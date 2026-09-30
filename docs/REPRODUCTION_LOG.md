@@ -410,7 +410,7 @@ Known typo `self.hstate_size_size` in HMSLSTM_cell.py is unreachable in the test
 - 6 scripts copied to src/repro/ (CRLF normalised to LF). Only path constants / env-var handling / manifest-based integrity check changed; see the diffs in the hand-off report.
 - reproduction_eval.py writes its regression re-run to experiments/00_reproduction/regression_eval/ so the archived original results are not overwritten.
 - 9 text artifacts (.csv/.log/.txt) copied from OLD reproduction_artifacts (77,293 bytes total); checkpoints and .npy files excluded.
-- This log was copied from OLD with `C:\Users\AISW_203_113\...` project paths -> `<PROJECT_ROOT>` and the user name -> `<USER>`.
+- This log was copied from the old working clone with its absolute project paths replaced by `<PROJECT_ROOT>` and the local user name replaced by `<USER>`.
 
 ## Stage 3 - regression test in the new structure (no training)
 - Command: `python src/repro/reproduction_eval.py 5` in the `ghoddoosian_tf1` env (pretrained my_model1..5, load=True, evaluation only).
@@ -438,3 +438,7 @@ Known typo `self.hstate_size_size` in HMSLSTM_cell.py is unreachable in the test
 - New-structure runs: check_environment.py -> ENVIRONMENT_OK, check_dataset.py -> DATASET_OK;
   check_video_assets.py without DLIB_LANDMARK_PATH exits with a message naming that variable (video/dlib assets not run: no data in the repo).
 - README reports only the confirmed regression table; Fold1 retraining is stated as TBD; BibTeX left as a TODO block.
+
+## Stage 5 - privacy / size check
+- Searched all tracked files (including binaries) for the local user name, `C:\Users` paths, e-mail-like strings and token/key patterns:
+  no hits in third_party/; no hits in the rest except one self-referencing line in this log, which was rewritten with placeholders.
