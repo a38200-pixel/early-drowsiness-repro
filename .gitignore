@@ -1,0 +1,29 @@
+# editor / interpreter artifacts
+.vscode/
+__pycache__/
+*.pyc
+
+# experiment tracking
+mlruns/
+
+# dlib landmark model is not redistributed here (see THIRD_PARTY.md, data/README.md)
+*.dat
+
+# videos and images (may show faces) are ignored by default; only docs/figures/ may hold images
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.png
+*.jpg
+*.jpeg
+*.gif
+!docs/figures/
+!docs/figures/**
+
+# new checkpoints (the vendored pretrained my_model* under third_party/ stay tracked)
+my_model*
+!third_party/**
+
+# local machine settings
+config.local.yaml

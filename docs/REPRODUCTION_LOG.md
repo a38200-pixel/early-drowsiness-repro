@@ -428,3 +428,13 @@ Known typo `self.hstate_size_size` in HMSLSTM_cell.py is unreachable in the test
 - Outputs saved to experiments/00_reproduction/regression_eval/ (CSV, summary, stdout log). The CSV is identical (6 decimals) to the archived
   original pretrained_5fold_results.csv; the summary differs only in "41 hashed" (old glob) vs "44 hashed" (manifest).
 - Stderr only contained the TensorFlow AVX2 CPU-feature notice (harmless).
+
+## Stage 4 - documents and configuration
+- Added LICENSE (MIT, copyright holder left as `<YOUR NAME>`), THIRD_PARTY.md, .gitignore, data/README.md, README.md,
+  configs/image_publishable.csv (36 subject_ids), src/repro/publish_guard.py, envs/environment_tf1.yml
+  (`conda env export -n ghoddoosian_tf1 --no-builds`, prefix line removed).
+- Checks: image_publishable.csv has 36 rows; publish_guard raises for non-listed subjects (nothing written) and saves for listed ones;
+  .gitignore leaves third_party/ tracked (44 files) and ignores foo.png, *.dat, *.mp4, new my_model* outside third_party, config.local.yaml, .vscode/.
+- New-structure runs: check_environment.py -> ENVIRONMENT_OK, check_dataset.py -> DATASET_OK;
+  check_video_assets.py without DLIB_LANDMARK_PATH exits with a message naming that variable (video/dlib assets not run: no data in the repo).
+- README reports only the confirmed regression table; Fold1 retraining is stated as TBD; BibTeX left as a TODO block.
