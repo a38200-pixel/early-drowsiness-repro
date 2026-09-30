@@ -442,3 +442,44 @@ Known typo `self.hstate_size_size` in HMSLSTM_cell.py is unreachable in the test
 ## Stage 5 - privacy / size check
 - Searched all tracked files (including binaries) for the local user name, `C:\Users` paths, e-mail-like strings and token/key patterns:
   no hits in third_party/; no hits in the rest except one self-referencing line in this log, which was rewritten with placeholders.
+
+# Fold1 다중 시드 재학습 준비 (2026-09-30)
+
+## 작성한 파일
+- `src/repro/common.py`: sha256_of_file, check_manifest(해시 44개 + third_party에 목록 밖 파일이 없는지), get_git_info(커밋, 추적 파일 dirty 여부). 기존 스크립트는 import하지 않음.
+- `src/repro/train_fold1_seeds.py`: `<시드> [epoch수=80] [출력폴더명=seed<시드>]`. 출력은 `experiments/01_fold1_seeds/<이름>/`이며, 폴더가 이미 있으면 종료.
+  원본 Training.py는 메모리에서만 치환한다.
+  - `tf.reset_default_graph()` 다음 줄에 `tf.set_random_seed(<시드>)`를 넣음(Train()이 매번 그래프를 새로 만들기 때문).
+  - `variable_path`와 `np.save(open('./...'))` 6곳을 출력 폴더로 돌림.
+  - Fold1만(`range(1)`, `ii=i+1`), epoch 수 치환.
+  - epoch 기록 호출(`_on_epoch_end`)을 추가. 계산에는 영향 없음.
+  - random.seed와 np.random.seed도 설정. 하이퍼파라미터는 그대로.
+  - metrics.csv는 epoch마다 flush. 열은 `epoch,train_loss,train_acc,BSA_loss,BSA_acc,VA,BSRE,VRE`이며, 기존 training_history.csv와 순서와 의미가 같음.
+  - train.log(원본 print 포함)와 run_meta.json을 남기고, 시작과 종료 시 check_manifest를 실행.
+- `src/repro/summarize_fold1_seeds.py`: `seed<숫자>` 폴더의 마지막 행으로 표와 통계(평균, ddof=1 표준편차, 최소, 최대)를 만듦.
+  - epoch가 80이 아니면 미완료로 보고 통계에서 제외.
+  - 공개 체크포인트 Fold1 값은 regression_eval CSV에서 읽음.
+  - VA와 BSA acc는 "시드 N개보다 높다"와 범위 안/밖만 출력하고, 범위 밖이면 "결론 보류, 추가 시드 필요"로 적음.
+- `scripts/run_fold1_seeds.bat`:
+  - Python 3.6 확인, 예상 시간과 공간 출력, 시드 1~5 순차 실행.
+  - 이미 있는 seed 폴더는 건너뛰고, 실패 시 종료 코드 1로 중단.
+- `.gitignore`에 `experiments/01_fold1_seeds/*/my_model*`와 `experiments/01_fold1_seeds/smoke_*/`를 추가.
+
+## 스모크 테스트 (2 epoch, 학습 소요 약 0.8~0.9분/회)
+
+| 실행 | 시드 | epoch 1 train_loss | epoch 2 train_loss | epoch 2 BSA acc | epoch 2 VA |
+|---|---|---|---|---|---|
+| smoke_a1 | 1 | 2323.292410 | 2093.058209 | 0.382979 | 0.333333 |
+| smoke_a2 | 1 | 2323.292410 | 2093.058209 | 0.382979 | 0.333333 |
+| smoke_b | 2 | 2388.162127 | 2187.231386 | 0.423956 | 0.363636 |
+
+- a1과 a2는 두 epoch 모두 train_loss 차이가 0이고, metrics.csv의 모든 값이 문자열까지 같음(1e-6 기준 일치).
+- a1과 b는 epoch 1 train_loss가 다름. 시드가 적용됨.
+- third_party: 매니페스트 해시 44/44 일치, 파일 수 44, `__pycache__` 없음(시작/종료 시 check_manifest 통과).
+- 스모크 폴더는 삭제하지 않음(gitignore 대상).
+- 요약 스크립트는 스크래치패드의 가짜 데이터(완료 5, 미완료 1, csv 없음 1, smoke 1)로 제외 규칙, 통계, 범위 판정을 확인함. 저장소에는 summary.md를 만들지 않음.
+- 배치 파일은 가짜 저장소 구조로 건너뛰기, 실패 시 중단(종료 코드 1), Python 3.6 외 환경 거부(종료 코드 1), 모두 건너뛴 정상 종료(0)를 확인함.
+  - 처음 버전은 for 블록 안의 `exit /b 1`이 종료 코드로 전달되지 않아(0) 루프 밖 `:failed` 레이블로 옮겨 고침.
+- 참고: `.gitattributes`의 `* text=auto`로 `configs/protected_manifest.sha256`이 CRLF로 체크아웃되어, THIRD_PARTY.md의 `sha256sum -c` 명령이 Windows에서는 파일명 끝 `\r` 때문에 실패함.
+  CR 제거 후 검증하면 44/44 OK. Python 검사(common.check_manifest)는 영향 없음.
+- 80 epoch 학습과 배치 실행은 하지 않음(사용자가 직접 실행).
