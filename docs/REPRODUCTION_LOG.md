@@ -411,3 +411,20 @@ Known typo `self.hstate_size_size` in HMSLSTM_cell.py is unreachable in the test
 - reproduction_eval.py writes its regression re-run to experiments/00_reproduction/regression_eval/ so the archived original results are not overwritten.
 - 9 text artifacts (.csv/.log/.txt) copied from OLD reproduction_artifacts (77,293 bytes total); checkpoints and .npy files excluded.
 - This log was copied from OLD with `C:\Users\AISW_203_113\...` project paths -> `<PROJECT_ROOT>` and the user name -> `<USER>`.
+
+## Stage 3 - regression test in the new structure (no training)
+- Command: `python src/repro/reproduction_eval.py 5` in the `ghoddoosian_tf1` env (pretrained my_model1..5, load=True, evaluation only).
+- Integrity: 44 protected files checked, changed: none, added: none. third_party/ still 44 files, no __pycache__.
+- Results (rounded to the reference-table precision) - all 25 values match:
+
+| Fold | BSA loss | BSA acc | VA | BSRE | VRE |
+|---|---|---|---|---|---|
+| 1 | 15.711 | 0.4838 | 0.6364 | 3.185 | 2.420 |
+| 2 | 10.574 | 0.5879 | 0.6111 | 1.391 | 1.040 |
+| 3 | 13.315 | 0.5606 | 0.6944 | 2.153 | 0.667 |
+| 4 | 11.508 | 0.5445 | 0.6389 | 1.599 | 0.850 |
+| 5 | 10.250 | 0.5287 | 0.6667 | 1.176 | 0.812 |
+
+- Outputs saved to experiments/00_reproduction/regression_eval/ (CSV, summary, stdout log). The CSV is identical (6 decimals) to the archived
+  original pretrained_5fold_results.csv; the summary differs only in "41 hashed" (old glob) vs "44 hashed" (manifest).
+- Stderr only contained the TensorFlow AVX2 CPU-feature notice (harmless).
