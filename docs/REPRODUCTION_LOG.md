@@ -483,3 +483,14 @@ Known typo `self.hstate_size_size` in HMSLSTM_cell.py is unreachable in the test
 - 참고: `.gitattributes`의 `* text=auto`로 `configs/protected_manifest.sha256`이 CRLF로 체크아웃되어, THIRD_PARTY.md의 `sha256sum -c` 명령이 Windows에서는 파일명 끝 `\r` 때문에 실패함.
   CR 제거 후 검증하면 44/44 OK. Python 검사(common.check_manifest)는 영향 없음.
 - 80 epoch 학습과 배치 실행은 하지 않음(사용자가 직접 실행).
+
+## 후속 수정 (2026-09-30)
+- metrics.csv 열 이름을 기존 training_history.csv에 맞춤: `train_loss` -> `train_loss_sum`, `train_acc` -> `train_moving_acc`
+  (나머지 열은 그대로). 두 스크립트 상단 주석에 열마다 의미를 한 줄씩 적음.
+- 스모크 테스트 `1 2 smoke_c`: 종료 코드 0, 머리줄 `epoch,train_loss_sum,train_moving_acc,BSA_loss,BSA_acc,VA,BSRE,VRE`.
+  값은 smoke_a1과 모두 같음(시드 1 재현성 재확인). 요약 스크립트는 이 CSV를 읽어 '미완료(epoch 2)'로 정상 표시함(스크래치패드에서 실행, 저장소에는 summary.md 만들지 않음).
+  third_party는 파일 44개, `__pycache__` 없음.
+- `.gitattributes`에 `configs/*.sha256 text eol=lf`를 추가하고 `git add --renormalize .`를 실행함. 인덱스 변화는 없었음(blob은 원래 LF).
+  작업 폴더의 매니페스트를 지우고 `git checkout`으로 다시 받자 `w/lf`가 됨. THIRD_PARTY.md의 두 검증법을 확인함.
+  - `sha256sum -c`: 44 OK, 실패 0.
+  - blob 해시 대조 루프: 로컬 원본 clone을 upstream으로 사용. MISMATCH 0, ls-files 44.

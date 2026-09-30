@@ -3,6 +3,15 @@
 # 사용법: python src\repro\summarize_fold1_seeds.py
 #         입력: experiments\01_fold1_seeds\seed<숫자>\metrics.csv (smoke_* 폴더는 읽지 않음)
 #         출력: 화면 + experiments\01_fold1_seeds\summary.md (매번 새로 만든다)
+# metrics.csv 열 (train_fold1_seeds.py가 쓰며, 이 스크립트는 epoch와 BSA_loss~VRE만 읽는다):
+#   epoch            - 1부터 시작하는 epoch 번호 (마지막 행이 80이어야 완료)
+#   train_loss_sum   - 그 epoch 안 학습 배치 손실의 합 (요약에 쓰지 않음)
+#   train_moving_acc - 그 epoch 안 학습 배치 정확도의 이동 평균 (요약에 쓰지 않음)
+#   BSA_loss         - 테스트 세트 전체 손실
+#   BSA_acc          - 테스트 세트 blink sequence 정확도
+#   VA               - 테스트 영상 단위 투표 정확도
+#   BSRE             - blink sequence 회귀 오차
+#   VRE              - 영상 단위 회귀 오차
 """Fold1 다중 시드 결과 요약 모듈.
 
 각 시드의 metrics.csv 마지막 행(마지막 epoch)만 사용한다. 최선 epoch 선택은 하지 않는다.

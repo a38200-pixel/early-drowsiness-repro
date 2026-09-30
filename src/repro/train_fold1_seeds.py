@@ -2,6 +2,15 @@
 # 역할: Fold1을 지정한 시드로 재학습하고 epoch마다 지표를 CSV로 기록한다.
 # 사용법: python src\repro\train_fold1_seeds.py <시드> [epoch수=80] [출력폴더명=seed<시드>]
 #         출력: experiments\01_fold1_seeds\<출력폴더명>\ (metrics.csv, train.log, run_meta.json, my_model1.*)
+# metrics.csv 열 (00_reproduction\fold1_training\training_history.csv와 앞 3개 이름이 같음, 한 행 = epoch 하나):
+#   epoch            - 1부터 시작하는 epoch 번호
+#   train_loss_sum   - 그 epoch 안 학습 배치 손실의 합
+#   train_moving_acc - 그 epoch 안 학습 배치 정확도의 이동 평균
+#   BSA_loss         - 테스트 세트 전체 손실 (기존 파일의 test_bsa_loss)
+#   BSA_acc          - 테스트 세트 blink sequence 정확도 (기존 test_bsa_acc)
+#   VA               - 테스트 영상 단위 투표 정확도 (기존 va)
+#   BSRE             - blink sequence 회귀 오차 (기존 bsre)
+#   VRE              - 영상 단위 회귀 오차 (기존 vre)
 """Fold1 다중 시드 재학습 스크립트.
 
 원본 third_party/ghoddoosian/Training.py는 디스크에서 수정하지 않는다. 텍스트로 읽어 메모리에서만
@@ -44,9 +53,8 @@ OUTPUT_PARENT = os.path.join(REPO_ROOT, "experiments", "01_fold1_seeds")
 DEFAULT_EPOCHS = 80
 FOLD1_INPUT_FILES = ["Blinks_30_Fold1.npy", "Labels_30_Fold1.npy",
                      "BlinksTest_30_Fold1.npy", "LabelsTest_30_Fold1.npy"]
-# 기존 training_history.csv(epoch, train_loss_sum, train_moving_acc, test_bsa_loss, test_bsa_acc, va, bsre, vre)와
-# 같은 순서, 같은 의미다. train_loss는 epoch 안 배치 손실의 합, train_acc는 배치 정확도의 이동 평균이다.
-METRIC_COLUMNS = ["epoch", "train_loss", "train_acc", "BSA_loss", "BSA_acc", "VA", "BSRE", "VRE"]
+# 기존 training_history.csv와 같은 순서, 같은 의미다(각 열 의미는 파일 상단 주석 참고).
+METRIC_COLUMNS = ["epoch", "train_loss_sum", "train_moving_acc", "BSA_loss", "BSA_acc", "VA", "BSRE", "VRE"]
 
 _log_file = None  # log()가 함께 기록할 train.log 파일 핸들
 
@@ -231,15 +239,15 @@ def make_epoch_recorder(metrics_path, regression_values, history):
 
     입력: metrics_path - metrics.csv 경로, regression_values - BSRE/VRE가 담기는 dict,
           history - 기록한 행을 모아 둘 list
-    반환: _on_epoch_end(idx, train_loss, train_acc, bsa_loss, bsa_acc, va) 함수
+    반환: _on_epoch_end(idx, train_loss_sum, train_moving_acc, bsa_loss, bsa_acc, va) 함수
     """
-    def on_epoch_end(idx, train_loss, train_acc, bsa_loss, bsa_acc, va):
+    def on_epoch_end(idx, train_loss_sum, train_moving_acc, bsa_loss, bsa_acc, va):
         """epoch 하나의 지표를 metrics.csv에 한 줄로 추가한다.
 
         입력: idx - 0부터 시작하는 epoch 번호, 나머지 - Train()의 y, yy, y_test, yy_test, y_v 해당 칸 값
         반환: 없음
         """
-        values =[idx + 1, float(train_loss), float(train_acc), float(bsa_loss), float(bsa_acc), float(va),
+        values = [idx + 1, float(train_loss_sum), float(train_moving_acc), float(bsa_loss), float(bsa_acc), float(va),
                   regression_values["BSRE"], regression_values["VRE"]]
         append_metrics_row(metrics_path, values)
         history.append(values)
