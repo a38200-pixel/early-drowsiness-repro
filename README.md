@@ -15,14 +15,14 @@
 `src/repro/reproduction_eval.py`로 생성했습니다(체크포인트 복원 후 평가만 수행). 원본 출력은
 `experiments/00_reproduction/regression_eval/`에 있습니다.
 
-| Fold | BSA loss | BSA acc | VA | BSRE | VRE |
-|---|---|---|---|---|---|
-| 1 | 15.711 | 0.4838 | 0.6364 | 3.185 | 2.420 |
-| 2 | 10.574 | 0.5879 | 0.6111 | 1.391 | 1.040 |
-| 3 | 13.315 | 0.5606 | 0.6944 | 2.153 | 0.667 |
-| 4 | 11.508 | 0.5445 | 0.6389 | 1.599 | 0.850 |
-| 5 | 10.250 | 0.5287 | 0.6667 | 1.176 | 0.812 |
-| 평균 | 12.271 | 0.5411 | 0.6495 | 1.901 | 1.158 |
+| Fold | BSA loss | BSA acc | VA     | BSRE  | VRE   |
+| ---- | -------- | ------- | ------ | ----- | ----- |
+| 1    | 15.711   | 0.4838  | 0.6364 | 3.185 | 2.420 |
+| 2    | 10.574   | 0.5879  | 0.6111 | 1.391 | 1.040 |
+| 3    | 13.315   | 0.5606  | 0.6944 | 2.153 | 0.667 |
+| 4    | 11.508   | 0.5445  | 0.6389 | 1.599 | 0.850 |
+| 5    | 10.250   | 0.5287  | 0.6667 | 1.176 | 0.812 |
+| 평균 | 12.271   | 0.5411  | 0.6495 | 1.901 | 1.158 |
 
 약어는 원본 `Training.py`가 출력하는 지표 이름입니다. 정의는 원본 README와 논문을 참고하세요.
 오류를 포함한 단계별 진행 기록은 `docs/REPRODUCTION_LOG.md`에 있습니다.
@@ -92,11 +92,20 @@ UTA-RLDD 영상, dlib 랜드마크 모델, 그로부터 만든 프레임은 **�
 
 ## 인용
 
-<!-- TODO: 공식 UTA-RLDD 페이지(https://sites.google.com/view/utarldd/home)에 있는 BibTeX를 그대로 붙여 넣으세요.
-     기억에 의존해 직접 작성하지 마세요. -->
-
 ```bibtex
-% TODO: 공식 BibTeX를 여기에 붙여 넣기
+@inproceedings{ghoddoosian2019realistic,
+
+title={A Realistic Dataset and Baseline Temporal Model for Early Drowsiness Detection},
+
+author={Ghoddoosian, Reza and Galib, Marnim and Athitsos, Vassilis},
+
+booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition Workshops},
+
+pages={0--0},
+
+year={2019}
+
+}
 ```
 
 ## 라이선스
