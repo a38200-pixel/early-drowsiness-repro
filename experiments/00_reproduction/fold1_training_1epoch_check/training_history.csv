@@ -1,0 +1,2 @@
+epoch,train_loss_sum,train_moving_acc,test_bsa_loss,test_bsa_acc,va,bsre,vre
+1,2364.103922,0.437847,21.691198,0.380615,0.333333,3.329551,3.252758

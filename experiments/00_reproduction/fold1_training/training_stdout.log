@@ -1,0 +1,1106 @@
+1.8.0
+######################
+0
+######################
+Epoch number: 0 ---- Batch number 0 -- the loss is: 25.385948--the accuracy: 0.3125
+
+Epoch number: 0 ---- Batch number 50 -- the loss is: 23.145996--the accuracy: 0.36611519607843135
+
+Epoch number: 0 ---- Batch number 100 -- the loss is: 18.05698--the accuracy: 0.38350866336633666
+
+1: True label is :0 and the detected label is 5
+2: True label is :5 and the detected label is 5
+3: True label is :10 and the detected label is 5
+4: True label is :0 and the detected label is 5
+5: True label is :5 and the detected label is 10
+6: True label is :10 and the detected label is 5
+7: True label is :0 and the detected label is 5
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 5
+10: True label is :0 and the detected label is 5
+11: True label is :5 and the detected label is 5
+12: True label is :10 and the detected label is 5
+13: True label is :0 and the detected label is 5
+14: True label is :5 and the detected label is 5
+15: True label is :10 and the detected label is 5
+16: True label is :0 and the detected label is 5
+17: True label is :5 and the detected label is 5
+18: True label is :10 and the detected label is 5
+19: True label is :0 and the detected label is 5
+20: True label is :5 and the detected label is 5
+21: True label is :10 and the detected label is 10
+22: True label is :0 and the detected label is 5
+23: True label is :5 and the detected label is 5
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 5
+26: True label is :5 and the detected label is 5
+27: True label is :10 and the detected label is 5
+28: True label is :0 and the detected label is 5
+29: True label is :5 and the detected label is 5
+30: True label is :10 and the detected label is 5
+31: True label is :0 and the detected label is 5
+32: True label is :5 and the detected label is 5
+33: True label is :10 and the detected label is 5
+For Training: 2525.1153144836426 , 0.3920995916515426
+BSA: 20.278923 , 0.3814026792750197
+VA: 0.3333333333333333
+Per Blink Sequence Regression Error is :1.821983 
+Per Video Regression Error is :1.378957 
+----------------------------------------------
+Sav
+Epoch number: 1 ---- Batch number 0 -- the loss is: 20.298086--the accuracy: 0.390625
+
+Epoch number: 1 ---- Batch number 50 -- the loss is: 20.486526--the accuracy: 0.41299019607843135
+
+Epoch number: 1 ---- Batch number 100 -- the loss is: 16.637905--the accuracy: 0.4350247524752475
+
+For Training: 2203.0955381393433 , 0.441668557168784
+BSA: 19.439224 , 0.37903861308116626
+VA: 0.2727272727272727
+----------------------------------------------
+Epoch number: 2 ---- Batch number 0 -- the loss is: 18.309559--the accuracy: 0.453125
+
+Epoch number: 2 ---- Batch number 50 -- the loss is: 18.673868--the accuracy: 0.4583333333333333
+
+Epoch number: 2 ---- Batch number 100 -- the loss is: 15.697168--the accuracy: 0.4752475247524752
+
+For Training: 2045.158519744873 , 0.4795187726860254
+BSA: 18.952501 , 0.3892828999211978
+VA: 0.3333333333333333
+----------------------------------------------
+Epoch number: 3 ---- Batch number 0 -- the loss is: 16.866726--the accuracy: 0.546875
+
+Epoch number: 3 ---- Batch number 50 -- the loss is: 17.358778--the accuracy: 0.4797794117647059
+
+Epoch number: 3 ---- Batch number 100 -- the loss is: 14.953417--the accuracy: 0.4942759900990099
+
+For Training: 1944.6030769348145 , 0.4979866152450091
+BSA: 18.710892 , 0.40504334121355395
+VA: 0.36363636363636365
+----------------------------------------------
+Epoch number: 4 ---- Batch number 0 -- the loss is: 15.891722--the accuracy: 0.53125
+
+Epoch number: 4 ---- Batch number 50 -- the loss is: 16.374743--the accuracy: 0.5045955882352942
+
+Epoch number: 4 ---- Batch number 100 -- the loss is: 14.48918--the accuracy: 0.5111386138613861
+
+For Training: 1869.577898979187 , 0.5141007826678766
+BSA: 18.56959 , 0.4034672970843184
+VA: 0.3333333333333333
+----------------------------------------------
+Epoch number: 5 ---- Batch number 0 -- the loss is: 15.093386--the accuracy: 0.546875
+
+Epoch number: 5 ---- Batch number 50 -- the loss is: 15.798643--the accuracy: 0.515625
+
+Epoch number: 5 ---- Batch number 100 -- the loss is: 13.749019--the accuracy: 0.521194306930693
+
+For Training: 1818.2564144134521 , 0.5235296619782214
+BSA: 18.471146 , 0.4144996059889677
+VA: 0.42424242424242425
+----------------------------------------------
+Sav
+Epoch number: 6 ---- Batch number 0 -- the loss is: 14.652685--the accuracy: 0.578125
+
+Epoch number: 6 ---- Batch number 50 -- the loss is: 15.450241--the accuracy: 0.5208333333333334
+
+Epoch number: 6 ---- Batch number 100 -- the loss is: 12.9745--the accuracy: 0.5304764851485149
+
+For Training: 1771.6339073181152 , 0.5320156533575318
+BSA: 18.32975 , 0.4160756501182033
+VA: 0.42424242424242425
+----------------------------------------------
+Epoch number: 7 ---- Batch number 0 -- the loss is: 14.131149--the accuracy: 0.609375
+
+Epoch number: 7 ---- Batch number 50 -- the loss is: 15.043568--the accuracy: 0.5346200980392157
+
+Epoch number: 7 ---- Batch number 100 -- the loss is: 12.453939--the accuracy: 0.5434715346534653
+
+For Training: 1727.0473709106445 , 0.544726916969147
+BSA: 18.192451 , 0.42631993695823484
+VA: 0.45454545454545453
+----------------------------------------------
+Epoch number: 8 ---- Batch number 0 -- the loss is: 13.778217--the accuracy: 0.65625
+
+Epoch number: 8 ---- Batch number 50 -- the loss is: 14.633591--the accuracy: 0.5465686274509803
+
+Epoch number: 8 ---- Batch number 100 -- the loss is: 11.800262--the accuracy: 0.5590965346534653
+
+For Training: 1682.423318862915 , 0.5587355376588022
+BSA: 18.047401 , 0.42080378250591016
+VA: 0.45454545454545453
+----------------------------------------------
+Epoch number: 9 ---- Batch number 0 -- the loss is: 13.29533--the accuracy: 0.671875
+
+Epoch number: 9 ---- Batch number 50 -- the loss is: 14.058502--the accuracy: 0.5594362745098039
+
+Epoch number: 9 ---- Batch number 100 -- the loss is: 12.134004--the accuracy: 0.572865099009901
+
+For Training: 1616.3692274093628 , 0.5724747617967332
+BSA: 17.545519 , 0.4436564223798266
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 10 ---- Batch number 0 -- the loss is: 12.764986--the accuracy: 0.609375
+
+Epoch number: 10 ---- Batch number 50 -- the loss is: 13.851217--the accuracy: 0.5962009803921569
+
+Epoch number: 10 ---- Batch number 100 -- the loss is: 11.294921--the accuracy: 0.6061262376237624
+
+1: True label is :0 and the detected label is 0
+2: True label is :5 and the detected label is 0
+3: True label is :10 and the detected label is 5
+4: True label is :0 and the detected label is 0
+5: True label is :5 and the detected label is 5
+6: True label is :10 and the detected label is 10
+7: True label is :0 and the detected label is 5
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 5
+11: True label is :5 and the detected label is 10
+12: True label is :10 and the detected label is 10
+13: True label is :0 and the detected label is 0
+14: True label is :5 and the detected label is 5
+15: True label is :10 and the detected label is 10
+16: True label is :0 and the detected label is 0
+17: True label is :5 and the detected label is 0
+18: True label is :10 and the detected label is 0
+19: True label is :0 and the detected label is 0
+20: True label is :5 and the detected label is 10
+21: True label is :10 and the detected label is 5
+22: True label is :0 and the detected label is 0
+23: True label is :5 and the detected label is 5
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 0
+26: True label is :5 and the detected label is 5
+27: True label is :10 and the detected label is 5
+28: True label is :0 and the detected label is 0
+29: True label is :5 and the detected label is 0
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 5
+32: True label is :5 and the detected label is 5
+33: True label is :10 and the detected label is 5
+For Training: 1506.1654624938965 , 0.6062840290381125
+BSA: 17.760595 , 0.44838455476753347
+VA: 0.5757575757575758
+----------------------------------------------
+Sav
+Epoch number: 11 ---- Batch number 0 -- the loss is: 12.282306--the accuracy: 0.671875
+
+Epoch number: 11 ---- Batch number 50 -- the loss is: 13.2140875--the accuracy: 0.640625
+
+Epoch number: 11 ---- Batch number 100 -- the loss is: 11.23868--the accuracy: 0.640625
+
+For Training: 1445.4998798370361 , 0.636002722323049
+BSA: 17.858215 , 0.4405043341213554
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 12 ---- Batch number 0 -- the loss is: 11.934519--the accuracy: 0.671875
+
+Epoch number: 12 ---- Batch number 50 -- the loss is: 12.713961--the accuracy: 0.647671568627451
+
+Epoch number: 12 ---- Batch number 100 -- the loss is: 10.914003--the accuracy: 0.6502165841584159
+
+For Training: 1404.6680688858032 , 0.643815222323049
+BSA: 17.333843 , 0.458628841607565
+VA: 0.6363636363636364
+----------------------------------------------
+Epoch number: 13 ---- Batch number 0 -- the loss is: 11.784481--the accuracy: 0.609375
+
+Epoch number: 13 ---- Batch number 50 -- the loss is: 12.286174--the accuracy: 0.6525735294117647
+
+Epoch number: 13 ---- Batch number 100 -- the loss is: 10.537611--the accuracy: 0.6564047029702971
+
+For Training: 1374.9165840148926 , 0.6505501361161524
+BSA: 17.07287 , 0.4736012608353034
+VA: 0.6060606060606061
+----------------------------------------------
+Epoch number: 14 ---- Batch number 0 -- the loss is: 11.607009--the accuracy: 0.640625
+
+Epoch number: 14 ---- Batch number 50 -- the loss is: 12.059059--the accuracy: 0.6583946078431373
+
+Epoch number: 14 ---- Batch number 100 -- the loss is: 10.422753--the accuracy: 0.6607363861386139
+
+For Training: 1349.3894128799438 , 0.6545910843920145
+BSA: 16.885008 , 0.47832939322301027
+VA: 0.6363636363636364
+----------------------------------------------
+Epoch number: 15 ---- Batch number 0 -- the loss is: 11.3471775--the accuracy: 0.671875
+
+Epoch number: 15 ---- Batch number 50 -- the loss is: 11.769979--the accuracy: 0.6629901960784313
+
+Epoch number: 15 ---- Batch number 100 -- the loss is: 10.280346--the accuracy: 0.6624381188118812
+
+For Training: 1327.4890117645264 , 0.6557537431941923
+BSA: 16.989624 , 0.4720252167060678
+VA: 0.6060606060606061
+Per Blink Sequence Regression Error is :2.385275 
+Per Video Regression Error is :1.815057 
+----------------------------------------------
+Sav
+Epoch number: 16 ---- Batch number 0 -- the loss is: 11.24757--the accuracy: 0.671875
+
+Epoch number: 16 ---- Batch number 50 -- the loss is: 11.650419--the accuracy: 0.6608455882352942
+
+Epoch number: 16 ---- Batch number 100 -- the loss is: 10.139062--the accuracy: 0.661200495049505
+
+For Training: 1307.8137397766113 , 0.6553992740471869
+BSA: 16.98319 , 0.4720252167060678
+VA: 0.6060606060606061
+----------------------------------------------
+Epoch number: 17 ---- Batch number 0 -- the loss is: 11.090742--the accuracy: 0.65625
+
+Epoch number: 17 ---- Batch number 50 -- the loss is: 11.527362--the accuracy: 0.663296568627451
+
+Epoch number: 17 ---- Batch number 100 -- the loss is: 9.96537--the accuracy: 0.6649133663366337
+
+For Training: 1291.6300230026245 , 0.6573701225045372
+BSA: 17.107819 , 0.46808510638297873
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 18 ---- Batch number 0 -- the loss is: 11.124048--the accuracy: 0.671875
+
+Epoch number: 18 ---- Batch number 50 -- the loss is: 11.488218--the accuracy: 0.6672794117647058
+
+Epoch number: 18 ---- Batch number 100 -- the loss is: 9.958599--the accuracy: 0.666924504950495
+
+For Training: 1275.3507204055786 , 0.6595252949183303
+BSA: 17.014467 , 0.4736012608353034
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 19 ---- Batch number 0 -- the loss is: 11.000311--the accuracy: 0.65625
+
+Epoch number: 19 ---- Batch number 50 -- the loss is: 11.313812--the accuracy: 0.6709558823529411
+
+Epoch number: 19 ---- Batch number 100 -- the loss is: 9.796586--the accuracy: 0.6711014851485149
+
+For Training: 1259.0558624267578 , 0.6630770757713249
+BSA: 16.932484 , 0.475177304964539
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 20 ---- Batch number 0 -- the loss is: 10.900694--the accuracy: 0.65625
+
+Epoch number: 20 ---- Batch number 50 -- the loss is: 11.182878--the accuracy: 0.6764705882352942
+
+Epoch number: 20 ---- Batch number 100 -- the loss is: 9.764643--the accuracy: 0.6740408415841584
+
+1: True label is :0 and the detected label is 0
+2: True label is :5 and the detected label is 0
+3: True label is :10 and the detected label is 5
+4: True label is :0 and the detected label is 0
+5: True label is :5 and the detected label is 5
+6: True label is :10 and the detected label is 10
+7: True label is :0 and the detected label is 5
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 5
+11: True label is :5 and the detected label is 10
+12: True label is :10 and the detected label is 10
+13: True label is :0 and the detected label is 0
+14: True label is :5 and the detected label is 10
+15: True label is :10 and the detected label is 10
+16: True label is :0 and the detected label is 0
+17: True label is :5 and the detected label is 0
+18: True label is :10 and the detected label is 0
+19: True label is :0 and the detected label is 0
+20: True label is :5 and the detected label is 10
+21: True label is :10 and the detected label is 10
+22: True label is :0 and the detected label is 0
+23: True label is :5 and the detected label is 0
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 0
+26: True label is :5 and the detected label is 0
+27: True label is :10 and the detected label is 0
+28: True label is :0 and the detected label is 0
+29: True label is :5 and the detected label is 0
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 5
+32: True label is :5 and the detected label is 5
+33: True label is :10 and the detected label is 10
+For Training: 1244.7528772354126 , 0.6660404378402904
+BSA: 16.83915 , 0.47754137115839246
+VA: 0.5454545454545454
+----------------------------------------------
+Sav
+Epoch number: 21 ---- Batch number 0 -- the loss is: 10.744103--the accuracy: 0.65625
+
+Epoch number: 21 ---- Batch number 50 -- the loss is: 11.052689--the accuracy: 0.6767769607843137
+
+Epoch number: 21 ---- Batch number 100 -- the loss is: 9.67972--the accuracy: 0.6738861386138614
+
+For Training: 1231.4402856826782 , 0.6657710412885662
+BSA: 16.843792 , 0.4791174152876281
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 22 ---- Batch number 0 -- the loss is: 10.550388--the accuracy: 0.65625
+
+Epoch number: 22 ---- Batch number 50 -- the loss is: 10.954191--the accuracy: 0.6798406862745098
+
+Epoch number: 22 ---- Batch number 100 -- the loss is: 9.563484--the accuracy: 0.6772896039603961
+
+For Training: 1217.5636749267578 , 0.6698119895644283
+BSA: 16.760824 , 0.4830575256107171
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 23 ---- Batch number 0 -- the loss is: 10.484587--the accuracy: 0.640625
+
+Epoch number: 23 ---- Batch number 50 -- the loss is: 10.833451--the accuracy: 0.6795343137254902
+
+Epoch number: 23 ---- Batch number 100 -- the loss is: 9.531366--the accuracy: 0.6758972772277227
+
+For Training: 1205.9309663772583 , 0.669003799909256
+BSA: 16.813047 , 0.47754137115839246
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 24 ---- Batch number 0 -- the loss is: 10.347709--the accuracy: 0.640625
+
+Epoch number: 24 ---- Batch number 50 -- the loss is: 10.862946--the accuracy: 0.6832107843137255
+
+Epoch number: 24 ---- Batch number 100 -- the loss is: 9.421507--the accuracy: 0.6796101485148515
+
+For Training: 1193.7702322006226 , 0.6725059550816697
+BSA: 16.826351 , 0.47044917257683216
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 25 ---- Batch number 0 -- the loss is: 10.252113--the accuracy: 0.640625
+
+Epoch number: 25 ---- Batch number 50 -- the loss is: 10.72824--the accuracy: 0.6853553921568627
+
+Epoch number: 25 ---- Batch number 100 -- the loss is: 9.365421--the accuracy: 0.682394801980198
+
+For Training: 1183.2842750549316 , 0.6758734119782214
+BSA: 16.787352 , 0.475177304964539
+VA: 0.5757575757575758
+----------------------------------------------
+Sav
+Epoch number: 26 ---- Batch number 0 -- the loss is: 10.160564--the accuracy: 0.625
+
+Epoch number: 26 ---- Batch number 50 -- the loss is: 10.531792--the accuracy: 0.6853553921568627
+
+Epoch number: 26 ---- Batch number 100 -- the loss is: 9.258629--the accuracy: 0.6831683168316832
+
+For Training: 1173.7699103355408 , 0.676950998185118
+BSA: 16.505024 , 0.48148148148148145
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 27 ---- Batch number 0 -- the loss is: 10.168743--the accuracy: 0.65625
+
+Epoch number: 27 ---- Batch number 50 -- the loss is: 10.379221--the accuracy: 0.6893382352941176
+
+Epoch number: 27 ---- Batch number 100 -- the loss is: 9.100701--the accuracy: 0.6864170792079208
+
+For Training: 1165.4392018318176 , 0.6806374773139746
+BSA: 16.29826 , 0.48699763593380613
+VA: 0.6060606060606061
+----------------------------------------------
+Epoch number: 28 ---- Batch number 0 -- the loss is: 10.120863--the accuracy: 0.671875
+
+Epoch number: 28 ---- Batch number 50 -- the loss is: 10.470506--the accuracy: 0.6887254901960784
+
+Epoch number: 28 ---- Batch number 100 -- the loss is: 8.976284--the accuracy: 0.6853341584158416
+
+For Training: 1158.536907672882 , 0.6769864450998185
+BSA: 16.042717 , 0.48699763593380613
+VA: 0.6060606060606061
+----------------------------------------------
+Epoch number: 29 ---- Batch number 0 -- the loss is: 10.147196--the accuracy: 0.65625
+
+Epoch number: 29 ---- Batch number 50 -- the loss is: 10.977696--the accuracy: 0.6780024509803921
+
+Epoch number: 29 ---- Batch number 100 -- the loss is: 9.374598--the accuracy: 0.6741955445544554
+
+For Training: 1180.9181399345398 , 0.6660758847549909
+BSA: 16.259277 , 0.4728132387706856
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 30 ---- Batch number 0 -- the loss is: 10.450061--the accuracy: 0.65625
+
+Epoch number: 30 ---- Batch number 50 -- the loss is: 10.37202--the accuracy: 0.6706495098039216
+
+Epoch number: 30 ---- Batch number 100 -- the loss is: 9.5119095--the accuracy: 0.6732673267326733
+
+1: True label is :0 and the detected label is 0
+2: True label is :5 and the detected label is 5
+3: True label is :10 and the detected label is 5
+4: True label is :0 and the detected label is 0
+5: True label is :5 and the detected label is 5
+6: True label is :10 and the detected label is 10
+7: True label is :0 and the detected label is 5
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 5
+11: True label is :5 and the detected label is 10
+12: True label is :10 and the detected label is 10
+13: True label is :0 and the detected label is 0
+14: True label is :5 and the detected label is 5
+15: True label is :10 and the detected label is 10
+16: True label is :0 and the detected label is 0
+17: True label is :5 and the detected label is 0
+18: True label is :10 and the detected label is 0
+19: True label is :0 and the detected label is 0
+20: True label is :5 and the detected label is 10
+21: True label is :10 and the detected label is 10
+22: True label is :0 and the detected label is 0
+23: True label is :5 and the detected label is 10
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 5
+26: True label is :5 and the detected label is 5
+27: True label is :10 and the detected label is 5
+28: True label is :0 and the detected label is 0
+29: True label is :5 and the detected label is 0
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 5
+32: True label is :5 and the detected label is 0
+33: True label is :10 and the detected label is 10
+For Training: 1171.383909702301 , 0.6654520190562614
+BSA: 16.587595 , 0.45547675334909377
+VA: 0.5757575757575758
+Per Blink Sequence Regression Error is :2.582926 
+Per Video Regression Error is :1.548107 
+----------------------------------------------
+Sav
+Epoch number: 31 ---- Batch number 0 -- the loss is: 11.881516--the accuracy: 0.65625
+
+Epoch number: 31 ---- Batch number 50 -- the loss is: 10.468534--the accuracy: 0.663296568627451
+
+Epoch number: 31 ---- Batch number 100 -- the loss is: 9.787201--the accuracy: 0.6697091584158416
+
+For Training: 1180.3403549194336 , 0.6612267468239564
+BSA: 16.651472 , 0.4562647754137116
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 32 ---- Batch number 0 -- the loss is: 11.690939--the accuracy: 0.671875
+
+Epoch number: 32 ---- Batch number 50 -- the loss is: 10.177187--the accuracy: 0.6645220588235294
+
+Epoch number: 32 ---- Batch number 100 -- the loss is: 10.034397--the accuracy: 0.666924504950495
+
+For Training: 1178.5901894569397 , 0.6590219487295825
+BSA: 16.036873 , 0.46966115051221435
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 33 ---- Batch number 0 -- the loss is: 10.069193--the accuracy: 0.640625
+
+Epoch number: 33 ---- Batch number 50 -- the loss is: 9.983818--the accuracy: 0.6731004901960784
+
+Epoch number: 33 ---- Batch number 100 -- the loss is: 10.066921--the accuracy: 0.6680074257425742
+
+For Training: 1158.6335773468018 , 0.6598301383847549
+BSA: 15.808704 , 0.475177304964539
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 34 ---- Batch number 0 -- the loss is: 9.820442--the accuracy: 0.640625
+
+Epoch number: 34 ---- Batch number 50 -- the loss is: 9.959627--the accuracy: 0.6786151960784313
+
+Epoch number: 34 ---- Batch number 100 -- the loss is: 10.019342--the accuracy: 0.6731126237623762
+
+For Training: 1153.2983469963074 , 0.6642751814882032
+BSA: 15.807077 , 0.46020488573680063
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 35 ---- Batch number 0 -- the loss is: 10.038721--the accuracy: 0.6875
+
+Epoch number: 35 ---- Batch number 50 -- the loss is: 9.872705--the accuracy: 0.678921568627451
+
+Epoch number: 35 ---- Batch number 100 -- the loss is: 9.75927--the accuracy: 0.6743502475247525
+
+For Training: 1156.6424984931946 , 0.6662460299455535
+BSA: 16.746904 , 0.44602048857368004
+VA: 0.5151515151515151
+----------------------------------------------
+Sav
+Epoch number: 36 ---- Batch number 0 -- the loss is: 11.117304--the accuracy: 0.703125
+
+Epoch number: 36 ---- Batch number 50 -- the loss is: 10.177481--the accuracy: 0.6746323529411765
+
+Epoch number: 36 ---- Batch number 100 -- the loss is: 9.61113--the accuracy: 0.6729579207920792
+
+For Training: 1155.8094606399536 , 0.6654378402903811
+BSA: 16.501068 , 0.44523246650906223
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 37 ---- Batch number 0 -- the loss is: 10.85882--the accuracy: 0.71875
+
+Epoch number: 37 ---- Batch number 50 -- the loss is: 10.333427--the accuracy: 0.6758578431372549
+
+Epoch number: 37 ---- Batch number 100 -- the loss is: 9.713192--the accuracy: 0.6748143564356436
+
+For Training: 1147.4415545463562 , 0.6661113316696914
+BSA: 16.802664 , 0.4444444444444444
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 38 ---- Batch number 0 -- the loss is: 11.063519--the accuracy: 0.703125
+
+Epoch number: 38 ---- Batch number 50 -- the loss is: 10.007877--the accuracy: 0.6767769607843137
+
+Epoch number: 38 ---- Batch number 100 -- the loss is: 9.370694--the accuracy: 0.6758972772277227
+
+For Training: 1137.6412019729614 , 0.6677277109800362
+BSA: 16.627296 , 0.4428684003152088
+VA: 0.5151515151515151
+----------------------------------------------
+Epoch number: 39 ---- Batch number 0 -- the loss is: 11.17303--the accuracy: 0.703125
+
+Epoch number: 39 ---- Batch number 50 -- the loss is: 9.960724--the accuracy: 0.671875
+
+Epoch number: 39 ---- Batch number 100 -- the loss is: 9.557869--the accuracy: 0.6720297029702971
+
+For Training: 1141.4197540283203 , 0.6648990471869328
+BSA: 16.69783 , 0.4397163120567376
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 40 ---- Batch number 0 -- the loss is: 10.833923--the accuracy: 0.703125
+
+Epoch number: 40 ---- Batch number 50 -- the loss is: 10.169605--the accuracy: 0.6734068627450981
+
+Epoch number: 40 ---- Batch number 100 -- the loss is: 9.347157--the accuracy: 0.6746596534653465
+
+1: True label is :0 and the detected label is 0
+2: True label is :5 and the detected label is 0
+3: True label is :10 and the detected label is 5
+4: True label is :0 and the detected label is 0
+5: True label is :5 and the detected label is 5
+6: True label is :10 and the detected label is 5
+7: True label is :0 and the detected label is 0
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 5
+11: True label is :5 and the detected label is 10
+12: True label is :10 and the detected label is 10
+13: True label is :0 and the detected label is 0
+14: True label is :5 and the detected label is 10
+15: True label is :10 and the detected label is 10
+16: True label is :0 and the detected label is 0
+17: True label is :5 and the detected label is 0
+18: True label is :10 and the detected label is 0
+19: True label is :0 and the detected label is 0
+20: True label is :5 and the detected label is 10
+21: True label is :10 and the detected label is 5
+22: True label is :0 and the detected label is 0
+23: True label is :5 and the detected label is 10
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 0
+26: True label is :5 and the detected label is 0
+27: True label is :10 and the detected label is 0
+28: True label is :0 and the detected label is 0
+29: True label is :5 and the detected label is 5
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 5
+32: True label is :5 and the detected label is 0
+33: True label is :10 and the detected label is 10
+For Training: 1129.8823590278625 , 0.6663807282214156
+BSA: 16.657701 , 0.4444444444444444
+VA: 0.5151515151515151
+----------------------------------------------
+Sav
+Epoch number: 41 ---- Batch number 0 -- the loss is: 10.844883--the accuracy: 0.703125
+
+Epoch number: 41 ---- Batch number 50 -- the loss is: 9.758438--the accuracy: 0.6783088235294118
+
+Epoch number: 41 ---- Batch number 100 -- the loss is: 9.29307--the accuracy: 0.676980198019802
+
+For Training: 1120.1804275512695 , 0.6700175816696914
+BSA: 16.627722 , 0.44208037825059104
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 42 ---- Batch number 0 -- the loss is: 10.550671--the accuracy: 0.703125
+
+Epoch number: 42 ---- Batch number 50 -- the loss is: 9.64414--the accuracy: 0.6731004901960784
+
+Epoch number: 42 ---- Batch number 100 -- the loss is: 9.067375--the accuracy: 0.6745049504950495
+
+For Training: 1114.6524186134338 , 0.6687202245916515
+BSA: 16.548018 , 0.4436564223798266
+VA: 0.5151515151515151
+----------------------------------------------
+Epoch number: 43 ---- Batch number 0 -- the loss is: 10.500426--the accuracy: 0.703125
+
+Epoch number: 43 ---- Batch number 50 -- the loss is: 9.591444--the accuracy: 0.6783088235294118
+
+Epoch number: 43 ---- Batch number 100 -- the loss is: 8.994261--the accuracy: 0.6777537128712872
+
+For Training: 1104.8657455444336 , 0.6719529832123412
+BSA: 16.582691 , 0.4373522458628842
+VA: 0.48484848484848486
+----------------------------------------------
+Epoch number: 44 ---- Batch number 0 -- the loss is: 10.413271--the accuracy: 0.703125
+
+Epoch number: 44 ---- Batch number 50 -- the loss is: 9.505035--the accuracy: 0.678921568627451
+
+Epoch number: 44 ---- Batch number 100 -- the loss is: 8.956903--the accuracy: 0.6789913366336634
+
+For Training: 1099.4315752983093 , 0.6738387590744102
+BSA: 16.459822 , 0.44759653270291566
+VA: 0.5151515151515151
+----------------------------------------------
+Epoch number: 45 ---- Batch number 0 -- the loss is: 10.28916--the accuracy: 0.703125
+
+Epoch number: 45 ---- Batch number 50 -- the loss is: 9.619225--the accuracy: 0.6770833333333334
+
+Epoch number: 45 ---- Batch number 100 -- the loss is: 8.999939--the accuracy: 0.6783725247524752
+
+For Training: 1090.2650990486145 , 0.6728958711433757
+BSA: 16.47369 , 0.44680851063829785
+VA: 0.5757575757575758
+Per Blink Sequence Regression Error is :2.806452 
+Per Video Regression Error is :1.746663 
+----------------------------------------------
+Sav
+Epoch number: 46 ---- Batch number 0 -- the loss is: 10.244671--the accuracy: 0.703125
+
+Epoch number: 46 ---- Batch number 50 -- the loss is: 9.283303--the accuracy: 0.678921568627451
+
+Epoch number: 46 ---- Batch number 100 -- the loss is: 8.886133--the accuracy: 0.6796101485148515
+
+For Training: 1082.6883068084717 , 0.6744271778584392
+BSA: 16.48666 , 0.4436564223798266
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 47 ---- Batch number 0 -- the loss is: 10.122532--the accuracy: 0.71875
+
+Epoch number: 47 ---- Batch number 50 -- the loss is: 9.341293--the accuracy: 0.6844362745098039
+
+Epoch number: 47 ---- Batch number 100 -- the loss is: 8.855282--the accuracy: 0.6811571782178217
+
+For Training: 1079.2058243751526 , 0.6756394623411978
+BSA: 16.302221 , 0.44759653270291566
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 48 ---- Batch number 0 -- the loss is: 10.04464--the accuracy: 0.71875
+
+Epoch number: 48 ---- Batch number 50 -- the loss is: 9.274029--the accuracy: 0.6847426470588235
+
+Epoch number: 48 ---- Batch number 100 -- the loss is: 8.836193--the accuracy: 0.6837871287128713
+
+For Training: 1066.0514559745789 , 0.6795953380217786
+BSA: 16.27031 , 0.44129235618597323
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 49 ---- Batch number 0 -- the loss is: 9.885713--the accuracy: 0.6875
+
+Epoch number: 49 ---- Batch number 50 -- the loss is: 9.1898365--the accuracy: 0.6850490196078431
+
+Epoch number: 49 ---- Batch number 100 -- the loss is: 8.693758--the accuracy: 0.6851794554455446
+
+For Training: 1057.5032773017883 , 0.6802688294010889
+BSA: 16.420483 , 0.43656422379826637
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 50 ---- Batch number 0 -- the loss is: 9.797779--the accuracy: 0.703125
+
+Epoch number: 50 ---- Batch number 50 -- the loss is: 9.292202--the accuracy: 0.6838235294117647
+
+Epoch number: 50 ---- Batch number 100 -- the loss is: 8.483229--the accuracy: 0.6876547029702971
+
+1: True label is :0 and the detected label is 0
+2: True label is :5 and the detected label is 5
+3: True label is :10 and the detected label is 5
+4: True label is :0 and the detected label is 0
+5: True label is :5 and the detected label is 5
+6: True label is :10 and the detected label is 5
+7: True label is :0 and the detected label is 0
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 5
+11: True label is :5 and the detected label is 10
+12: True label is :10 and the detected label is 10
+13: True label is :0 and the detected label is 0
+14: True label is :5 and the detected label is 10
+15: True label is :10 and the detected label is 10
+16: True label is :0 and the detected label is 0
+17: True label is :5 and the detected label is 0
+18: True label is :10 and the detected label is 0
+19: True label is :0 and the detected label is 0
+20: True label is :5 and the detected label is 10
+21: True label is :10 and the detected label is 5
+22: True label is :0 and the detected label is 0
+23: True label is :5 and the detected label is 5
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 0
+26: True label is :5 and the detected label is 5
+27: True label is :10 and the detected label is 0
+28: True label is :0 and the detected label is 0
+29: True label is :5 and the detected label is 0
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 5
+32: True label is :5 and the detected label is 0
+33: True label is :10 and the detected label is 10
+For Training: 1048.9943799972534 , 0.6824736274954628
+BSA: 16.351904 , 0.4389282899921198
+VA: 0.5757575757575758
+----------------------------------------------
+Sav
+Epoch number: 51 ---- Batch number 0 -- the loss is: 9.765186--the accuracy: 0.6875
+
+Epoch number: 51 ---- Batch number 50 -- the loss is: 9.278233--the accuracy: 0.6856617647058824
+
+Epoch number: 51 ---- Batch number 100 -- the loss is: 8.527504--the accuracy: 0.687190594059406
+
+For Training: 1040.753140449524 , 0.6817505104355717
+BSA: 16.227942 , 0.4373522458628842
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 52 ---- Batch number 0 -- the loss is: 9.650728--the accuracy: 0.703125
+
+Epoch number: 52 ---- Batch number 50 -- the loss is: 9.14188--the accuracy: 0.6859681372549019
+
+Epoch number: 52 ---- Batch number 100 -- the loss is: 8.28044--the accuracy: 0.6910581683168316
+
+For Training: 1034.1486973762512 , 0.6851179673321234
+BSA: 16.262487 , 0.44129235618597323
+VA: 0.5757575757575758
+----------------------------------------------
+Epoch number: 53 ---- Batch number 0 -- the loss is: 9.60065--the accuracy: 0.703125
+
+Epoch number: 53 ---- Batch number 50 -- the loss is: 9.128635--the accuracy: 0.6850490196078431
+
+Epoch number: 53 ---- Batch number 100 -- the loss is: 8.421545--the accuracy: 0.6912128712871287
+
+For Training: 1028.97655916214 , 0.6870533688747732
+BSA: 16.271368 , 0.4397163120567376
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 54 ---- Batch number 0 -- the loss is: 9.429245--the accuracy: 0.71875
+
+Epoch number: 54 ---- Batch number 50 -- the loss is: 9.358168--the accuracy: 0.6829044117647058
+
+Epoch number: 54 ---- Batch number 100 -- the loss is: 8.5296955--the accuracy: 0.6876547029702971
+
+For Training: 1027.2172446250916 , 0.6843594033575318
+BSA: 16.343508 , 0.43498817966903075
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 55 ---- Batch number 0 -- the loss is: 9.378402--the accuracy: 0.71875
+
+Epoch number: 55 ---- Batch number 50 -- the loss is: 9.579323--the accuracy: 0.6841299019607843
+
+Epoch number: 55 ---- Batch number 100 -- the loss is: 8.261571--the accuracy: 0.6890470297029703
+
+For Training: 1025.6606607437134 , 0.6834165154264973
+BSA: 16.089138 , 0.44129235618597323
+VA: 0.5757575757575758
+----------------------------------------------
+Sav
+Epoch number: 56 ---- Batch number 0 -- the loss is: 9.246272--the accuracy: 0.734375
+
+Epoch number: 56 ---- Batch number 50 -- the loss is: 9.313196--the accuracy: 0.6890318627450981
+
+Epoch number: 56 ---- Batch number 100 -- the loss is: 8.161724--the accuracy: 0.6907487623762376
+
+For Training: 1023.0437932014465 , 0.6858410843920145
+BSA: 16.145817 , 0.4405043341213554
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 57 ---- Batch number 0 -- the loss is: 9.213948--the accuracy: 0.703125
+
+Epoch number: 57 ---- Batch number 50 -- the loss is: 9.478891--the accuracy: 0.6884191176470589
+
+Epoch number: 57 ---- Batch number 100 -- the loss is: 8.087405--the accuracy: 0.6922957920792079
+
+For Training: 1017.6954097747803 , 0.6874078380217786
+BSA: 16.166815 , 0.438140267927502
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 58 ---- Batch number 0 -- the loss is: 9.230036--the accuracy: 0.6875
+
+Epoch number: 58 ---- Batch number 50 -- the loss is: 9.441536--the accuracy: 0.6905637254901961
+
+Epoch number: 58 ---- Batch number 100 -- the loss is: 7.954015--the accuracy: 0.6941522277227723
+
+For Training: 1011.8345079421997 , 0.6892085412885662
+BSA: 16.033852 , 0.43420015760441294
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 59 ---- Batch number 0 -- the loss is: 9.139792--the accuracy: 0.703125
+
+Epoch number: 59 ---- Batch number 50 -- the loss is: 9.422646--the accuracy: 0.6905637254901961
+
+Epoch number: 59 ---- Batch number 100 -- the loss is: 7.8073225--the accuracy: 0.6932240099009901
+
+For Training: 1005.4311652183533 , 0.6888895190562614
+BSA: 16.004253 , 0.4389282899921198
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 60 ---- Batch number 0 -- the loss is: 9.257159--the accuracy: 0.671875
+
+Epoch number: 60 ---- Batch number 50 -- the loss is: 9.392672--the accuracy: 0.6893382352941176
+
+Epoch number: 60 ---- Batch number 100 -- the loss is: 7.899469--the accuracy: 0.6949257425742574
+
+1: True label is :0 and the detected label is 0
+2: True label is :5 and the detected label is 0
+3: True label is :10 and the detected label is 5
+4: True label is :0 and the detected label is 0
+5: True label is :5 and the detected label is 5
+6: True label is :10 and the detected label is 10
+7: True label is :0 and the detected label is 0
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 5
+11: True label is :5 and the detected label is 10
+12: True label is :10 and the detected label is 10
+13: True label is :0 and the detected label is 0
+14: True label is :5 and the detected label is 10
+15: True label is :10 and the detected label is 10
+16: True label is :0 and the detected label is 0
+17: True label is :5 and the detected label is 0
+18: True label is :10 and the detected label is 0
+19: True label is :0 and the detected label is 0
+20: True label is :5 and the detected label is 10
+21: True label is :10 and the detected label is 5
+22: True label is :0 and the detected label is 0
+23: True label is :5 and the detected label is 5
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 0
+26: True label is :5 and the detected label is 0
+27: True label is :10 and the detected label is 0
+28: True label is :0 and the detected label is 0
+29: True label is :5 and the detected label is 0
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 5
+32: True label is :5 and the detected label is 0
+33: True label is :10 and the detected label is 10
+For Training: 1003.6312050819397 , 0.6893432395644283
+BSA: 15.927572 , 0.43420015760441294
+VA: 0.5454545454545454
+Per Blink Sequence Regression Error is :2.749840 
+Per Video Regression Error is :1.524273 
+----------------------------------------------
+Sav
+Epoch number: 61 ---- Batch number 0 -- the loss is: 9.1150875--the accuracy: 0.71875
+
+Epoch number: 61 ---- Batch number 50 -- the loss is: 9.300358--the accuracy: 0.6927083333333334
+
+Epoch number: 61 ---- Batch number 100 -- the loss is: 7.861492--the accuracy: 0.6919863861386139
+
+For Training: 1002.8885040283203 , 0.6871384414700544
+BSA: 15.935465 , 0.4389282899921198
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 62 ---- Batch number 0 -- the loss is: 9.082747--the accuracy: 0.71875
+
+Epoch number: 62 ---- Batch number 50 -- the loss is: 9.2309--the accuracy: 0.6966911764705882
+
+Epoch number: 62 ---- Batch number 100 -- the loss is: 7.859913--the accuracy: 0.6972462871287128
+
+For Training: 998.1423664093018 , 0.6916331102540835
+BSA: 15.8628435 , 0.438140267927502
+VA: 0.5151515151515151
+----------------------------------------------
+Epoch number: 63 ---- Batch number 0 -- the loss is: 8.850723--the accuracy: 0.734375
+
+Epoch number: 63 ---- Batch number 50 -- the loss is: 9.17223--the accuracy: 0.6963848039215687
+
+Epoch number: 63 ---- Batch number 100 -- the loss is: 8.053095--the accuracy: 0.6972462871287128
+
+For Training: 986.4944086074829 , 0.6927603221415608
+BSA: 15.853789 , 0.43420015760441294
+VA: 0.48484848484848486
+----------------------------------------------
+Epoch number: 64 ---- Batch number 0 -- the loss is: 8.784903--the accuracy: 0.734375
+
+Epoch number: 64 ---- Batch number 50 -- the loss is: 8.857696--the accuracy: 0.7037377450980392
+
+Epoch number: 64 ---- Batch number 100 -- the loss is: 7.899315--the accuracy: 0.7017326732673267
+
+For Training: 977.6408734321594 , 0.6965318738656987
+BSA: 15.83515 , 0.438140267927502
+VA: 0.48484848484848486
+----------------------------------------------
+Epoch number: 65 ---- Batch number 0 -- the loss is: 8.718529--the accuracy: 0.734375
+
+Epoch number: 65 ---- Batch number 50 -- the loss is: 8.888959--the accuracy: 0.703125
+
+Epoch number: 65 ---- Batch number 100 -- the loss is: 7.9159794--the accuracy: 0.7004950495049505
+
+For Training: 973.1580247879028 , 0.6958087568058077
+BSA: 15.747355 , 0.43420015760441294
+VA: 0.48484848484848486
+----------------------------------------------
+Sav
+Epoch number: 66 ---- Batch number 0 -- the loss is: 8.586748--the accuracy: 0.734375
+
+Epoch number: 66 ---- Batch number 50 -- the loss is: 8.870689--the accuracy: 0.7052696078431373
+
+Epoch number: 66 ---- Batch number 100 -- the loss is: 7.8431826--the accuracy: 0.7023514851485149
+
+For Training: 968.407952785492 , 0.6958087568058077
+BSA: 15.849585 , 0.42710795902285265
+VA: 0.48484848484848486
+----------------------------------------------
+Epoch number: 67 ---- Batch number 0 -- the loss is: 8.698661--the accuracy: 0.71875
+
+Epoch number: 67 ---- Batch number 50 -- the loss is: 9.064216--the accuracy: 0.703125
+
+Epoch number: 67 ---- Batch number 100 -- the loss is: 7.828513--the accuracy: 0.7000309405940595
+
+For Training: 967.404125213623 , 0.6957236842105263
+BSA: 15.909781 , 0.4302600472813239
+VA: 0.45454545454545453
+----------------------------------------------
+Epoch number: 68 ---- Batch number 0 -- the loss is: 8.692885--the accuracy: 0.734375
+
+Epoch number: 68 ---- Batch number 50 -- the loss is: 9.06033--the accuracy: 0.7034313725490197
+
+Epoch number: 68 ---- Batch number 100 -- the loss is: 7.730464--the accuracy: 0.7008044554455446
+
+For Training: 958.1552810668945 , 0.6965318738656987
+BSA: 15.687619 , 0.43341213553979513
+VA: 0.48484848484848486
+----------------------------------------------
+Epoch number: 69 ---- Batch number 0 -- the loss is: 8.463568--the accuracy: 0.734375
+
+Epoch number: 69 ---- Batch number 50 -- the loss is: 8.8274355--the accuracy: 0.7022058823529411
+
+Epoch number: 69 ---- Batch number 100 -- the loss is: 7.7056694--the accuracy: 0.7014232673267327
+
+For Training: 956.3280062675476 , 0.697070666969147
+BSA: 15.926693 , 0.43498817966903075
+VA: 0.45454545454545453
+----------------------------------------------
+Epoch number: 70 ---- Batch number 0 -- the loss is: 8.660387--the accuracy: 0.734375
+
+Epoch number: 70 ---- Batch number 50 -- the loss is: 9.05566--the accuracy: 0.7009803921568627
+
+Epoch number: 70 ---- Batch number 100 -- the loss is: 7.650223--the accuracy: 0.7009591584158416
+
+1: True label is :0 and the detected label is 0
+2: True label is :5 and the detected label is 0
+3: True label is :10 and the detected label is 5
+4: True label is :0 and the detected label is 0
+5: True label is :5 and the detected label is 5
+6: True label is :10 and the detected label is 10
+7: True label is :0 and the detected label is 0
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 5
+11: True label is :5 and the detected label is 10
+12: True label is :10 and the detected label is 10
+13: True label is :0 and the detected label is 0
+14: True label is :5 and the detected label is 10
+15: True label is :10 and the detected label is 10
+16: True label is :0 and the detected label is 0
+17: True label is :5 and the detected label is 0
+18: True label is :10 and the detected label is 0
+19: True label is :0 and the detected label is 0
+20: True label is :5 and the detected label is 10
+21: True label is :10 and the detected label is 5
+22: True label is :0 and the detected label is 0
+23: True label is :5 and the detected label is 0
+24: True label is :10 and the detected label is 5
+25: True label is :0 and the detected label is 0
+26: True label is :5 and the detected label is 0
+27: True label is :10 and the detected label is 0
+28: True label is :0 and the detected label is 0
+29: True label is :5 and the detected label is 0
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 5
+32: True label is :5 and the detected label is 0
+33: True label is :10 and the detected label is 10
+For Training: 956.8023943901062 , 0.697070666969147
+BSA: 15.828502 , 0.43341213553979513
+VA: 0.48484848484848486
+----------------------------------------------
+Sav
+Epoch number: 71 ---- Batch number 0 -- the loss is: 8.375497--the accuracy: 0.734375
+
+Epoch number: 71 ---- Batch number 50 -- the loss is: 8.748983--the accuracy: 0.7018995098039216
+
+Epoch number: 71 ---- Batch number 100 -- the loss is: 7.821866--the accuracy: 0.7040532178217822
+
+For Training: 947.6121692657471 , 0.7007075204174229
+BSA: 15.915087 , 0.4389282899921198
+VA: 0.48484848484848486
+----------------------------------------------
+Epoch number: 72 ---- Batch number 0 -- the loss is: 8.59222--the accuracy: 0.734375
+
+Epoch number: 72 ---- Batch number 50 -- the loss is: 9.044839--the accuracy: 0.7009803921568627
+
+Epoch number: 72 ---- Batch number 100 -- the loss is: 7.881912--the accuracy: 0.7023514851485149
+
+For Training: 949.8047852516174 , 0.6984672754083485
+BSA: 15.988732 , 0.43341213553979513
+VA: 0.48484848484848486
+----------------------------------------------
+Epoch number: 73 ---- Batch number 0 -- the loss is: 8.42192--the accuracy: 0.734375
+
+Epoch number: 73 ---- Batch number 50 -- the loss is: 8.671815--the accuracy: 0.7009803921568627
+
+Epoch number: 73 ---- Batch number 100 -- the loss is: 7.742139--the accuracy: 0.7025061881188119
+
+For Training: 946.4951386451721 , 0.6984672754083485
+BSA: 15.95925 , 0.4428684003152088
+VA: 0.48484848484848486
+----------------------------------------------
+Epoch number: 74 ---- Batch number 0 -- the loss is: 8.45183--the accuracy: 0.75
+
+Epoch number: 74 ---- Batch number 50 -- the loss is: 9.04702--the accuracy: 0.703125
+
+Epoch number: 74 ---- Batch number 100 -- the loss is: 7.7731485--the accuracy: 0.7066831683168316
+
+For Training: 936.5074534416199 , 0.7025082236842105
+BSA: 15.898547 , 0.4428684003152088
+VA: 0.48484848484848486
+----------------------------------------------
+Epoch number: 75 ---- Batch number 0 -- the loss is: 8.309312--the accuracy: 0.75
+
+Epoch number: 75 ---- Batch number 50 -- the loss is: 8.7509--the accuracy: 0.7012867647058824
+
+Epoch number: 75 ---- Batch number 100 -- the loss is: 7.6969213--the accuracy: 0.7046720297029703
+
+For Training: 936.476185798645 , 0.6998497050816697
+BSA: 15.99438 , 0.4326241134751773
+VA: 0.48484848484848486
+Per Blink Sequence Regression Error is :2.894286 
+Per Video Regression Error is :1.527321 
+----------------------------------------------
+Sav
+Epoch number: 76 ---- Batch number 0 -- the loss is: 8.400103--the accuracy: 0.75
+
+Epoch number: 76 ---- Batch number 50 -- the loss is: 8.500063--the accuracy: 0.6973039215686274
+
+Epoch number: 76 ---- Batch number 100 -- the loss is: 7.703087--the accuracy: 0.7011138613861386
+
+For Training: 937.6440029144287 , 0.6973400635208712
+BSA: 15.973949 , 0.4318360914105595
+VA: 0.45454545454545453
+----------------------------------------------
+Epoch number: 77 ---- Batch number 0 -- the loss is: 8.248119--the accuracy: 0.75
+
+Epoch number: 77 ---- Batch number 50 -- the loss is: 8.439544--the accuracy: 0.6973039215686274
+
+Epoch number: 77 ---- Batch number 100 -- the loss is: 7.4892664--the accuracy: 0.7006497524752475
+
+For Training: 933.1389513015747 , 0.6971557395644283
+BSA: 15.8259735 , 0.4373522458628842
+VA: 0.48484848484848486
+----------------------------------------------
+Epoch number: 78 ---- Batch number 0 -- the loss is: 8.190062--the accuracy: 0.75
+
+Epoch number: 78 ---- Batch number 50 -- the loss is: 8.369261--the accuracy: 0.696078431372549
+
+Epoch number: 78 ---- Batch number 100 -- the loss is: 7.385226--the accuracy: 0.7018873762376238
+
+For Training: 938.6090869903564 , 0.6990060685117968
+BSA: 16.026691 , 0.4294720252167061
+VA: 0.5454545454545454
+----------------------------------------------
+Epoch number: 79 ---- Batch number 0 -- the loss is: 8.425772--the accuracy: 0.765625
+
+Epoch number: 79 ---- Batch number 50 -- the loss is: 8.373692--the accuracy: 0.6979166666666666
+
+Epoch number: 79 ---- Batch number 100 -- the loss is: 7.907095--the accuracy: 0.7004950495049505
+
+For Training: 934.8115491867065 , 0.6959434550816697
+BSA: 15.714569 , 0.43656422379826637
+VA: 0.48484848484848486
+Per Blink Sequence Regression Error is :2.799518 
+Per Video Regression Error is :1.449324 
+----------------------------------------------
+saving variables...
+
+
+protected files checked: 41 | changed: none | added: none
+total wall time: 20.8 min
+final epoch: BSA loss 15.714569 | BSA acc 0.436564 | VA 0.484848 | BSRE 2.799518 | VRE 1.449324
+best  epoch by VA: 13 (VA 0.636364, BSA acc 0.458629)
+TRAIN_DONE

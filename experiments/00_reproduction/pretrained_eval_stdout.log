@@ -1,0 +1,220 @@
+1.8.0
+######################
+0
+######################
+loading variables...
+1: True label is :0 and the detected label is 0
+2: True label is :5 and the detected label is 0
+3: True label is :10 and the detected label is 5
+4: True label is :0 and the detected label is 0
+5: True label is :5 and the detected label is 5
+6: True label is :10 and the detected label is 10
+7: True label is :0 and the detected label is 5
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 5
+11: True label is :5 and the detected label is 10
+12: True label is :10 and the detected label is 10
+13: True label is :0 and the detected label is 0
+14: True label is :5 and the detected label is 10
+15: True label is :10 and the detected label is 10
+16: True label is :0 and the detected label is 0
+17: True label is :5 and the detected label is 0
+18: True label is :10 and the detected label is 0
+19: True label is :0 and the detected label is 0
+20: True label is :5 and the detected label is 10
+21: True label is :10 and the detected label is 10
+22: True label is :0 and the detected label is 0
+23: True label is :5 and the detected label is 5
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 0
+26: True label is :5 and the detected label is 5
+27: True label is :10 and the detected label is 0
+28: True label is :0 and the detected label is 0
+29: True label is :5 and the detected label is 5
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 5
+32: True label is :5 and the detected label is 5
+33: True label is :10 and the detected label is 10
+BSA: 15.711236 , 0.4838455476753349
+VA: 0.6363636363636364
+Per Blink Sequence Regression Error is :3.185322 
+Per Video Regression Error is :2.419539 
+----------------------------------------------
+######################
+1
+######################
+loading variables...
+1: True label is :0 and the detected label is 0
+2: True label is :5 and the detected label is 10
+3: True label is :10 and the detected label is 10
+4: True label is :0 and the detected label is 0
+5: True label is :5 and the detected label is 10
+6: True label is :10 and the detected label is 10
+7: True label is :0 and the detected label is 0
+8: True label is :5 and the detected label is 0
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 0
+11: True label is :5 and the detected label is 10
+12: True label is :10 and the detected label is 10
+13: True label is :0 and the detected label is 0
+14: True label is :5 and the detected label is 10
+15: True label is :10 and the detected label is 10
+16: True label is :0 and the detected label is 0
+17: True label is :5 and the detected label is 10
+18: True label is :10 and the detected label is 10
+19: True label is :0 and the detected label is 10
+20: True label is :5 and the detected label is 5
+21: True label is :10 and the detected label is 10
+22: True label is :0 and the detected label is 0
+23: True label is :5 and the detected label is 0
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 0
+26: True label is :5 and the detected label is 0
+27: True label is :10 and the detected label is 5
+28: True label is :0 and the detected label is 0
+29: True label is :5 and the detected label is 10
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 5
+32: True label is :5 and the detected label is 10
+33: True label is :10 and the detected label is 10
+34: True label is :0 and the detected label is 0
+35: True label is :5 and the detected label is 0
+36: True label is :10 and the detected label is 10
+BSA: 10.573708 , 0.5878609887420461
+VA: 0.6111111111111112
+Per Blink Sequence Regression Error is :1.390765 
+Per Video Regression Error is :1.039631 
+----------------------------------------------
+######################
+2
+######################
+loading variables...
+1: True label is :0 and the detected label is 0
+2: True label is :5 and the detected label is 10
+3: True label is :10 and the detected label is 10
+4: True label is :0 and the detected label is 0
+5: True label is :5 and the detected label is 5
+6: True label is :10 and the detected label is 5
+7: True label is :0 and the detected label is 0
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 0
+11: True label is :5 and the detected label is 5
+12: True label is :10 and the detected label is 10
+13: True label is :0 and the detected label is 0
+14: True label is :5 and the detected label is 10
+15: True label is :10 and the detected label is 10
+16: True label is :0 and the detected label is 5
+17: True label is :5 and the detected label is 5
+18: True label is :10 and the detected label is 10
+19: True label is :0 and the detected label is 0
+20: True label is :5 and the detected label is 10
+21: True label is :10 and the detected label is 10
+22: True label is :0 and the detected label is 0
+23: True label is :5 and the detected label is 5
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 0
+26: True label is :5 and the detected label is 10
+27: True label is :10 and the detected label is 10
+28: True label is :0 and the detected label is 0
+29: True label is :5 and the detected label is 10
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 0
+32: True label is :5 and the detected label is 10
+33: True label is :10 and the detected label is 0
+34: True label is :0 and the detected label is 0
+35: True label is :5 and the detected label is 5
+36: True label is :10 and the detected label is 5
+BSA: 13.31488 , 0.5605646630236795
+VA: 0.6944444444444444
+Per Blink Sequence Regression Error is :2.153216 
+Per Video Regression Error is :0.667389 
+----------------------------------------------
+######################
+3
+######################
+loading variables...
+1: True label is :0 and the detected label is 0
+2: True label is :5 and the detected label is 5
+3: True label is :10 and the detected label is 10
+4: True label is :0 and the detected label is 0
+5: True label is :5 and the detected label is 5
+6: True label is :10 and the detected label is 10
+7: True label is :0 and the detected label is 5
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 0
+11: True label is :5 and the detected label is 10
+12: True label is :10 and the detected label is 10
+13: True label is :0 and the detected label is 0
+14: True label is :5 and the detected label is 5
+15: True label is :10 and the detected label is 10
+16: True label is :0 and the detected label is 5
+17: True label is :5 and the detected label is 5
+18: True label is :10 and the detected label is 10
+19: True label is :0 and the detected label is 5
+20: True label is :5 and the detected label is 10
+21: True label is :10 and the detected label is 5
+22: True label is :0 and the detected label is 0
+23: True label is :5 and the detected label is 10
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 0
+26: True label is :5 and the detected label is 5
+27: True label is :10 and the detected label is 5
+28: True label is :0 and the detected label is 0
+29: True label is :5 and the detected label is 10
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 0
+32: True label is :5 and the detected label is 10
+33: True label is :10 and the detected label is 10
+34: True label is :0 and the detected label is 5
+35: True label is :5 and the detected label is 10
+36: True label is :10 and the detected label is 10
+BSA: 11.5080185 , 0.5444596443228454
+VA: 0.6388888888888888
+Per Blink Sequence Regression Error is :1.599456 
+Per Video Regression Error is :0.849650 
+----------------------------------------------
+######################
+4
+######################
+loading variables...
+1: True label is :0 and the detected label is 0
+2: True label is :5 and the detected label is 10
+3: True label is :10 and the detected label is 10
+4: True label is :0 and the detected label is 0
+5: True label is :5 and the detected label is 10
+6: True label is :10 and the detected label is 10
+7: True label is :0 and the detected label is 5
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 0
+11: True label is :5 and the detected label is 10
+12: True label is :10 and the detected label is 10
+13: True label is :0 and the detected label is 0
+14: True label is :5 and the detected label is 0
+15: True label is :10 and the detected label is 5
+16: True label is :0 and the detected label is 0
+17: True label is :5 and the detected label is 10
+18: True label is :10 and the detected label is 10
+19: True label is :0 and the detected label is 0
+20: True label is :5 and the detected label is 10
+21: True label is :10 and the detected label is 10
+22: True label is :0 and the detected label is 0
+23: True label is :5 and the detected label is 5
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 0
+26: True label is :5 and the detected label is 10
+27: True label is :10 and the detected label is 10
+28: True label is :0 and the detected label is 0
+29: True label is :5 and the detected label is 5
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 0
+32: True label is :5 and the detected label is 5
+33: True label is :10 and the detected label is 5
+BSA: 10.249504 , 0.5286812536960378
+VA: 0.6666666666666666
+Per Blink Sequence Regression Error is :1.176440 
+Per Video Regression Error is :0.812155 
+----------------------------------------------

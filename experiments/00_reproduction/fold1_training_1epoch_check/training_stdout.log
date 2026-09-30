@@ -1,0 +1,58 @@
+1.8.0
+######################
+0
+######################
+Epoch number: 0 ---- Batch number 0 -- the loss is: 18.888199--the accuracy: 0.4375
+
+Epoch number: 0 ---- Batch number 50 -- the loss is: 20.932053--the accuracy: 0.4175857843137255
+
+Epoch number: 0 ---- Batch number 100 -- the loss is: 18.01685--the accuracy: 0.4353341584158416
+
+1: True label is :0 and the detected label is 5
+2: True label is :5 and the detected label is 5
+3: True label is :10 and the detected label is 5
+4: True label is :0 and the detected label is 5
+5: True label is :5 and the detected label is 10
+6: True label is :10 and the detected label is 5
+7: True label is :0 and the detected label is 5
+8: True label is :5 and the detected label is 10
+9: True label is :10 and the detected label is 10
+10: True label is :0 and the detected label is 5
+11: True label is :5 and the detected label is 10
+12: True label is :10 and the detected label is 5
+13: True label is :0 and the detected label is 5
+14: True label is :5 and the detected label is 5
+15: True label is :10 and the detected label is 10
+16: True label is :0 and the detected label is 5
+17: True label is :5 and the detected label is 5
+18: True label is :10 and the detected label is 5
+19: True label is :0 and the detected label is 5
+20: True label is :5 and the detected label is 10
+21: True label is :10 and the detected label is 10
+22: True label is :0 and the detected label is 5
+23: True label is :5 and the detected label is 10
+24: True label is :10 and the detected label is 10
+25: True label is :0 and the detected label is 5
+26: True label is :5 and the detected label is 5
+27: True label is :10 and the detected label is 5
+28: True label is :0 and the detected label is 5
+29: True label is :5 and the detected label is 5
+30: True label is :10 and the detected label is 10
+31: True label is :0 and the detected label is 5
+32: True label is :5 and the detected label is 5
+33: True label is :10 and the detected label is 5
+For Training: 2364.103921890259 , 0.43784737976406535
+BSA: 21.691198 , 0.3806146572104019
+VA: 0.3333333333333333
+Per Blink Sequence Regression Error is :3.329551 
+Per Video Regression Error is :3.252758 
+----------------------------------------------
+Sav
+saving variables...
+
+
+protected files checked: 41 | changed: none | added: none
+total wall time: 0.6 min
+final epoch: BSA loss 21.691198 | BSA acc 0.380615 | VA 0.333333 | BSRE 3.329551 | VRE 3.252758
+best  epoch by VA: 1 (VA 0.333333, BSA acc 0.380615)
+TRAIN_DONE
