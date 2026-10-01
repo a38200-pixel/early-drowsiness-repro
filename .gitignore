@@ -31,3 +31,7 @@ config.local.yaml
 # Fold1 multi-seed runs: checkpoints and smoke-test folders stay local
 experiments/01_fold1_seeds/*/my_model*
 experiments/01_fold1_seeds/smoke_*/
+
+# Fold2~5 seed runs
+experiments/02_fold_seeds/*/my_model*
+experiments/02_fold_seeds/smoke_*/

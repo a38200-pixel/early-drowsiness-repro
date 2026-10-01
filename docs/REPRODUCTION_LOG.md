@@ -494,3 +494,26 @@ Known typo `self.hstate_size_size` in HMSLSTM_cell.py is unreachable in the test
   작업 폴더의 매니페스트를 지우고 `git checkout`으로 다시 받자 `w/lf`가 됨. THIRD_PARTY.md의 두 검증법을 확인함.
   - `sha256sum -c`: 44 OK, 실패 0.
   - blob 해시 대조 루프: 로컬 원본 clone을 upstream으로 사용. MISMATCH 0, ls-files 44.
+
+# Fold2~5 재학습 스크립트 준비 (2026-10-01)
+
+## 작성한 파일
+- `src/repro/train_fold_seeds.py`: `train_fold1_seeds.py`를 복사해 만든 일반화 버전(원본 파일은 수정하지 않음).
+  사용법은 `<fold 1~5> <시드> [epoch수=80] [출력폴더명=fold<fold>_seed<시드>]`이고, 출력은 `experiments/02_fold_seeds/<이름>/`이며 폴더가 이미 있으면 종료.
+  - fold 반복부를 `range(fold-1, fold)`로 치환. 원본이 반복 변수 i로 입력 파일(`Fold<i+1>`)과 `start_indices`(`if i==0` ...)를 고르므로 입력과 start_indices가 해당 fold에 맞게 선택됨.
+  - `ii=i+1`로 `my_model<fold>` 이름 저장, 저장 경로는 출력 폴더로 리다이렉트(기존 방식).
+  - metrics.csv 열과 run_meta.json은 기존과 같고 run_meta.json에 `fold`만 추가. 입력 .npy 해시도 해당 fold 파일 기준.
+- `scripts/run_folds_seed.bat <시드>`: fold 2,3,4,5 순서 실행. 폴더가 이미 있으면 건너뛰고 실패 시 종료 코드 1로 중단. 시작 시 예상 시간(fold당 약 21분, 총 약 1.4시간)과 공간 출력.
+- `src/repro/summarize_folds.py <시드>`: Fold1(`01_fold1_seeds/seed<S>`)과 Fold2~5(`02_fold_seeds/fold<F>_seed<S>`)를 합쳐 재학습 표, 공개 체크포인트 표, 차이(재학습 - 공개) 표를 만들고 `02_fold_seeds/summary_seed<S>.md`로 저장.
+  마지막 epoch가 80이 아니면 미완료로 표시하고 평균에서 제외(공개 값과 차이의 평균도 같은 fold 집합으로 계산). 결론 문구 없이 숫자만 출력.
+- `.gitignore`에 `experiments/02_fold_seeds/*/my_model*`와 `experiments/02_fold_seeds/smoke_*/` 추가.
+
+## 검증 (학습은 2 epoch 스모크만 실행, 80 epoch 학습은 하지 않음)
+- `1 1 2 smoke_f1`: epoch 1,2의 train_loss_sum이 2323.292410, 2093.058209로 `01_fold1_seeds/seed1/metrics.csv`와 같음(epoch 1~2의 모든 열이 동일).
+- `2 1 2 smoke_f2`: 오류 없이 종료. 체크포인트가 `my_model2.*`, run_meta.json의 fold=2, 입력 해시는 Fold2 파일 기준. epoch 2: BSA loss 19.896252, VA 0.305556.
+- third_party: 매니페스트 해시 44/44 일치, 파일 수 44, `__pycache__` 없음(시작/종료 시 check_manifest 통과).
+- 중간에 `upstream_print`의 컴프리헨션을 for 루프로 풀어 쓴 뒤 `1 1 2 smoke_f3`를 다시 실행했고 seed1과 epoch 1~2의 모든 열이 동일.
+- 요약 스크립트는 스크래치패드의 가짜 데이터(완료 3, 미완료 1, 없음 1)로 제외 규칙, 평균, 차이 표를 확인함. 저장소에는 summary 파일을 만들지 않음.
+- 배치 파일은 가짜 저장소로 인자 없음, Python 3.6 아님, 건너뛰기 후 실패 중단(종료 코드 1), 모두 건너뜀(종료 코드 0)을 확인함.
+- 코드 규칙: 상단 3줄 주석과 모듈 docstring, 모든 함수 docstring, 컴프리헨션/람다 없음, 가장 긴 함수 main 31줄, 3.6 문법만 사용.
+- 스모크 폴더(smoke_f1, f2, f3)는 삭제하지 않고 남김(gitignore 대상).
