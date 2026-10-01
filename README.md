@@ -6,8 +6,10 @@
 
 ## 현재 상태
 
-- **완료:** 사전학습 체크포인트(`my_model1..5`, 공식 5-fold 분할)의 평가가 이 저장소 구조에서 재현됩니다.
-  아래 회귀 테스트 표를 참고하세요.
+- **완료:** 사전학습 체크포인트(`my_model1..5`, 공식 5-fold 분할)의 평가를 이 저장소 구조에서 다시 실행했고, 이 프로젝트의
+  이전 실행 기록과 25개 값이 모두 일치합니다(자체 기대값과의 비교). 논문 Table 2·3과는 비교 가능한 14칸 중 11칸이 일치하고
+  3칸(Fold3 VA, Fold3 VRE, 평균 VRE)이 다릅니다. 원인은 미확인이며 자세한 대조는
+  [docs/IMPLEMENTATION_DIFF.md](docs/IMPLEMENTATION_DIFF.md)의 5절을 참고하세요. 아래 회귀 테스트 표를 참고하세요.
 - **진행 중:** 재학습. Fold1 재학습 결과는 다중 시드로 확인 중이며 **TBD**입니다. 재학습 수치는 여기에 싣지 않았습니다.
 
 ## 회귀 테스트 결과: 사전학습 체크포인트 5-fold 평가 (학습 없음)
@@ -38,6 +40,8 @@ envs/environment_tf1.yml   conda 환경(Python 3.6, TensorFlow 1.8)
 data/README.md             데이터 입수 방법(저장소에는 데이터를 넣지 않음)
 docs/REPRODUCTION_LOG.md   오류를 포함한 단계별 기록
 ```
+
+원본 대비 차이: [docs/IMPLEMENTATION_DIFF.md](docs/IMPLEMENTATION_DIFF.md)
 
 ## 재현 방법
 

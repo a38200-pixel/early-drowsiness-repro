@@ -517,3 +517,15 @@ Known typo `self.hstate_size_size` in HMSLSTM_cell.py is unreachable in the test
 - 배치 파일은 가짜 저장소로 인자 없음, Python 3.6 아님, 건너뛰기 후 실패 중단(종료 코드 1), 모두 건너뜀(종료 코드 0)을 확인함.
 - 코드 규칙: 상단 3줄 주석과 모듈 docstring, 모든 함수 docstring, 컴프리헨션/람다 없음, 가장 긴 함수 main 31줄, 3.6 문법만 사용.
 - 스모크 폴더(smoke_f1, f2, f3)는 삭제하지 않고 남김(gitignore 대상).
+
+## 정정 (2026-10-01)
+
+위쪽 기존 줄은 수정하지 않고, 아래 두 서술을 정정한다.
+
+- **279행** "Everything agrees within rounding except Fold3 VRE (0.58 paper vs 0.667 here)":
+  소수 둘째 자리 반올림 기준으로는 Fold3 VRE(논문 0.58, 측정 0.67)만 다른 것이 아니다. Fold3 VA(논문 0.70, 측정 0.694444 → 0.69)와
+  5-fold 평균 VRE(논문 1.14, 측정 1.157673 → 1.16)도 논문과 다르다. 논문과 비교 가능한 14칸 중 11칸이 일치하고 3칸이 불일치한다.
+  원인은 확인되지 않았다.
+- **418행** "all 25 values match": 비교 대상은 논문이 아니라 이 프로젝트의 이전 실행 결과(245-253행 표)를 표 표기 자릿수로 반올림한 값이다.
+  새 폴더 구조에서 다시 실행했을 때 이전 실행과 같은 값이 나오는지 보는 자체 일관성 확인이며, 논문 재현을 뜻하지 않는다.
+- 상세 대조는 `docs/IMPLEMENTATION_DIFF.md`의 5절에 있다.
