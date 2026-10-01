@@ -35,3 +35,10 @@ experiments/01_fold1_seeds/smoke_*/
 # Fold2~5 seed runs
 experiments/02_fold_seeds/*/my_model*
 experiments/02_fold_seeds/smoke_*/
+
+experiments/01_fold1_seeds/*/*.npy
+experiments/01_fold1_seeds/*/checkpoint
+experiments/02_fold_seeds/*/*.npy
+experiments/02_fold_seeds/*/checkpoint
+experiments/01_fold1_seeds/*/train.log
+experiments/02_fold_seeds/*/train.log

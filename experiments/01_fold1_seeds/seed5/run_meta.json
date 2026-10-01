@@ -1,0 +1,29 @@
+{
+  "seed": 5,
+  "num_epochs": 80,
+  "git_commit": "9816e2ed4f262fe422b2597dca92a7381b0008ab",
+  "git_dirty": false,
+  "python_version": "3.6.13",
+  "tensorflow_version": "1.8.0",
+  "numpy_version": "1.14.6",
+  "started_at": "2026-09-30T22:01:50",
+  "finished_at": "2026-09-30T22:25:58",
+  "elapsed_seconds": 1432.7,
+  "status": "completed",
+  "input_sha256": {
+    "Blinks_30_Fold1.npy": "205639aafeb1edc5f5a32478b1ad4a9b68c4b08ae5845e914094bb6ac043bf91",
+    "Labels_30_Fold1.npy": "8c71da05994fcbd9586b4cea6718983cef437d0af6332e267e26e33d0ea0e83d",
+    "BlinksTest_30_Fold1.npy": "cf6c07a25b479aa5e053fbbcbc5d9a850f79b36e79141e5f0e6a4131ab4fe313",
+    "LabelsTest_30_Fold1.npy": "369e1e30789e4683aba5b8a0c2c3f307e43dc8223ff5250f51f17544680d7112"
+  },
+  "final_epoch_metrics": {
+    "epoch": 80,
+    "train_loss_sum": 834.3665509223938,
+    "train_moving_acc": 0.7249035843920145,
+    "BSA_loss": 16.317230224609375,
+    "BSA_acc": 0.4791174152876281,
+    "VA": 0.5151515151515151,
+    "BSRE": 3.7246419444057866,
+    "VRE": 2.8523853510583623
+  }
+}
