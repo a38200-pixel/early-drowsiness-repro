@@ -529,3 +529,7 @@ Known typo `self.hstate_size_size` in HMSLSTM_cell.py is unreachable in the test
 - **418행** "all 25 values match": 비교 대상은 논문이 아니라 이 프로젝트의 이전 실행 결과(245-253행 표)를 표 표기 자릿수로 반올림한 값이다.
   새 폴더 구조에서 다시 실행했을 때 이전 실행과 같은 값이 나오는지 보는 자체 일관성 확인이며, 논문 재현을 뜻하지 않는다.
 - 상세 대조는 `docs/IMPLEMENTATION_DIFF.md`의 5절에 있다.
+
+# blink 무화면 실행 검증 (2026-10-02)
+
+- `reproduction_blink_headless.py`로 Fold2_part1/17/0.mp4(클래스 0) 1개를 실행: 소요 755.9초(약 12분 36초), 출력 58줄(첫 빈 줄 1 + blink 57행)이 GUI 기준 출력과 `--compare`로 전 줄 일치(종료 코드 0).
