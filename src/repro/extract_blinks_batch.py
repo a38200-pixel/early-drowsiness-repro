@@ -6,6 +6,9 @@
 #           python src/repro/extract_blinks_batch.py --limit 3 --workers 1   (앞 3개만 시험)
 #           python src/repro/extract_blinks_batch.py --workers 4             (전체)
 #         옵션: --workers N, --list, --only-fold F, --limit K, --flagged-only, --retry-failed
+# 회전: 영상마다 configs/video_orientation_overrides.csv(육안 확인) 값이 있으면 그 값, 없으면
+#       configs/video_orientation_survey.csv 의 resolved_orientation 을 자식 프로세스의 --rotate 로 넘긴다.
+#       resolved_orientation 이 review 이고 override 도 없는 영상은 처리하지 않고 목록으로 출력한다.
 # 환경변수: RLDD_DATA_DIR (영상 루트), BLINK_OUT_DIR (출력 루트, 필수·저장소 밖·기본값 없음),
 #           DLIB_LANDMARK_PATH (실행 시 필수)
 """blink 일괄 추출 관리 도구(Python 3.6 호환).
@@ -18,6 +21,10 @@
 실패: 종료 코드가 0이 아니거나 출력이 없으면 매니페스트에 기록만 하고 계속한다.
       기본 실행은 실패로 기록된 영상을 건너뛰고, --retry-failed 는 그 영상들만 다시 처리한다.
 --limit K 는 이번에 실제로 처리할 목록의 앞 K개이다(0이면 아무것도 처리하지 않는다).
+회전: override(육안 확인)가 있으면 그 값, 없으면 resolved_orientation 을 쓴다. review 이면서 override 가 없는 영상은
+      처리하지 않고 카운트와 함께 목록으로 출력한다. 자식 프로세스에는 --rotate 를 넘긴다.
+매니페스트 열에는 rotate 와 face_frames(자식 출력에서 "not grabbed" 다음 줄의 숫자, 얼굴이 검출된 프레임 수)가 있다.
+      기존 매니페스트의 열 이름이 다르면 이어 쓰지 않고 중단한다.
 """
 import argparse
 import csv
@@ -28,15 +35,18 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
+from orientation_common import normalize_orientation, to_rotate_option
 from reproduction_blink_headless import count_blink_rows
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 HEADLESS_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reproduction_blink_headless.py")
 INVENTORY_PATH = os.path.join(REPO, "configs", "video_inventory.csv")
 FLAGS_PATH = os.path.join(REPO, "configs", "video_manual_flags.csv")
+SURVEY_PATH = os.path.join(REPO, "configs", "video_orientation_survey.csv")
+OVERRIDES_PATH = os.path.join(REPO, "configs", "video_orientation_overrides.csv")
 MANIFEST_NAME = "batch_manifest.csv"
 MANIFEST_COLUMNS = ["fold", "part", "subject_id", "class_label", "variant", "status", "return_code",
-                    "elapsed_s", "blink_rows", "started", "ended"]
+                    "elapsed_s", "blink_rows", "started", "ended", "rotate", "face_frames"]
 FAILURE_STATUSES = ("failed", "no_output")
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
@@ -169,6 +179,149 @@ def entry_key(entry):
     반환: (fold, part, subject_id, class_label, variant)
     """
     return (entry["fold"], entry["part"], entry["subject_id"], entry["class_label"], entry["variant"])
+
+
+def load_survey_orientations(survey_path):
+    """회전 조사 CSV 에서 영상별 resolved_orientation 과 방향별 얼굴 수를 읽는다.
+
+    입력: survey_path - video_orientation_survey.csv 경로
+    반환: {rel_path: {"resolved": 값, "counts": (faces_0, faces_cw90, faces_180, faces_ccw90) 문자열 튜플}}.
+          파일이 없거나 resolved_orientation 열이 없으면 안내 후 중단한다
+    """
+    if not os.path.isfile(survey_path):
+        sys.exit("configs/video_orientation_survey.csv 가 없습니다. survey_orientation.py 로 조사를 먼저 실행하세요.")
+    survey_map = {}
+    with open(survey_path, "r", newline="", encoding="utf-8-sig") as file:
+        reader = csv.DictReader(file)
+        if "resolved_orientation" not in (reader.fieldnames or []):
+            sys.exit("video_orientation_survey.csv 에 resolved_orientation 열이 없습니다. "
+                     "survey_orientation.py --resolve-only 를 먼저 실행하세요.")
+        for row in reader:
+            counts = (row["faces_0"], row["faces_cw90"], row["faces_180"], row["faces_ccw90"])
+            survey_map[row["rel_path"]] = {"resolved": row["resolved_orientation"], "counts": counts}
+    return survey_map
+
+
+def load_overrides(overrides_path):
+    """육안 확인 결과 CSV(rel_path, orientation, ...)를 읽어 {rel_path: 표준 방향 이름} 으로 돌려준다.
+
+    입력: overrides_path - video_orientation_overrides.csv 경로
+    반환: dict. 파일이 없으면 빈 dict. orientation 이 빈 행은 건너뛰고(아직 못 본 영상),
+          허용되지 않는 값(허용: 0, none, cw90, ccw90, 180)이나 같은 영상의 중복 행이 있으면 안내 후 중단한다
+    """
+    overrides = {}
+    if not os.path.isfile(overrides_path):
+        return overrides
+    with open(overrides_path, "r", newline="", encoding="utf-8-sig") as file:
+        for row in csv.DictReader(file):
+            value = (row["orientation"] or "").strip()
+            if value == "":
+                continue
+            canonical = normalize_orientation(value)
+            if canonical is None:
+                sys.exit("video_orientation_overrides.csv 의 orientation 값이 올바르지 않습니다 (%s: %s). "
+                         "허용: 0, none, cw90, ccw90, 180" % (row["rel_path"], value))
+            if row["rel_path"] in overrides:
+                sys.exit("video_orientation_overrides.csv 에 같은 영상이 두 번 있습니다: %s" % row["rel_path"])
+            overrides[row["rel_path"]] = canonical
+    return overrides
+
+
+def rotation_label(entry, survey_map, overrides):
+    """영상에 쓸 회전을 정한다. override(육안 확인)가 있으면 그 값, 없으면 resolved_orientation 을 쓴다.
+
+    입력: entry - 영상 항목, survey_map - load_survey_orientations 결과, overrides - load_overrides 결과
+    반환: --rotate 옵션 이름("none", "cw90", "ccw90", "180") 또는 "review"(정할 수 없음, 조사 결과 없음 포함)
+    """
+    rel_path = entry["rel_path"]
+    if rel_path in overrides:
+        return to_rotate_option(overrides[rel_path])
+    surveyed = survey_map.get(rel_path)
+    if surveyed is None or surveyed["resolved"] == "review":
+        return "review"
+    return to_rotate_option(surveyed["resolved"])
+
+
+def split_review(entries, survey_map, overrides):
+    """처리 후보를 회전이 정해진 영상과 review(override 없음) 영상으로 나눈다. 정해진 항목에는 rotate 를 기록한다.
+
+    입력: entries - 처리 후보 항목 list, survey_map/overrides - 회전 정보
+    반환: (ready, review) 항목 list 2개(순서 유지)
+    """
+    ready, review = [], []
+    for entry in entries:
+        label = rotation_label(entry, survey_map, overrides)
+        if label == "review":
+            review.append(entry)
+        else:
+            entry["rotate"] = label
+            ready.append(entry)
+    return ready, review
+
+
+def print_review_list(review, survey_map):
+    """방향이 정해지지 않아(review, override 없음) 처리하지 않는 영상의 목록을 카운트와 함께 출력한다.
+
+    입력: review - split_review 의 review 목록, survey_map - 조사 결과
+    """
+    if not review:
+        return
+    print("review(방향 미정, override 없음)라 처리하지 않는 영상: %d개 (faces 0/cw90/180/ccw90)" % len(review))
+    for entry in review:
+        surveyed = survey_map.get(entry["rel_path"])
+        counts = "조사 결과 없음" if surveyed is None else "/".join(surveyed["counts"])
+        print("  %s  %s" % (entry["rel_path"], counts))
+    print("  육안으로 확인한 뒤 configs/video_orientation_overrides.csv 에 orientation 을 기록하면 다음 실행부터 처리합니다.")
+
+
+def print_rotation_overview(targets, survey_map, overrides):
+    """--list 용: 선택된 대상의 회전별 영상 수와 review 개수, override 적용 개수를 출력한다.
+
+    입력: targets - 선택된 대상, survey_map/overrides - 회전 정보
+    """
+    tally = {}
+    overridden = 0
+    for entry in targets:
+        label = rotation_label(entry, survey_map, overrides)
+        tally[label] = tally.get(label, 0) + 1
+        if entry["rel_path"] in overrides:
+            overridden += 1
+    print("회전별 영상 수(선택된 대상): none %d, cw90 %d, ccw90 %d, 180 %d | review(처리 안 함) %d | override 적용 %d" % (
+        tally.get("none", 0), tally.get("cw90", 0), tally.get("ccw90", 0), tally.get("180", 0),
+        tally.get("review", 0), overridden))
+
+
+def parse_face_frames(output_bytes):
+    """자식 출력에서 blink_video.py 가 영상 끝에 찍는 'not grabbed' 다음 줄의 숫자(얼굴이 검출된 프레임 수)를 읽는다.
+
+    입력: output_bytes - 합쳐진 stdout/stderr 바이트
+    반환: 숫자 문자열. 영상 끝까지 가지 못했거나 숫자를 찾지 못하면 빈 문자열
+    """
+    lines = output_bytes.decode("utf-8", "replace").split("\n")
+    for index, line in enumerate(lines):
+        if line.strip() == "not grabbed":
+            for later in lines[index + 1:]:
+                if later.strip() != "":
+                    return later.strip() if later.strip().isdigit() else ""
+    return ""
+
+
+def check_manifest_header(manifest_path):
+    """기존 매니페스트의 열 이름이 현재 도구와 다르면 이어 쓰지 않고 중단한다. 파일이 없으면 아무것도 하지 않는다.
+
+    입력: manifest_path - batch_manifest.csv 경로
+    """
+    if not os.path.isfile(manifest_path):
+        return
+    header = None
+    with open(manifest_path, "r", newline="", encoding="utf-8") as file:
+        for line in file:
+            if not line.startswith("#"):
+                header = next(csv.reader([line]))
+                break
+    if header != MANIFEST_COLUMNS:
+        sys.exit("기존 batch_manifest.csv 의 열 이름이 현재 도구와 다릅니다. 이어 쓰지 않고 중단합니다. "
+                 "기존 파일을 다른 이름으로 옮기거나 BLINK_OUT_DIR 을 바꾸세요.")
 
 
 def output_path_for(out_dir, entry):
@@ -331,29 +484,31 @@ def process_video(entry, out_dir):
     """영상 1개를 별도 프로세스로 처리한다. 작업 스레드에서 호출되며 공유 상태를 건드리지 않는다.
 
     입력: entry - 영상 항목, out_dir - 출력 루트
-    반환: dict(entry, status, return_code, elapsed_s, blink_rows, started, ended, message)
+    반환: dict(entry, status, return_code, elapsed_s, blink_rows, started, ended, message, rotate, face_frames)
     """
     final_path = output_path_for(out_dir, entry)
     part_path = final_path + ".part"
     started = datetime.now()
     clock = time.time()
-    return_code, message, status, blink_rows = -1, "", "failed", 0
+    return_code, message, status, blink_rows, face_frames = -1, "", "failed", 0, ""
     try:
         os.makedirs(os.path.dirname(final_path), exist_ok=True)
         if os.path.exists(part_path):
             os.remove(part_path)     # 이전 실행이 끊겨 남은 미완료 파일만 지운다
         environment = dict(os.environ)
         environment["PYTHONIOENCODING"] = "utf-8"
-        command = [sys.executable, HEADLESS_SCRIPT, entry["rel_path"], part_path]
+        command = [sys.executable, HEADLESS_SCRIPT, entry["rel_path"], part_path, "--rotate", entry["rotate"]]
         result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=environment)
         return_code = result.returncode
+        face_frames = parse_face_frames(result.stdout)
         status, blink_rows = judge_result(return_code, part_path, final_path)
         message = last_output_line(result.stdout) if status != "ok" else ""
     except OSError as error:
         message = "OSError: %s" % type(error).__name__
     return {"entry": entry, "status": status, "return_code": return_code, "blink_rows": blink_rows,
             "elapsed_s": time.time() - clock, "started": started.strftime(TIME_FORMAT),
-            "ended": datetime.now().strftime(TIME_FORMAT), "message": message}
+            "ended": datetime.now().strftime(TIME_FORMAT), "message": message,
+            "rotate": entry["rotate"], "face_frames": face_frames}
 
 
 def manifest_values(result):
@@ -365,7 +520,7 @@ def manifest_values(result):
     entry = result["entry"]
     return [entry["fold"], entry["part"], entry["subject_id"], entry["class_label"], entry["variant"],
             result["status"], result["return_code"], "%.1f" % result["elapsed_s"], result["blink_rows"],
-            result["started"], result["ended"]]
+            result["started"], result["ended"], result["rotate"], result["face_frames"]]
 
 
 def print_progress(number, total, result):
@@ -374,8 +529,9 @@ def print_progress(number, total, result):
     입력: number - 완료 순번, total - 이번 처리 총수, result - process_video 반환 dict
     """
     entry = result["entry"]
-    line = "[%d/%d] %s %s (소요 %.1f초, blink %d행)" % (number, total, entry["rel_path"], result["status"],
-                                                        result["elapsed_s"], result["blink_rows"])
+    line = "[%d/%d] %s %s rotate=%s (소요 %.1f초, blink %d행, face_frames=%s)" % (
+        number, total, entry["rel_path"], result["status"], result["rotate"], result["elapsed_s"],
+        result["blink_rows"], result["face_frames"] or "-")
     if result["status"] != "ok":
         line += " 종료코드 %s: %s" % (result["return_code"], result["message"])
     print(line)
@@ -420,14 +576,19 @@ def main():
     flag_keys = load_flag_keys(FLAGS_PATH)
     targets = select_targets(entries, flag_keys, arguments)
     manifest_path = os.path.join(out_dir, MANIFEST_NAME)
+    check_manifest_header(manifest_path)
+    survey_map = load_survey_orientations(SURVEY_PATH)
+    overrides = load_overrides(OVERRIDES_PATH)
     done, failed, pending = split_by_state(targets, out_dir, read_status_map(manifest_path))
-    run_list = failed if arguments.retry_failed else pending
-    if arguments.limit is not None:
-        run_list = run_list[:arguments.limit]
+    ready, review = split_review(failed if arguments.retry_failed else pending, survey_map, overrides)
+    run_list = ready if arguments.limit is None else ready[:arguments.limit]
     if arguments.list_only:
         print_list(entries, flag_keys, targets, (done, failed, pending), run_list, arguments)
+        print_rotation_overview(targets, survey_map, overrides)
+        print_review_list(review, survey_map)
         return 0
     require_run_environment()
+    print_review_list(review, survey_map)
     return run_batch(run_list, len(done), out_dir, manifest_path, arguments.workers)
 
 

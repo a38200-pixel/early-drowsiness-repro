@@ -3,12 +3,15 @@
 #       영상 1개에 실행한다. 실행이 끝나면 소요 시간과 출력 파일의 blink 행 수를 출력한다.
 #       --compare 서브모드로 두 출력 파일을 줄 단위로 비교할 수도 있다(영상은 읽지 않는다).
 # 사용법: conda 환경 ghoddoosian_tf1 을 활성화하고 저장소 루트에서 실행한다.
-#           python src/repro/reproduction_blink_headless.py <영상경로> [출력txt]
+#           python src/repro/reproduction_blink_headless.py <영상경로> [출력txt] [--rotate none|cw90|ccw90|180]
+#           python src/repro/reproduction_blink_headless.py <영상경로> --dry-run [--rotate ...]  (치환만 확인, 영상은 열지 않음)
 #           python src/repro/reproduction_blink_headless.py --compare <a.txt> <b.txt>
+# --rotate: 원본 프레임을 먼저 회전한 뒤 같은 resize(width=450)를 한다(조사 스크립트와 같은 순서). 방향 이름과 회전 함수는
+#           orientation_common.py 의 정의를 조사 스크립트와 함께 쓴다. none 이면 이전 버전과 같은 소스를 실행한다.
 # 환경변수: DLIB_LANDMARK_PATH (영상 실행 시 필수), RLDD_DATA_DIR (영상경로가 상대경로일 때 필수)
 """blink_video.py 무화면 실행 래퍼와 출력 파일 비교 도구(Python 3.6 호환).
 
-사용법:  python reproduction_blink_headless.py <영상경로> [출력txt]
+사용법:  python reproduction_blink_headless.py <영상경로> [출력txt] [--rotate none|cw90|ccw90|180] [--dry-run]
          python reproduction_blink_headless.py --compare <a.txt> <b.txt>
 영상경로가 상대경로이면 RLDD_DATA_DIR 아래에서 찾는다. 출력txt를 생략하면
 experiments/00_reproduction/blink_test/<영상이름>_blinks.txt 에 쓴다(기존 래퍼와 같은 규칙).
@@ -16,14 +19,21 @@ experiments/00_reproduction/blink_test/<영상이름>_blinks.txt 에 쓴다(기�
 원본이 열 때 쓰는 Tk 창과 figure 생성부는 그대로 두고, 아래 세 가지 표현식만 메모리에서 바꾼다.
   매 프레임 plot_frame.draw() -> None,  cv2.imshow(...) -> None,  cv2.waitKey(1) -> 255
 waitKey 가 255 로 고정되므로 키 입력으로 중간에 멈출 수 없고 영상 끝까지 처리한다.
+--rotate 가 none 이 아니면 `frame = imutils.resize(frame, width=450)` 한 곳(정확히 1회 일치해야 하며 아니면 중단)을
+"원본 프레임을 회전한 뒤 같은 resize" 로 바꾼다. 이 방향은 회전 태그를 적용하는 디코더가 주는 프레임과 같을 것으로 추측하며,
+영상의 회전 태그는 읽지 않는다. --dry-run 은 치환 일치 횟수와 치환된 줄 번호만 출력하고 영상은 열지 않고 끝낸다.
 """
+import argparse
 import os
 import sys
 import time
 
+from orientation_common import ROTATE_OPTIONS, rotation_expression
+
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ROOT = os.path.join(REPO, "third_party", "ghoddoosian")
 DRAW_INDENT = " " * 16   # 매 프레임 draw 호출의 들여쓰기. Tk 생성부의 draw 는 4칸이라 이 문자열과 구분된다
+RESIZE_TARGET = "frame = imutils.resize(frame, width=450)"   # blink_video.py 의 프레임 리사이즈(회전을 끼워 넣을 한 곳)
 
 
 def get_dlib_path():
@@ -70,13 +80,14 @@ def resolve_output_path(video, output_argument):
     return output
 
 
-def build_replacements(output, video, dlib_path):
+def build_replacements(output, video, dlib_path, rotate="none"):
     """메모리에서 바꿀 문자열 목록을 만든다. 각 항목은 (설명, 원문, 새 문장, 기대 일치 횟수).
 
-    입력: output - 출력 txt 경로, video - 영상 경로, dlib_path - .dat 경로
-    반환: 튜플 list. 줄을 지우지 않고 표현식만 바꾼다
+    입력: output - 출력 txt 경로, video - 영상 경로, dlib_path - .dat 경로, rotate - --rotate 옵션 이름
+    반환: 튜플 list. 줄을 지우지 않고 표현식만 바꾼다. rotate 가 none 이면 이전 버전과 같은 6개 항목이고,
+          그 외에는 프레임 회전 후 resize 하는 치환 1개(정확히 1회 일치해야 함)가 더해진다
     """
-    return [
+    replacements = [
         ("출력 파일 경로", "output_file = 'alert.txt'", "output_file = %r" % output, 1),
         ("입력 영상 경로", "path = ''", "path = %r" % video, 1),
         ("dlib .dat 경로", "'shape_predictor_68_face_landmarks.dat'", repr(dlib_path), 1),
@@ -84,6 +95,10 @@ def build_replacements(output, video, dlib_path):
         ("cv2.imshow", 'cv2.imshow("Frame", frameMinus7)', "None", 2),
         ("cv2.waitKey(1)", "cv2.waitKey(1)", "255", 2),
     ]
+    if rotate != "none":
+        rotated = "frame = imutils.resize(%s, width=450)" % rotation_expression(rotate)
+        replacements.append(("원본 프레임 회전 후 resize", RESIZE_TARGET, rotated, 1))
+    return replacements
 
 
 def check_counts(source, replacements):
@@ -176,24 +191,57 @@ def prepare_runtime():
     sys.dont_write_bytecode = True
 
 
-def run_video_mode(arguments):
-    """영상 1개를 무화면으로 실행하고 소요 시간과 blink 행 수를 출력한다.
+def parse_video_arguments(arguments):
+    """영상 실행 모드의 인자를 해석한다.
 
-    입력: arguments - 영상경로와 선택적 출력경로
+    입력: arguments - sys.argv[1:] (영상경로, 선택적 출력경로, --rotate, --dry-run)
+    반환: argparse.Namespace (video, output, rotate, dry_run)
     """
-    dlib_path = get_dlib_path()
-    if len(arguments) < 1 or len(arguments) > 2:
-        sys.exit(__doc__)
-    video = resolve_video_path(arguments[0])
-    output = resolve_output_path(video, arguments[1] if len(arguments) > 1 else None)
+    parser = argparse.ArgumentParser(
+        prog="reproduction_blink_headless.py",
+        usage="%(prog)s <영상경로> [출력txt] [--rotate none|cw90|ccw90|180] [--dry-run]")
+    parser.add_argument("video", nargs="?", default=None)
+    parser.add_argument("output", nargs="?", default=None)
+    parser.add_argument("--rotate", choices=list(ROTATE_OPTIONS), default="none")
+    parser.add_argument("--dry-run", action="store_true", dest="dry_run")
+    return parser.parse_args(arguments)
+
+
+def run_dry_run(rotate):
+    """--dry-run: 치환 일치 횟수와 치환된 줄 번호만 출력하고 끝낸다. 영상은 열지 않고 경로·환경변수도 검사하지 않는다.
+
+    입력: rotate - --rotate 옵션 이름
+    """
     original = read_original_source()
-    replacements = build_replacements(output, video, dlib_path)
+    replacements = build_replacements("OUTPUT.txt", "VIDEO", "DLIB.dat", rotate)
+    print("회전: %s (--dry-run: 영상을 열지 않음)" % rotate)
+    check_counts(original, replacements)
+    modified = apply_replacements(original, replacements)
+    print("치환된 줄 번호: %s" % changed_line_numbers(original, modified))
+
+
+def run_video_mode(arguments):
+    """영상 1개를 무화면으로 실행하고 소요 시간과 blink 행 수를 출력한다. --dry-run 이면 치환만 확인하고 끝낸다.
+
+    입력: arguments - 영상경로, 선택적 출력경로, --rotate, --dry-run
+    """
+    options = parse_video_arguments(arguments)
+    if options.dry_run:
+        run_dry_run(options.rotate)
+        return
+    if options.video is None:
+        sys.exit(__doc__)
+    dlib_path = get_dlib_path()
+    video = resolve_video_path(options.video)
+    output = resolve_output_path(video, options.output)
+    original = read_original_source()
+    replacements = build_replacements(output, video, dlib_path, options.rotate)
     check_counts(original, replacements)
     modified = apply_replacements(original, replacements)
     print("치환된 줄 번호: %s" % changed_line_numbers(original, modified))
     os.makedirs(os.path.dirname(output), exist_ok=True)
     prepare_runtime()
-    print("영상: %s\n출력: %s" % (video, output))
+    print("회전: %s\n영상: %s\n출력: %s" % (options.rotate, video, output))
     started = time.time()
     try:
         run_source(modified)
