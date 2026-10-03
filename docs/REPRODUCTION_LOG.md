@@ -782,3 +782,91 @@ Known typo `self.hstate_size_size` in HMSLSTM_cell.py is unreachable in the test
 - 에이전트가 같은 방식으로 Fold1_part2/10/0.MOV(`cw90`)의 배치 출력과 앞선 단독 시험 출력도 비교했고, 20줄이 모두 같았다. [확실] (측정)
 - `180`은 비교하지 못했다. 단독 시험 영상(Fold4_part2/45/10.mp4)은 manual_flags라 배치 목록에 없고, 배치에서 회전 `180`으로 처리된 영상은 Fold3_part1/26/5.mp4 하나이며 단독 실행과 비교하지 않았다. [확실]
 - 비교한 것은 `ccw90` 1영상과 `cw90` 1영상뿐이다. 다른 영상으로 일반화는 미검증이다. [확실]
+
+# 시퀀스 생성 구현 사전 등록 (2026-10-03)
+
+이 항목은 `src/repro/reproduction_build_sequences.py`를 쓰기 **전에** 쓴다. 결과는 날짜가 붙은 별도 항목으로 추가하고 이 항목은 고치지 않는다.
+
+- 목적: 우리가 재추출한 blink txt(`<출력 루트>/Fold<N>_part<M>/<피험자>/<클래스>[_<변형>].txt`)에서 저자 `Preprocessing.py`(PP)와 같은 계산으로 `.npy` 시퀀스를 만든다. 저자 코드는 `exec`하지 않고 직접 구현한다. [확실] (작업 정의)
+- 1단계 점검(저자 PP 읽기)에서 알려진 내용과 다른 점은 없었다. 정규화 기준은 alert의 마지막 `n//3`개(PP 168~187줄), 쓰는 열은 txt의 1~4열(163~166줄), 데이터 구간은 alert `n − n//3`개(169, 189줄)이고 semisleepy·sleepy는 전부(213, 231줄)이다. 윈도우 30, 이동 폭 2(263~264줄), `n ≤ 30`이면 앞쪽 0 패딩 시퀀스 1개(27~30줄), 아니면 `(n−30)//2+1`개(32줄)이다. [확실] (코드 읽기)
+- 1단계에서 추가로 측정한 저자 코드의 동작: blink가 정확히 1행인 파일은 `np.loadtxt`가 0차원 배열을 돌려줘 `len()`에서 TypeError가 난다. 0행(빈 파일)은 빈 배열과 경고만 나오고 `unroll_in_time`(29줄)에서 ValueError가 난다. `n < 3`이면 `bunch_size`가 0이라 `[-0:]`가 배열 전체이다. 표준편차가 0이면 전체 표준편차로 대체하고(173~174줄 등) 그것도 0이면 NaN이다. [확실] (numpy 1.14.6 측정)
+- `Training.py`의 `batch_gen`은 배치를 섞지 않고 순서대로 자른다(265~275줄). 288줄 주석도 입력이 섞여 있다고 적는다. 그래서 훈련 세트는 섞어서 저장해야 하며, 저자 PP는 255줄에서 섞는다. 우리 구현은 재현 가능하도록 fold 번호를 시드로 고정해 섞는다(저자는 시드가 없다). 이것은 의도한 차이이다. [확실]
+- 제외 정책(영상별로 `exclusions.csv`가 아니라 `video_summary.csv`와 제외 목록에 사유와 함께 기록하며 앞 피험자 값으로 대체하지 않는다): `variant_deferred`(변형 파일), `not_extracted`(txt가 없고 인벤토리의 manual_flag가 1), `no_blink_file`(그 밖에 txt가 없거나 blink 0행), `no_alert_reference`(그 피험자의 alert를 쓸 수 없음), `degenerate_reference`(기준 구간 blink 수 < 2, 또는 저자식 대체 후에도 표준편차가 0이거나 비유한). 영상마다 앞에서부터 이 순서로 하나만 붙인다. [확실] (정의)
+- 제외는 "재추출 데이터에서의 기계적 결과"이다. 저자가 어떤 영상이나 피험자를 제외했는지는 확인된 바 없으며 우리 제외를 저자의 제외로 해석하지 않는다. 미확인 [확실]
+- `not_extracted`와 `no_blink_file`은 txt가 없다는 점이 같아서 txt 존재만으로는 구분되지 않는다. 구분은 인벤토리의 `manual_flag`(배치 기본 목록에서 빠지는 영상)로 하며, 아직 추출하지 않은 영상이 `no_blink_file`로 분류될 수 있다. 미검증 [확실]
+- 예측 (a): 합성 blink 표(alert n ∈ {2, 29, 30, 31, 32, 33, 57, 100, 200}, semisleepy·sleepy n ∈ {2, 3, 5, 29, 30, 31, 32, 33, 57, 100, 200})로 우리 구현의 X와 y가 저자 PP의 함수·절차(검증 하네스에서만 PP의 함수 정의 1~259줄을 메모리에서 실행하고 실행부 261~272줄은 제외, 파일은 쓰지 않음)와 `np.array_equal`로 같다. 테스트 fold는 순서까지 같고, 훈련 fold는 같은 시드와 같은 순서이면 순서까지 같다. [추측]
+- 예측 (a)의 예외(비교에서 빼고 두 동작을 따로 기록): alert n = 1은 저자 TypeError. alert n = 3, 4, 5는 기준 구간이 1개라 우리는 `degenerate_reference`로 제외하지만 저자는 전체 표준편차로 대체해 진행한다. 모든 행이 같은 값이면 저자는 NaN을 내고 우리는 제외한다. semisleepy·sleepy n = 1은 저자 TypeError이고 우리는 포함한다. [추측]
+- 예측 (b): 영상 하나의 시퀀스 수는 사용 blink 수가 30 이하이면 1, 30보다 크면 `(n−30)//2+1`이다. alert의 사용 blink 수는 `n − n//3`이다. 메타데이터의 `seq_in_video` 개수와 일치한다. [추측]
+- 예측 (c): blink 0행(빈 파일, 빈 줄만 있는 파일)은 `no_blink_file`로 기록되고 예외가 나지 않는다. [추측]
+- 예측 (d): 실제 출력 루트를 `--check-only`로 읽기만 해 실행하면 오류 없이 coverage가 나오고 다음과 같다(다르면 그대로 보고). 영상 182개 중 포함 165개, 제외 17개: `no_blink_file` 1개(Fold2_part2/23/0), `variant_deferred` 4개(피험자 32와 49의 10_1, 10_2), `not_extracted` 8개(manual_flags), `no_alert_reference` 2개(피험자 23의 5, 10), `degenerate_reference` 2개(피험자 49의 0, 5; alert가 3행). `ref_small`(기준 구간 blink 수 10 미만)은 피험자 9명(10, 16, 25, 27, 33, 34, 41, 47, 50). [추측]
+- 예측 (e): 같은 입력으로 서로 다른 임시 출력 폴더에 두 번 실행한 `.npy`가 `np.array_equal`로 같다. [추측]
+- 판정 규칙: 예측이 하나라도 빗나가면 그대로 기록한다. 실제 출력 루트(`SEQ_OUT_DIR`)에는 쓰지 않고, 시험은 임시 폴더의 합성 데이터로만 한다. [확실] (사전 정의)
+
+
+# 시퀀스 생성 구현 결과 (2026-10-03)
+
+사전 등록(위 "시퀀스 생성 구현 사전 등록 (2026-10-03)")에 대한 결과다. 구현은 `src/repro/reproduction_build_sequences.py`이다. 저자 코드는 exec하지 않고 같은 계산을 직접 구현했다. 산출물(.npy, 메타데이터 CSV)은 저장소에 두지 않았고, 실제 `SEQ_OUT_DIR`에는 쓰지 않았다.
+
+## 시험 방법과 한계
+- 합성 데이터 시험은 임시 폴더(저장소 밖)에서만 했다. 하네스 스크립트는 저장소에 넣지 않았다. [확실]
+- 비교를 위해 하네스 안에서만 저자 `Preprocessing.py`의 함수 정의(1~259줄)를 텍스트로 읽어 메모리에서 정의했다(`os.listdir`는 정렬하는 것으로 바꿨다). 구현 파일에는 exec가 없다. 하네스에서 exec를 쓴 것은 "exec 금지" 규칙에 대한 예외로, 사용자에게 알린 사항이다. [확실]
+- 합성 데이터는 임의 난수이므로 이 시험은 계산 절차의 동일성만 확인한다. 실제 데이터에서 저자 결과와 같은지는 확인하지 못했다. 미검증
+
+## 예측 대조
+- (a) 합성 시험 전부 통과(88개 점검 중 실패 0). [확실]
+  - 전체 파이프라인: 3개 fold × 2개 part × 2명, 사용 blink 수가 6~200인 합성 표에서 fold마다 저자 `Preprocess`(시드 = fold 번호)와 우리 train/test X, y가 `np.array_equal`로 같았고 dtype도 float64로 같았다.
+  - 함수 수준: n = 2, 3, 5, 29, 30, 31, 32, 33, 57, 100, 200을 alert, semisleepy, sleepy 각각에 넣어 저자 `gen`과 우리 함수가 `np.array_equal`로 같았다(alert n = 3, 5는 우리 파이프라인이 제외하는 값이지만 계산 자체는 같다).
+  - 퇴화 입력의 저자 동작과 우리 동작을 따로 기록했다: alert n = 1은 저자 TypeError, 우리 `degenerate_reference`. alert n = 3, 4, 5는 저자가 전체 표준편차로 대체해 진행(시퀀스 29개)하고 우리는 `degenerate_reference`. 모든 행이 같은 값이면 저자는 NaN을 내고 우리는 제외. semisleepy n = 1은 저자 TypeError이고 우리는 포함. 예측과 같았다.
+- (b) 시퀀스 수가 n ≤ 30이면 1, n > 30이면 `(n−30)//2+1`로 n = 1~200에서 맞았다. alert 사용 blink 수는 `n−n//3`으로 맞았다. 메타데이터 행 수는 모든 fold의 train, test에서 시퀀스 수와 같았다. [확실]
+- (c) 0바이트 파일, 빈 줄만 있는 파일, txt 없음은 `no_blink_file`, alert가 0행이면 같은 피험자의 나머지가 `no_alert_reference`, alert 3행은 `degenerate_reference`로 기록되고 예외가 없었다. [확실]
+- (d) 실제 출력 루트에 `--check-only`(읽기 전용, `SEQ_OUT_DIR` 없이)를 실행했고 오류 없이 끝났다(종료 코드 0). 예측과 모두 같았다. [확실]
+  - 영상 182개: 포함 165, 제외 17. `variant_deferred` 4, `not_extracted` 8, `no_blink_file` 1, `no_alert_reference` 2, `degenerate_reference` 2.
+  - ref_small(기준 구간 blink 수 10 미만) 피험자 9명: 10, 16, 25, 27, 33, 34, 41, 47, 50. 기준 구간 표준편차 0으로 전체 표준편차를 쓴 피험자는 0명.
+  - 사용 가능한 피험자 56명, ref_n 최소 4, 중앙값 24, 최대 172.
+  - fold별 포함 영상 수(클래스 0/5/10): Fold1 11/11/11, Fold2 11/11/11, Fold3 12/12/11, Fold4 11/10/11, Fold5 11/11/10.
+  - fold별 시퀀스 수(훈련/테스트)와 테스트 영상 수: Fold1 6506/1328/33, Fold2 5775/2059/33, Fold3 6193/1641/35, Fold4 6628/1206/32, Fold5 6234/1600/32.
+- (e) 같은 입력으로 서로 다른 임시 출력 폴더에 두 번 실행한 .npy가 모두 `np.array_equal`로 같았고(float64), 메타데이터 폴더의 해시도 같았다. [확실]
+- 가드: `SEQ_OUT_DIR` 미설정, 저장소 안, `BLINK_OUT_DIR` 안이면 중단하고 폴더를 만들지 않았다. 출력 파일이 이미 있으면 덮어쓰지 않고 중단했으며 파일은 그대로였다. `--check-only`는 입력 폴더를 바꾸지 않았고 `SEQ_OUT_DIR`가 있어도 쓰지 않았다. [확실]
+
+## 기록할 점
+- 처음 하네스 실행에서 점검 1개가 실패했는데, 하네스의 오류였다. 합성 데이터가 3개 fold라서 npy가 12개인데 20개를 기대하도록 적었다. 기대 개수를 고쳐 다시 실행해 전부 통과했다. 구현 코드는 바꾸지 않았다. [확실]
+- 정정: 사전 등록 항목은 제외 사유를 "`exclusions.csv`가 아니라 `video_summary.csv`와 제외 목록에" 기록한다고 적었다. 이는 사용자 지시(정책 줄에 `exclusions.csv`가 명시됨)와 맞지 않는 문구였다. 구현은 `metadata/exclusions.csv`(열: video_id, subject_id, class_label, level, reason, detail)를 쓴다. 이 항목이 사전 등록의 문구를 정정한다. [확실]
+- 제외 영상 목록은 "재추출 데이터에서의 기계적 결과"이다. 저자가 어떤 영상이나 피험자를 제외했는지는 확인된 바 없다. 확인되지 않았다.
+- 우리 테스트 영상 수(Fold1~5: 33, 33, 35, 32, 32)는 `Training.py`의 start_indices 목록 길이(33, 36, 36, 36, 33)와 Fold1을 빼고 다르다. 원인이 우리 제외인지, 저자 데이터의 구성인지는 확인하지 못했다. 미검증
+- 저자 `Preprocess`는 폴더 순서를 `os.listdir`에 맡긴다. 우리는 (fold, part, 피험자 id) 순으로 정렬했다. 저자 실제 데이터의 피험자 순서가 같은지, 저자가 실제로 훈련 세트를 섞었는지는 확인하지 못했다. 합성 비교에서는 순서를 정렬로 맞췄다. 미검증
+- `ref_small` 피험자 9명의 정규화는 마지막 n//3 개(4~9개 blink)로 계산한 평균과 표준편차에 의존한다. 이 값이 저자 결과와 가까운지는 알 수 없다. 미검증
+
+
+# degenerate_reference 정책 변경 사전 등록 (2026-10-03)
+
+## 변경 이유
+- 위 "시퀀스 생성 구현 사전 등록 (2026-10-03)"의 `degenerate_reference` 규칙(기준 구간 blink 수 2 미만이면 피험자 제외)은 alert n = 3~5에서 저자 PP보다 엄격하다. 저자 PP는 n = 2에 전체 배열 통계, n = 3~5에 마지막 n//3(= 1)개 평균과 열 전체 표준편차 대체를 쓰며 진행한다(합성 시험으로 확인, n = 3~5는 시퀀스 29개). 사용자 방침은 "저자 코드 재현이 목적이므로 저자가 하지 않은 제외를 만들지 않는다"이다. 그 방침과 맞지 않아 규칙을 바꾼다. [확실]
+- 이 항목 이전의 결과 항목(영상 182개 중 포함 165, 제외 17의 `--check-only` 결과 포함)은 고치지 않고 보존한다.
+
+## 변경 내용(구현 전)
+- 피험자 제외(`degenerate_reference`)는 저자 코드가 예외를 내거나 비유한 값을 만드는 경우로 한정한다: alert 1행(저자 TypeError), 대체 후에도 표준편차가 0 또는 비유한(저자 NaN).
+- 그 밖의 경우(alert n = 2~5, 표준편차 0 대체)는 저자 동작을 따른다. `video_summary.csv`에 열 `author_fallback_used`를 추가한다: `none` / `whole_array`(n < 3이라 전체 배열 통계) / `whole_std`(기준 구간 표준편차가 0이라 전체 열 표준편차로 대체한 열이 있음). `ref_n`, `ref_small`은 유지하고, `coverage.txt`에 `author_fallback_used` 개수를 추가한다.
+
+## 예측
+- (a) 합성 시험에서 alert n = 2, 3, 4, 5의 X, y가 저자 PP 함수(`Preprocess`)와 `np.array_equal`로 같다(이전에는 3~5가 제외였다). [추측]
+- (b) alert n = 1과 모든 행이 같은 값인 alert는 `degenerate_reference`로 기록되고 예외가 없다. [추측]
+- (c) 실제 출력 루트 `--check-only`: `degenerate_reference` 2개 → 0개, 포함 영상 165 → 167(피험자 49의 0, 5). 49의 변형 파일 10_1, 10_2는 `variant_deferred`로 남아 49는 sleepy 없이 alert와 semisleepy만 포함된다. 다른 사유의 개수는 불변(`variant_deferred` 4, `not_extracted` 8, `no_blink_file` 1, `no_alert_reference` 2). 추가로, 사용 가능한 피험자 수는 56 → 57로 예상한다(피험자 49가 들어오므로). [추측]
+- (d) 같은 합성 입력으로 두 번 실행한 .npy가 `np.array_equal`로 같다. [추측]
+- 판정 규칙: 빗나가면 그대로 기록한다. 실제 `SEQ_OUT_DIR`에는 쓰지 않는다. [확실] (사전 정의)
+
+
+# degenerate_reference 정책 변경 결과와 정정 (2026-10-03)
+
+## 정정
+- 위 "시퀀스 생성 구현 사전 등록 (2026-10-03)"의 `degenerate_reference` 규칙(기준 구간 blink 수 2 미만이면 피험자 제외)은 저자 재현 원칙(저자가 하지 않은 제외를 만들지 않는다)과 맞지 않아 변경했다. 이전 `--check-only` 결과(영상 182개 중 포함 165, 제외 17, `degenerate_reference` 2개 = 피험자 49의 0, 5)는 그 규칙에서 나온 결과로서 위 항목에 그대로 보존한다. [확실]
+- 변경 후 규칙: 제외는 alert 1행(저자 TypeError)과 전체 열 표준편차로 대체한 뒤에도 표준편차가 0 또는 비유한인 경우(저자 NaN)로 한정한다. 나머지는 저자 동작을 따르고 `video_summary.csv`의 `author_fallback_used`(`none` / `whole_array` / `whole_std`)에 기록한다. [확실]
+
+## 예측 대조 (위 "degenerate_reference 정책 변경 사전 등록 (2026-10-03)")
+- (a) 합성 시험: alert n = 2, 3, 4, 5의 X, y가 저자 함수와 `np.array_equal`로 같았다. 함수 수준(저자 `gen`)과 파이프라인 전체(저자 `Preprocess`, 3개 fold) 모두에서였다. `fallback_kind`는 n = 2 `whole_array`, n = 3~5 `whole_std`로 기록됐다. 적중. [확실]
+- (b) alert n = 1과 모든 행이 같은 값인 alert는 `degenerate_reference`로 기록되고 예외가 없었다(저자는 각각 TypeError와 NaN). 적중. [확실]
+- (c) 실제 출력 루트 `--check-only`(읽기 전용, 종료 코드 0): `degenerate_reference` 2 → 0, 포함 영상 165 → 167. 49의 변형 10_1, 10_2는 `variant_deferred`로 남아 49는 alert, semisleepy만 포함된다. 다른 사유의 개수는 불변(`variant_deferred` 4, `not_extracted` 8, `no_blink_file` 1, `no_alert_reference` 2). 사용 가능한 피험자 56 → 57. 모두 적중. [확실]
+  - `author_fallback_used`: `none` 56명, `whole_array` 0명, `whole_std` 1명(피험자 49, alert 3행). `ref_small`은 10명(이전 9명 + 49), `ref_n` 최소 1(49), 중앙값 24, 최대 172.
+  - fold별 포함 영상 수(클래스 0/5/10)는 Fold5만 11/11/10 → 12/12/10으로 바뀌었고 나머지는 같았다. 시퀀스 수(훈련/테스트, 테스트 영상 수): Fold1 6554/1328/33, Fold2 5823/2059/33, Fold3 6241/1641/35, Fold4 6676/1206/32, Fold5 6234/1648/34. 훈련은 Fold1~4가 48씩 늘었고 Fold5 테스트가 48 늘었다(49의 시퀀스 48개). [확실]
+- (d) 같은 합성 입력으로 두 번 실행한 .npy가 `np.array_equal`로 같았다(합성 점검 93개 중 실패 0). 적중. [확실]
+- 하네스 변경: 정책 변경에 맞춰 점검의 기대값을 바꿨다(alert n = 3 → 포함, n = 1 → 제외로 바꿔 시험). 구현을 점검에 맞추려고 바꾼 것이 아니라 정책에 맞춰 점검을 바꿨다. 실제 `SEQ_OUT_DIR`에는 쓰지 않았다. [확실]
+- 피험자 49의 정규화는 alert 3행 중 마지막 1개로 평균을 구하고 표준편차는 alert 열 전체로 대체한 값이다(저자 코드와 같은 절차). 이 값이 의미 있는 기준인지는 알 수 없다. 미검증

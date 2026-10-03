@@ -341,3 +341,38 @@
 - `face_frames`가 비어 있는 2건 점검(P-22).
 - 검출기 진단과 화면 오버레이: `--show` 위에 EAR 값이나 랜드마크를 그리는 일(8.1절). 구현하지 않았다.
 - 피험자 23 영상의 얼굴 크기 가설 확인: 얼굴 크기가 검출 실패와 관련된다는 가설을 뜻하는 것으로 이해한다. 이 저장소에는 근거가 되는 측정이 없다. [추측]. 미검증
+
+
+## 9. 2단계(시퀀스 생성) 구현 메모 (2026-10-03)
+
+`src/repro/reproduction_build_sequences.py`는 재추출한 blink txt(`<BLINK_OUT_DIR>/Fold<N>_part<M>/<피험자>/<클래스>[_<변형>].txt`)에서 저자 `Preprocessing.py`(PP)와 같은 계산으로 시퀀스 .npy와 메타데이터를 만든다. 입력은 `BLINK_OUT_DIR`(읽기 전용), 출력은 `SEQ_OUT_DIR`(저장소 밖, 기본값 없음)에만 쓴다.
+
+### 9.1 저자 PP와 같게 동작하는 부분
+- txt의 1~4열(빈도×100, 진폭, 지속 시간, 속도)을 쓴다. 0열(누적 blink 수)은 쓰지 않는다(PP `usecols=1..4`). [확실]
+- 피험자별 정규화: alert의 마지막 `n//3`개 blink로 평균과 표준편차(ddof=0)를 구한다. `n < 3`이면 PP의 `[-0:]`처럼 전체를 쓴다. 기준 구간 표준편차가 0이면 전체 표준편차로 대체한다. alert 데이터는 앞쪽 `n − n//3`개, semisleepy·sleepy는 전부이며 같은 통계로 정규화한다. [확실]
+- `unroll_in_time`: 길이 30, 폭 2. n ≤ 30이면 앞쪽을 0으로 채운 시퀀스 1개, 그보다 크면 `((n−30)//2)+1`개. [확실]
+- 순서: 피험자마다 alert, semisleepy, sleepy를 이어 붙인다. 테스트 세트는 섞지 않는다. 라벨은 `label*np.ones([N,1])`(float64). [확실]
+- 파일 이름과 형상: `Blinks_30_Fold<k>.npy`, `Labels_30_Fold<k>.npy`, `BlinksTest_30_Fold<k>.npy`, `LabelsTest_30_Fold<k>.npy`. X는 (N,30,4) float64, y는 (N,1). 테스트는 그 fold의 피험자 전체, 훈련은 나머지 fold의 피험자. [확실]
+- 합성 데이터로 저자 함수와 비교해 `np.array_equal`로 같음을 확인했다(REPRODUCTION_LOG.md의 "시퀀스 생성 구현 결과 (2026-10-03)"). [확실]
+
+### 9.2 의도적으로 다른 부분
+1. 제외 정책 5가지. 영상마다 사유를 기록하고 앞 피험자의 값으로 대체하지 않는다. 우선순위는 `variant_deferred`, `not_extracted`, `no_blink_file`, `no_alert_reference`, `degenerate_reference` 순이다. 피험자 단위 사유(`no_alert_reference`, `degenerate_reference`)는 그 피험자의 나머지 영상도 제외한다. 이 목록은 재추출 데이터에서의 기계적 결과이며 저자의 제외와 관련지을 근거가 없다. [확실]
+2. `degenerate_reference` (2026-10-03 변경): 피험자 제외는 저자 코드가 예외를 내거나 비유한 값을 만드는 경우로 한정한다. 해당하는 경우는 alert 1행(저자 TypeError)과 전체 열 표준편차로 대체한 뒤에도 0 또는 비유한인 경우(저자 NaN)뿐이다. alert n = 2(전체 배열 통계), n = 3~5(마지막 1개 평균과 전체 열 표준편차 대체), 기준 구간 표준편차 0의 대체는 저자 동작을 그대로 따르고, 사용한 대체 종류를 `video_summary.csv`의 `author_fallback_used`(`none` / `whole_array` / `whole_std`)에 기록한다. 이전 규칙(기준 구간 blink 수 2 미만이면 제외)은 저자가 하지 않은 제외를 만들어 취소했다. 합성 시험에서 alert n = 2~5의 결과가 저자 `Preprocess`와 `np.array_equal`로 같음을 확인했다. [확실]
+3. 메타데이터 출력: `sequence_metadata_fold<k>_<train|test>.csv`, `video_summary.csv`, `exclusions.csv`, `coverage.txt`. 저자 PP에는 없다. [확실]
+4. `start_indices_fold<k>.json`을 메타데이터에서 계산한다. 시작이 0이고 증가하며 마지막 영상이 N까지 이어지고, 합이 테스트 시퀀스 수와 같다는 것을 확인한다. `Training.py`의 하드코딩 목록과 같은 형식이다. [확실]
+5. 변형 파일(`10_1`, `10_2` 등)은 이번 단계에서 보류한다(`variant_deferred`). 저자가 변형 파일을 어떻게 다뤘는지 확인된 바 없다. 확인되지 않았다.
+6. 훈련 세트는 fold 번호를 시드로 고정해 섞는다(`np.random.RandomState(fold).permutation`, PP는 시드 없는 `np.random.permutation`). `Training.py`의 `batch_gen`은 섞지 않으므로 .npy가 섞여 있어야 한다는 판단이다(그 파일 288줄 주석). 같은 시드를 쓰면 저자 `Preprocess`와 같은 순열이다. [가능성 높음]
+7. 기존 출력 파일은 덮어쓰지 않고 중단한다(`--force` 없음). `--check-only`는 아무것도 쓰지 않는다.
+
+### 9.3 확인하지 못한 점
+- 실제 데이터에서 저자 결과와 같은지. 저자의 .npy는 이 저장소의 원본과 우리 재추출이 달라 직접 비교하지 않았다. 미검증
+- 저자 PP가 실제로 사용한 피험자 순서와 훈련 세트 섞기 여부. 미검증
+- 우리 테스트 영상 수(2026-10-03 정책 변경 뒤 33, 33, 35, 32, 34)와 `Training.py`의 start_indices 길이(33, 36, 36, 36, 33)가 다른 이유. 미검증
+- `ref_small` 피험자 9명의 정규화 안정성. 미검증
+- 위의 합성 비교는 하네스에서 저자 함수 정의를 읽어 메모리에서 정의해 수행했다. 이 방식은 구현 파일에는 쓰지 않았다.
+
+### 9.4 확인한 항목 (2026-10-03)
+- (i) 훈련 셔플과 시드: 저자 `Preprocessing.py`의 셔플은 `np.random.permutation`이고(5줄, 호출은 255줄) 이 폴더의 `.py` 어디에도 numpy 시드를 설정하는 줄이 없다(Grep에서 `seed`는 `Training.py`의 TensorFlow 초기화 `seed=None`뿐). 따라서 저자의 훈련 순서는 실행마다 달랐을 것이다. [확실] (코드 읽기). 우리 구현은 fold 번호를 시드로 고정한다(`np.random.RandomState(fold).permutation`). 이는 재현성(두 번 실행해 같은 .npy)을 위한 의도한 차이다. 저자 순서를 복원하는 방법은 없다. 훈련 순서가 학습 결과에 미치는 영향은 미검증이다. 훈련 세트의 평균과 표준편차(`Training.py` 2차 정규화)는 순서와 무관하다. [가능성 높음]
+- (ii) "usable subjects" 정의: `coverage.txt`와 출력의 "사용 가능한 피험자"는 상태가 `ok`인 피험자, 곧 alert 영상이 포함되었고(txt가 있고 blink 1행 이상이며 변형이 아님) 정규화 기준이 `degenerate_reference`가 아닌 피험자다. 정책 변경 전 56명, 변경 뒤 57명이다. 제외되는 피험자는 06, 45(alert가 `not_extracted`), 23(alert txt 없음)이다. 인벤토리 전체 피험자가 60명이라는 값은 57 + 3에서 따진 것이고 직접 세어 확인하지는 않았다. [가능성 높음]
+- (iii) 20개 npy와 저자 main 블록: 저자 main 블록은 `test_fold='Fold3'`를 하드코딩하고(268) 테스트 배열만 저장한다(271~272, `BlinksTest_30_Fold3.npy`, `LabelsTest_30_Fold3.npy`). 훈련 저장(269~270)은 주석이다. 즉 배포된 `Preprocessing.py`는 20개 중 2개만 만든다. 20개라는 구성은 `Training.py`가 `range(5)` 반복에서 fold마다 4개 파일(`Blinks_30_Fold%d`, `Labels_30_Fold%d`, `BlinksTest_30_Fold%d`, `LabelsTest_30_Fold%d`)을 읽는 것에서 온다(408, 414~417). 우리 구현은 이 20개를 모두 만든다. 저자가 나머지 파일을 어떻게 만들었는지(fold 값을 바꿔 반복 실행하고 주석을 풀었는지 등)는 확인하지 못했다. [확실] (코드 읽기). 미검증
+- 같은 동작과 다른 동작의 구분은 9.1과 9.2를 따른다. 9.2의 2번이 이번 변경으로 바뀌었다.
