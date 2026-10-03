@@ -8,6 +8,9 @@
 #           python src/repro/compare_with_author_npy.py --match-free [--check-only]
 #                (순서 가정 없이 저자 영상 블록마다 우리 영상 전체와 값으로 비교: E 정확 일치, A 아핀 일치(|r|>=0.99999).
 #                 compare/match_free.csv 와 compare/match_free_summary.txt 를 새로 쓰며 이미 있으면 중단한다)
+#           python src/repro/compare_with_author_npy.py --graded [--check-only]
+#                (탐색적: 클래스별 풀링 통계와, blink 행 복원 + shift(-3..3) 피어슨 상관 0.9 이상의 근사 일치.
+#                 compare/graded.csv 와 compare/graded_summary.txt 를 새로 쓰며 이미 있으면 중단한다)
 #         옵션: --author-dir <폴더> (기본 third_party/ghoddoosian, 읽기 전용)
 # 환경변수: SEQ_OUT_DIR (우리 산출물 루트, 저장소 밖), BLINK_OUT_DIR (배치 manifest 의 rotate 열을 읽기 위한 입력 루트, 읽기 전용)
 # 규칙: 저자 npy 는 mmap_mode='r' 로만 연다. 정렬 규칙을 바꿔 일치율을 올리지 않는다(어긋나는 위치만 보고하고 재정렬하지 않는다).
@@ -35,6 +38,13 @@ ALIGN_COLUMNS = ["fold", "position", "author_start", "author_n_seq", "author_lab
 DUP_COLUMNS = ["n_seq", "fold_a", "position_a", "our_id_a", "fold_b", "position_b", "our_id_b"]
 AFFINE_R = 0.99999
 MATCH_COLUMNS = ["fold", "position", "author_class", "n_seq", "trivial", "matched_ids", "match_kind"]
+GRADED_COLUMNS = ["fold", "position", "author_class", "n_seq", "author_len", "matched_ids", "shifts", "our_lens",
+                  "r_amp", "r_dur", "r_vel", "n_candidates"]
+GRADED_SHIFTS = range(-3, 4)
+GRADED_FEATURES = (1, 2, 3)
+NEAR_R = 0.9
+MIN_OVERLAP = 30
+FEATURE_NAMES = ("freq", "amp", "dur", "vel")
 
 
 def parse_arguments():
@@ -46,6 +56,7 @@ def parse_arguments():
     parser.add_argument("--check-only", action="store_true", dest="check_only", help="아무 파일도 쓰지 않고 결과만 출력")
     parser.add_argument("--author-dir", default=DEFAULT_AUTHOR_DIR, dest="author_dir", help="저자 .npy 폴더(읽기 전용)")
     parser.add_argument("--match-free", action="store_true", dest="match_free", help="순서 가정 없이 값으로 일치 탐색")
+    parser.add_argument("--graded", action="store_true", dest="graded", help="탐색적: 클래스별 풀링 통계와 근사 일치")
     return parser.parse_args()
 
 
@@ -695,6 +706,279 @@ def run_match_free_mode(arguments, seq_dir, blink_dir, authors, all_runs):
     print("compare 폴더에 썼습니다.")
 
 
+def reconstruct_rows(x_block):
+    """시퀀스 N 개 블록에서 blink 행을 복원한다: 첫 윈도우 30행 + 이후 각 윈도우의 마지막 2행(길이 28 + 2N).
+
+    입력: x_block - (N, 30, 4) 블록, N >= 2
+    반환: (28 + 2N, 4) 배열
+    """
+    first = np.asarray(x_block[0])
+    tails = np.asarray(x_block[1:, -2:, :]).reshape(-1, 4)
+    return np.concatenate([first, tails], axis=0)
+
+
+def safe_pearson(vec_a, vec_b):
+    """피어슨 상관계수. 한쪽 분산이 0이면 0 으로 둔다.
+
+    입력: vec_a, vec_b - 같은 길이의 1차원 배열
+    반환: 상관계수(float)
+    """
+    if vec_a.std() == 0 or vec_b.std() == 0:
+        return 0.0
+    return float(np.corrcoef(vec_a, vec_b)[0, 1])
+
+
+def shift_correlations(rows_a, rows_b, shift):
+    """저자의 i번째 행과 우리의 (i+shift)번째 행을 맞춰 amplitude, duration, velocity 열의 상관을 구한다.
+
+    입력: rows_a, rows_b - 복원한 blink 행, shift - 행 이동
+    반환: 겹침이 30 미만이면 None, 아니면 상관 3개 list
+    """
+    start = max(0, -shift)
+    stop = min(len(rows_a), len(rows_b) - shift)
+    if stop - start < MIN_OVERLAP:
+        return None
+    part_a = rows_a[start:stop]
+    part_b = rows_b[start + shift:stop + shift]
+    return [safe_pearson(part_a[:, column], part_b[:, column]) for column in GRADED_FEATURES]
+
+
+def best_shift_match(rows_a, rows_b):
+    """shift -3..3 중 세 상관의 평균이 최대인 것을 고른다.
+
+    입력: rows_a, rows_b - 복원한 blink 행
+    반환: dict(shift, corrs, mean) 또는 None(모든 shift 에서 겹침 부족)
+    """
+    best = None
+    for shift in GRADED_SHIFTS:
+        corrs = shift_correlations(rows_a, rows_b, shift)
+        if corrs is None:
+            continue
+        mean = sum(corrs) / len(corrs)
+        if best is None or mean > best["mean"]:
+            best = {"shift": shift, "corrs": corrs, "mean": mean}
+    return best
+
+
+def find_graded_matches(author_blocks, our_videos):
+    """시퀀스 2개 이상인 모든 저자 블록과 우리 영상의 쌍에서 근사 일치(세 상관 모두 0.9 이상)를 찾는다.
+
+    입력: author_blocks, our_videos
+    반환: {(fold, position): [(우리 영상, 일치 dict)]} (평균 상관 내림차순, 모든 저자 블록 키 포함)
+    """
+    ours = [(video, reconstruct_rows(video["X"])) for video in our_videos if video["n_seq"] >= 2]
+    result = dict(((b["fold"], b["position"]), []) for b in author_blocks)
+    for block in author_blocks:
+        if block["n_seq"] < 2:
+            continue
+        rows_a = reconstruct_rows(block["X"])
+        found = []
+        for video, rows_b in ours:
+            best = best_shift_match(rows_a, rows_b)
+            if best is not None and min(best["corrs"]) >= NEAR_R:
+                best.update({"author_len": len(rows_a), "our_len": len(rows_b)})
+                found.append((video, best))
+        found.sort(key=lambda item: -item[1]["mean"])
+        result[(block["fold"], block["position"])] = found
+    return result
+
+
+def join_field(found, getter):
+    """후보 목록의 한 필드를 '|' 로 이어 문자열로 만든다.
+
+    입력: found - [(영상, 일치 dict)], getter - (영상, 일치) -> 값 함수
+    반환: 문자열
+    """
+    return "|".join(str(getter(video, match)) for video, match in found)
+
+
+def graded_rows(author_blocks, matches):
+    """graded.csv 의 행을 만든다(시퀀스 2개 이상인 저자 블록마다 한 줄).
+
+    입력: author_blocks, matches - find_graded_matches 결과
+    반환: GRADED_COLUMNS 의 dict list
+    """
+    rows = []
+    for block in author_blocks:
+        if block["n_seq"] < 2:
+            continue
+        found = matches[(block["fold"], block["position"])]
+        rows.append({"fold": block["fold"], "position": block["position"], "author_class": block["label"],
+                     "n_seq": block["n_seq"], "author_len": 28 + 2 * block["n_seq"],
+                     "matched_ids": join_field(found, lambda v, m: v["video_id"]),
+                     "shifts": join_field(found, lambda v, m: m["shift"]),
+                     "our_lens": join_field(found, lambda v, m: m["our_len"]),
+                     "r_amp": join_field(found, lambda v, m: "%.5f" % m["corrs"][0]),
+                     "r_dur": join_field(found, lambda v, m: "%.5f" % m["corrs"][1]),
+                     "r_vel": join_field(found, lambda v, m: "%.5f" % m["corrs"][2]),
+                     "n_candidates": len(found)})
+    return rows
+
+
+def class_stats(items, label):
+    """시퀀스 2개 이상인 영상 중 한 클래스의 영상 수, 영상당 시퀀스 수, 특징 평균·표준편차를 구한다.
+
+    입력: items - label, n_seq, X 를 가진 dict list, label - 클래스
+    반환: dict(videos, mean_n, median_n, mean, std)
+    """
+    chosen = [item for item in items if item["n_seq"] >= 2 and item["label"] == label]
+    counts = [item["n_seq"] for item in chosen]
+    values = np.concatenate([np.asarray(item["X"]).reshape(-1, 4) for item in chosen], axis=0)
+    return {"videos": len(chosen), "mean_n": float(np.mean(counts)), "median_n": float(np.median(counts)),
+            "mean": values.mean(axis=0), "std": values.std(axis=0)}
+
+
+def format_vector(values):
+    """특징 4개 값을 이름과 함께 한 줄 문자열로 만든다.
+
+    입력: values - 길이 4 배열
+    반환: 문자열
+    """
+    return ", ".join("%s %.3f" % (name, value) for name, value in zip(FEATURE_NAMES, values))
+
+
+def pooled_lines(author_blocks, our_videos):
+    """클래스별 풀링 통계 비교 줄(통계, 클래스 10-0 평균 차이 부호, 영상당 시퀀스 수 비)을 만든다.
+
+    입력: author_blocks, our_videos
+    반환: 문자열 list
+    """
+    stats, lines = {}, []
+    for name, items in (("저자", author_blocks), ("우리", our_videos)):
+        for label in CLASS_ORDER:
+            stats[(name, label)] = class_stats(items, label)
+            s = stats[(name, label)]
+            lines.append("%s 클래스 %d: 영상 %d, 시퀀스/영상 평균 %.1f 중앙값 %.1f | 평균 %s | 표준편차 %s" % (
+                name, label, s["videos"], s["mean_n"], s["median_n"], format_vector(s["mean"]), format_vector(s["std"])))
+    for name in ("저자", "우리"):
+        diff = stats[(name, 10)]["mean"] - stats[(name, 0)]["mean"]
+        lines.append("%s 평균 차이(10-0): %s" % (name, format_vector(diff)))
+    same = [bool(np.sign(stats[("저자", 10)]["mean"][i] - stats[("저자", 0)]["mean"][i]) ==
+                 np.sign(stats[("우리", 10)]["mean"][i] - stats[("우리", 0)]["mean"][i])) for i in range(4)]
+    lines.append("10-0 부호 같음(freq, amp, dur, vel): %s" % same)
+    ratios = ["클래스 %d %.3f" % (label, stats[("우리", label)]["mean_n"] / stats[("저자", label)]["mean_n"]) for label in CLASS_ORDER]
+    lines.append("영상당 시퀀스 수 평균 비(우리/저자): " + ", ".join(ratios))
+    return lines
+
+
+def length_ratio_lines(matches, excluded_prefix):
+    """대표 후보(평균 상관 최대) 쌍의 복원 길이 차이 |Δn|/n 분포 줄을 만든다(n 은 저자 복원 길이).
+
+    입력: matches - find_graded_matches 결과, excluded_prefix - 분포에서 뺄 영상 ID 접두(예: 피험자 09)
+    반환: 문자열 list
+    """
+    ratios, all_ratios = [], []
+    for found in matches.values():
+        if not found:
+            continue
+        video, best = found[0]
+        ratio = abs(best["author_len"] - best["our_len"]) / float(best["author_len"])
+        all_ratios.append(ratio)
+        if not video["video_id"].startswith(excluded_prefix):
+            ratios.append(ratio)
+    lines = ["대표 후보 쌍 %d개(09 포함) 중 정확 일치 3개 제외 %d개" % (len(all_ratios), len(ratios))]
+    if ratios:
+        lines.append("|Δn|/n(09 제외): 중앙값 %.3f, 75퍼센타일 %.3f, 최대 %.3f" % (
+            float(np.median(ratios)), float(np.percentile(ratios, 75)), max(ratios)))
+    return lines
+
+
+def graded_rotation_lines(our_videos, matches):
+    """우리 영상(시퀀스 2개 이상) 기준으로 회전별 근사 일치율(근사 일치한 저자 블록이 하나 이상 있는 영상의 비율)을 만든다.
+
+    입력: our_videos, matches
+    반환: 문자열 list
+    """
+    near_ids = set(video["video_id"] for found in matches.values() for video, _ in found)
+    pool = [video for video in our_videos if video["n_seq"] >= 2]
+    groups = [("회전 영상 합계(cw90+ccw90+180)", [v for v in pool if v["rotation"] in ("cw90", "ccw90", "180")])]
+    groups += [(name, [v for v in pool if v["rotation"] == name]) for name in sorted(set(v["rotation"] for v in pool))]
+    lines = []
+    for name, videos in groups:
+        count = sum(1 for video in videos if video["video_id"] in near_ids)
+        lines.append("회전 %s: 영상 %d, 근사 일치 %d(%.3f)" % (name, len(videos), count, count / float(max(len(videos), 1))))
+    return lines
+
+
+def graded_duplicate_lines(duplicates, matches):
+    """동일 X 블록 쌍의 두 위치가 근사 일치하는 우리 영상(이동, 평균 상관)을 보고한다.
+
+    입력: duplicates - find_duplicates 결과, matches - find_graded_matches 결과
+    반환: 문자열 list
+    """
+    lines = []
+    for pair in duplicates:
+        parts = []
+        for position in (pair["position_a"], pair["position_b"]):
+            found = matches[(pair["fold_a"], position)]
+            text = ", ".join("%s(shift %d, r평균 %.4f)" % (v["video_id"], m["shift"], m["mean"]) for v, m in found)
+            parts.append("위치 %d: %s" % (position, text or "근사 일치 없음"))
+        lines.append("쌍 Fold%d (시퀀스 %d개) | %s" % (pair["fold_a"], pair["n_seq"], " | ".join(parts)))
+    return lines
+
+
+def graded_check_lines(matches):
+    """점검: 정확 일치 3개(우리 Fold1_part2/09)의 shift 와 상관을 보고한다.
+
+    입력: matches - find_graded_matches 결과
+    반환: 문자열 list
+    """
+    lines = []
+    for (fold, position), found in sorted(matches.items()):
+        for video, best in found:
+            if video["video_id"].startswith("Fold1_part2/09/"):
+                lines.append("점검 저자 F%d#%d <-> %s: shift %d, 상관 %s" % (
+                    fold, position, video["video_id"], best["shift"], ["%.8f" % r for r in best["corrs"]]))
+    return lines
+
+
+def graded_report(author_blocks, our_videos, matches, all_runs, authors):
+    """탐색적 분석 전체 보고 줄(풀링 통계, 근사 일치 요약, 순서 복원, 동일 블록 쌍)을 만든다.
+
+    입력: author_blocks, our_videos, matches, all_runs, authors
+    반환: 문자열 list
+    """
+    inventory = read_inventory_rows(os.path.join(REPO, "configs", "video_inventory.csv"))
+    big = [b for b in author_blocks if b["n_seq"] >= 2]
+    near = [b for b in big if matches[(b["fold"], b["position"])]]
+    ambiguous = [b for b in near if len(matches[(b["fold"], b["position"])]) >= 2]
+    lines = ["[탐색적] 작업 1: 클래스별 풀링 통계(시퀀스 2개 이상)"] + pooled_lines(author_blocks, our_videos)
+    lines += ["[탐색적] 작업 2: 근사 일치(shift -3..3, 상관 3개 모두 >= %.1f)" % NEAR_R,
+              "근사 일치한 저자 블록 %d/%d(%.3f), 후보 둘 이상인 모호한 블록 %d" % (
+                  len(near), len(big), len(near) / float(max(len(big), 1)), len(ambiguous))]
+    lines += graded_check_lines(matches) + length_ratio_lines(matches, "Fold1_part2/09/")
+    lines += graded_rotation_lines(our_videos, matches) + order_lines(all_runs, matches, inventory)
+    return lines + graded_duplicate_lines(run_duplicates(authors, all_runs, []), matches)
+
+
+def run_graded_mode(arguments, seq_dir, blink_dir, authors, all_runs):
+    """--graded 모드: 풀링 통계와 근사 일치를 실행해 출력하고 (쓰기 모드면) compare 폴더에 새 파일로 저장한다.
+
+    입력: arguments - 명령줄 옵션, seq_dir, blink_dir - 경로, authors - 저자 배열, all_runs - 저자 런
+    """
+    rotations = read_rotations(blink_dir)
+    our_videos = []
+    for fold in FOLDS:
+        our_videos.extend(load_our_fold_videos(seq_dir, fold, rotations))
+    author_blocks = split_author_blocks(authors, all_runs)
+    matches = find_graded_matches(author_blocks, our_videos)
+    lines = graded_report(author_blocks, our_videos, matches, all_runs, authors)
+    print("== 탐색적: 클래스별 풀링 통계와 근사 일치 ==")
+    print("\n".join(lines))
+    if arguments.check_only:
+        print("--check-only: 아무 파일도 쓰지 않았습니다.")
+        return
+    compare_dir = os.path.join(seq_dir, "compare")
+    paths = [os.path.join(compare_dir, name) for name in ("graded.csv", "graded_summary.txt")]
+    if any(os.path.exists(path) for path in paths):
+        sys.exit("graded 출력 파일이 이미 있어 덮어쓰지 않고 중단합니다.")
+    os.makedirs(compare_dir, exist_ok=True)
+    write_csv(paths[0], GRADED_COLUMNS, graded_rows(author_blocks, matches))
+    with open(paths[1], "x", encoding="utf-8") as file:
+        file.write("\n".join(lines) + "\n")
+    print("compare 폴더에 썼습니다.")
+
+
 def main():
     """전체 흐름: 작업 0 점검, 저자 구조 검사(불일치면 중단), 위치 대응 비교, 동일 블록 검사, (쓰기 모드면) compare 폴더에 저장."""
     arguments = parse_arguments()
@@ -712,6 +996,9 @@ def main():
         sys.exit("저자 구조가 start_indices 와 맞지 않아 이후 비교를 멈춥니다.")
     if arguments.match_free:
         run_match_free_mode(arguments, seq_dir, blink_dir, authors, all_runs)
+        return
+    if arguments.graded:
+        run_graded_mode(arguments, seq_dir, blink_dir, authors, all_runs)
         return
     print("== 작업 2: 위치 대응 비교 ==")
     rows, align_lines = run_alignment(seq_dir, blink_dir, authors, all_runs)
