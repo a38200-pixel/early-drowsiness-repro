@@ -5,6 +5,9 @@
 # 사용법: 저장소 루트에서 conda 환경 ghoddoosian_tf1 의 python 으로 실행한다.
 #           python src/repro/compare_with_author_npy.py --check-only   (표시만, 아무 파일도 쓰지 않음)
 #           python src/repro/compare_with_author_npy.py                (SEQ_OUT_DIR/compare/ 에 표와 CSV 를 새로 씀)
+#           python src/repro/compare_with_author_npy.py --match-free [--check-only]
+#                (순서 가정 없이 저자 영상 블록마다 우리 영상 전체와 값으로 비교: E 정확 일치, A 아핀 일치(|r|>=0.99999).
+#                 compare/match_free.csv 와 compare/match_free_summary.txt 를 새로 쓰며 이미 있으면 중단한다)
 #         옵션: --author-dir <폴더> (기본 third_party/ghoddoosian, 읽기 전용)
 # 환경변수: SEQ_OUT_DIR (우리 산출물 루트, 저장소 밖), BLINK_OUT_DIR (배치 manifest 의 rotate 열을 읽기 위한 입력 루트, 읽기 전용)
 # 규칙: 저자 npy 는 mmap_mode='r' 로만 연다. 정렬 규칙을 바꿔 일치율을 올리지 않는다(어긋나는 위치만 보고하고 재정렬하지 않는다).
@@ -30,6 +33,8 @@ EXPECTED_VIDEOS = {1: 33, 2: 36, 3: 36, 4: 36, 5: 33}
 ALIGN_COLUMNS = ["fold", "position", "author_start", "author_n_seq", "author_label", "our_video_id", "our_class",
                  "status", "rotation", "our_n_seq", "count_equal", "allclose", "max_abs_diff", "y_equal"]
 DUP_COLUMNS = ["n_seq", "fold_a", "position_a", "our_id_a", "fold_b", "position_b", "our_id_b"]
+AFFINE_R = 0.99999
+MATCH_COLUMNS = ["fold", "position", "author_class", "n_seq", "trivial", "matched_ids", "match_kind"]
 
 
 def parse_arguments():
@@ -40,6 +45,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="저자 .npy 대비 비교(읽기 전용)")
     parser.add_argument("--check-only", action="store_true", dest="check_only", help="아무 파일도 쓰지 않고 결과만 출력")
     parser.add_argument("--author-dir", default=DEFAULT_AUTHOR_DIR, dest="author_dir", help="저자 .npy 폴더(읽기 전용)")
+    parser.add_argument("--match-free", action="store_true", dest="match_free", help="순서 가정 없이 값으로 일치 탐색")
     return parser.parse_args()
 
 
@@ -414,6 +420,281 @@ def run_duplicates(authors, all_runs, rows):
     return find_duplicates(blocks, names)
 
 
+def split_author_blocks(authors, all_runs):
+    """저자 테스트 배열을 y 런 기준 영상 블록으로 자른다.
+
+    입력: authors - {fold: (X, y)}, all_runs - {fold: runs}
+    반환: dict(fold, position, label, n_seq, X, y) list
+    """
+    blocks = []
+    for fold in FOLDS:
+        for position, (start, length, label) in enumerate(all_runs[fold]):
+            blocks.append({"fold": fold, "position": position, "label": label, "n_seq": length,
+                           "X": np.asarray(authors[fold][0][start:start + length]),
+                           "y": np.asarray(authors[fold][1][start:start + length])})
+    return blocks
+
+
+def make_our_video(video_id, fold, x_block, y_block, rotations):
+    """우리 영상 하나의 블록과 식별 정보를 dict 로 만든다.
+
+    입력: video_id - 'Fold<N>_part<M>/<피험자>/<클래스>', fold - fold 번호, x_block, y_block - 잘라낸 배열, rotations - 회전 사전
+    반환: dict(video_id, fold, subject, label, n_seq, rotation, X, y)
+    """
+    folder, subject, label_text = video_id.split("/")
+    part = int(re.match(r"Fold\d+_part(\d+)", folder).group(1))
+    key = (fold, part, int(subject), int(label_text), "")
+    return {"video_id": video_id, "fold": fold, "subject": subject, "label": int(label_text), "n_seq": len(x_block),
+            "rotation": rotations.get(key, "unknown"), "X": np.asarray(x_block), "y": np.asarray(y_block)}
+
+
+def load_our_fold_videos(seq_dir, fold, rotations):
+    """우리 한 fold 의 테스트 npy 를 start_indices 로 잘라 포함 영상 블록을 만든다(영상 ID 는 메타데이터 순서, 시작 위치 대조).
+
+    입력: seq_dir - 산출물 루트, fold - fold 번호, rotations - 회전 사전
+    반환: 우리 영상 dict list
+    """
+    meta_dir = os.path.join(seq_dir, "metadata")
+    x_all = load_npy(os.path.join(seq_dir, "npy", "BlinksTest_30_Fold%d.npy" % fold))
+    y_all = load_npy(os.path.join(seq_dir, "npy", "LabelsTest_30_Fold%d.npy" % fold))
+    first_index = {}
+    for row in read_csv_rows(os.path.join(meta_dir, "sequence_metadata_fold%d_test.csv" % fold)):
+        first_index.setdefault(row["video_id"], int(row["seq_index"]))
+    with open(os.path.join(meta_dir, "start_indices_fold%d.json" % fold), "r", encoding="utf-8") as file:
+        starts = json.load(file)
+    ids = sorted(first_index, key=lambda name: first_index[name])
+    if [first_index[name] for name in ids] != starts:
+        sys.exit("start_indices 와 메타데이터 시작 위치가 다릅니다: Fold%d" % fold)
+    ends = starts[1:] + [len(x_all)]
+    return [make_our_video(name, fold, x_all[a:b], y_all[a:b], rotations) for name, a, b in zip(ids, starts, ends)]
+
+
+def features_correlate(author_x, our_x):
+    """특징 4개 열 각각을 전 시퀀스·전 시점으로 펼친 벡터의 |r| >= 0.99999 인지 본다. 분산 0 인 열은 양쪽 모두 0 일 때만 통과.
+
+    입력: author_x, our_x - 같은 shape 의 X 블록
+    반환: 4개 열 모두 통과하면 True
+    """
+    for column in range(4):
+        vec_a = author_x[:, :, column].reshape(-1)
+        vec_b = our_x[:, :, column].reshape(-1)
+        flat_a, flat_b = vec_a.std() == 0, vec_b.std() == 0
+        if flat_a or flat_b:
+            if not (flat_a and flat_b):
+                return False
+        elif abs(np.corrcoef(vec_a, vec_b)[0, 1]) < AFFINE_R:
+            return False
+    return True
+
+
+def match_kind(author, ours):
+    """저자 블록과 우리 영상(같은 shape)의 일치 종류를 판정한다. 시퀀스 1개 블록은 E 만 시도한다.
+
+    입력: author, ours - X, y, n_seq 를 가진 dict
+    반환: 'E'(정확 일치) / 'A'(아핀 일치) / ''(없음)
+    """
+    if np.allclose(author["X"], ours["X"], atol=1e-6) and np.array_equal(author["y"], ours["y"]):
+        return "E"
+    if author["n_seq"] >= 2 and features_correlate(author["X"], ours["X"]):
+        return "A"
+    return ""
+
+
+def find_matches(author_blocks, our_videos):
+    """모든 저자 블록을 같은 shape 의 우리 영상 전체와 비교한다.
+
+    입력: author_blocks - split_author_blocks 결과, our_videos - 모든 fold 의 우리 영상
+    반환: {(fold, position): [(우리 영상 dict, 종류)]}
+    """
+    result = {}
+    for block in author_blocks:
+        found = []
+        for video in our_videos:
+            kind = match_kind(block, video) if video["X"].shape == block["X"].shape else ""
+            if kind:
+                found.append((video, kind))
+        result[(block["fold"], block["position"])] = found
+    return result
+
+
+def best_kind(found):
+    """후보 목록에서 가장 강한 일치 종류를 돌려준다(E, A, none 순).
+
+    입력: found - [(영상, 종류)]
+    반환: 'E' / 'A' / 'none'
+    """
+    kinds = [kind for _, kind in found]
+    if "E" in kinds:
+        return "E"
+    return "A" if "A" in kinds else "none"
+
+
+def match_rows(author_blocks, matches):
+    """match_free.csv 의 행을 만든다(저자 블록마다 한 줄).
+
+    입력: author_blocks - 저자 블록, matches - find_matches 결과
+    반환: MATCH_COLUMNS 의 dict list
+    """
+    rows = []
+    for block in author_blocks:
+        found = matches[(block["fold"], block["position"])]
+        rows.append({"fold": block["fold"], "position": block["position"], "author_class": block["label"],
+                     "n_seq": block["n_seq"], "trivial": block["n_seq"] == 1,
+                     "matched_ids": "|".join("%s:%s" % (video["video_id"], kind) for video, kind in found),
+                     "match_kind": best_kind(found)})
+    return rows
+
+
+def subject_label(video, author_fold):
+    """일치한 우리 영상의 피험자 표시(다른 fold 이면 F<fold>/ 접두)를 만든다.
+
+    입력: video - 우리 영상 dict, author_fold - 저자 fold
+    반환: 문자열
+    """
+    if video["fold"] == author_fold:
+        return video["subject"]
+    return "F%d/%s" % (video["fold"], video["subject"])
+
+
+def recovered_order(fold, count, matches):
+    """저자 fold 의 위치 3칸(피험자 1명)마다 일치한 우리 피험자 집합을 구한다(없으면 unknown).
+
+    입력: fold - 저자 fold, count - 그 fold 의 영상 수, matches - find_matches 결과
+    반환: 피험자 표시 문자열 list
+    """
+    labels = []
+    for triple in range(count // 3):
+        names = set()
+        for position in range(triple * 3, triple * 3 + 3):
+            names.update(subject_label(video, fold) for video, _ in matches[(fold, position)])
+        labels.append("|".join(sorted(names)) if names else "unknown")
+    return labels
+
+
+def order_lines(all_runs, matches, inventory):
+    """복원한 피험자 순서를 (part, id) 오름차순 가정과 비교하는 보고 줄을 만든다.
+
+    입력: all_runs - 저자 런, matches - 일치 결과, inventory - read_inventory_rows 결과
+    반환: 문자열 list
+    """
+    lines = []
+    for fold in FOLDS:
+        expected = [s for _, s in sorted(set((v["part"], v["subject"]) for v in inventory if v["fold"] == fold))]
+        found = recovered_order(fold, len(all_runs[fold]), matches)
+        same = sum(1 for index, name in enumerate(found) if index < len(expected) and name == expected[index])
+        lines.append("Fold%d 복원(저자 위치 순): %s" % (fold, found))
+        lines.append("Fold%d 오름차순 가정: %s | 같은 칸 %d/%d, unknown %d" % (
+            fold, expected, same, len(found), found.count("unknown")))
+    return lines
+
+
+def duplicate_match_lines(duplicates, matches, author_blocks, our_videos):
+    """동일 X 블록 쌍마다 X 만으로 일치하는 우리 영상과 정상 슬롯/사본 판정을 보고한다.
+
+    입력: duplicates - find_duplicates 결과, matches - 일치 결과, author_blocks - 저자 블록, our_videos - 우리 영상
+    반환: 문자열 list
+    """
+    blocks = dict(((b["fold"], b["position"]), b) for b in author_blocks)
+    lines = []
+    for pair in duplicates:
+        fold, spots = pair["fold_a"], (pair["position_a"], pair["position_b"])
+        block = blocks[(fold, spots[0])]
+        hits = [v for v in our_videos if v["X"].shape == block["X"].shape and np.allclose(block["X"], v["X"], atol=1e-6)]
+        text = "쌍 Fold%d 위치 %d, %d(시퀀스 %d개): X 일치 우리 영상 %s" % (
+            fold, spots[0], spots[1], pair["n_seq"], [v["video_id"] for v in hits] or "없음")
+        for spot in spots:
+            others = set()
+            for position in range(spot // 3 * 3, spot // 3 * 3 + 3):
+                if position not in spots:
+                    others.update(subject_label(v, fold) for v, _ in matches[(fold, position)])
+            normal = any(subject_label(v, fold) in others for v in hits)
+            text += " | 위치 %d 칸의 다른 블록 일치 피험자 %s -> %s" % (spot, sorted(others), "정상 슬롯" if normal else "정상 아님(사본 또는 불명)")
+        lines.append(text)
+    return lines
+
+
+def unmatched_lines(author_blocks, matches, our_videos):
+    """일치하지 못한 저자 블록과 우리 영상 목록 줄을 만든다.
+
+    입력: author_blocks, matches, our_videos
+    반환: 문자열 list
+    """
+    missing = ["F%d#%d(클래스 %d, %d개)" % (b["fold"], b["position"], b["label"], b["n_seq"]) for b in author_blocks
+               if best_kind(matches[(b["fold"], b["position"])]) == "none"]
+    used = set(video["video_id"] for found in matches.values() for video, _ in found)
+    ours = ["%s(%s, %d개)" % (v["video_id"], v["rotation"], v["n_seq"]) for v in our_videos if v["video_id"] not in used]
+    return ["일치 못한 저자 블록 %d개: %s" % (len(missing), missing), "일치 못한 우리 영상 %d개: %s" % (len(ours), ours)]
+
+
+def rotation_match_lines(our_videos, matches):
+    """우리 영상(시퀀스 2개 이상) 기준으로 회전별 E, A, 일치 없음 비율 줄을 만든다.
+
+    입력: our_videos, matches
+    반환: 문자열 list
+    """
+    best = {}
+    for found in matches.values():
+        for video, kind in found:
+            if kind == "E" or video["video_id"] not in best:
+                best[video["video_id"]] = kind
+    pool = [v for v in our_videos if v["n_seq"] >= 2]
+    groups = [("회전 영상 합계(cw90+ccw90+180)", [v for v in pool if v["rotation"] in ("cw90", "ccw90", "180")])]
+    groups += [(r, [v for v in pool if v["rotation"] == r]) for r in sorted(set(v["rotation"] for v in pool))]
+    lines = []
+    for name, videos in groups:
+        counts = dict((kind, sum(1 for v in videos if best.get(v["video_id"], "none") == kind)) for kind in ("E", "A", "none"))
+        total = float(max(len(videos), 1))
+        lines.append("회전 %s: 영상 %d, E %d(%.3f), A %d(%.3f), 없음 %d(%.3f)" % (
+            name, len(videos), counts["E"], counts["E"] / total, counts["A"], counts["A"] / total, counts["none"], counts["none"] / total))
+    return lines
+
+
+def match_free_report(author_blocks, matches, our_videos, all_runs, authors):
+    """정렬 없는 일치 탐색의 전체 보고 줄을 만든다.
+
+    입력: author_blocks, matches, our_videos, all_runs, authors
+    반환: 문자열 list
+    """
+    inventory = read_inventory_rows(os.path.join(REPO, "configs", "video_inventory.csv"))
+    rows = match_rows(author_blocks, matches)
+    trivial = [r for r in rows if r["trivial"]]
+    lines = ["저자 블록 %d개, 우리 영상 %d개" % (len(author_blocks), len(our_videos)),
+             "일치 종류: E %d, A %d, none %d | 자명(시퀀스 1개) %d개 중 E %d" % (
+                 sum(r["match_kind"] == "E" for r in rows), sum(r["match_kind"] == "A" for r in rows),
+                 sum(r["match_kind"] == "none" for r in rows), len(trivial), sum(r["match_kind"] == "E" for r in trivial))]
+    lines += order_lines(all_runs, matches, inventory)
+    lines += duplicate_match_lines(run_duplicates(authors, all_runs, []), matches, author_blocks, our_videos)
+    return lines + unmatched_lines(author_blocks, matches, our_videos) + rotation_match_lines(our_videos, matches)
+
+
+def run_match_free_mode(arguments, seq_dir, blink_dir, authors, all_runs):
+    """--match-free 모드: 일치 탐색을 실행해 출력하고 (쓰기 모드면) compare 폴더에 새 파일로 저장한다.
+
+    입력: arguments - 명령줄 옵션, seq_dir, blink_dir - 경로, authors - 저자 배열, all_runs - 저자 런
+    """
+    rotations = read_rotations(blink_dir)
+    our_videos = []
+    for fold in FOLDS:
+        our_videos.extend(load_our_fold_videos(seq_dir, fold, rotations))
+    author_blocks = split_author_blocks(authors, all_runs)
+    matches = find_matches(author_blocks, our_videos)
+    lines = match_free_report(author_blocks, matches, our_videos, all_runs, authors)
+    print("== 정렬 없는 일치 탐색 ==")
+    print("\n".join(lines))
+    if arguments.check_only:
+        print("--check-only: 아무 파일도 쓰지 않았습니다.")
+        return
+    compare_dir = os.path.join(seq_dir, "compare")
+    paths = [os.path.join(compare_dir, name) for name in ("match_free.csv", "match_free_summary.txt")]
+    if any(os.path.exists(path) for path in paths):
+        sys.exit("match_free 출력 파일이 이미 있어 덮어쓰지 않고 중단합니다.")
+    os.makedirs(compare_dir, exist_ok=True)
+    write_csv(paths[0], MATCH_COLUMNS, match_rows(author_blocks, matches))
+    with open(paths[1], "x", encoding="utf-8") as file:
+        file.write("\n".join(lines) + "\n")
+    print("compare 폴더에 썼습니다.")
+
+
 def main():
     """전체 흐름: 작업 0 점검, 저자 구조 검사(불일치면 중단), 위치 대응 비교, 동일 블록 검사, (쓰기 모드면) compare 폴더에 저장."""
     arguments = parse_arguments()
@@ -429,6 +710,9 @@ def main():
     print("\n".join(lines))
     if not passed:
         sys.exit("저자 구조가 start_indices 와 맞지 않아 이후 비교를 멈춥니다.")
+    if arguments.match_free:
+        run_match_free_mode(arguments, seq_dir, blink_dir, authors, all_runs)
+        return
     print("== 작업 2: 위치 대응 비교 ==")
     rows, align_lines = run_alignment(seq_dir, blink_dir, authors, all_runs)
     duplicates = run_duplicates(authors, all_runs, rows)
