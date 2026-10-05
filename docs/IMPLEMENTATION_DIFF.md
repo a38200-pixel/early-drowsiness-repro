@@ -3,7 +3,7 @@
 ## 1. 목적과 범위
 
 저자 원본(`third_party/ghoddoosian/`)과 이 저장소의 재구현·실행 환경, 그리고 논문(arXiv:1904.07312v1)과 원본 코드 사이의 대응을 한 곳에 정리한다.
-코드와 환경만 다루며, 성능 수치는 5절의 논문 대조표를 제외하면 본문에 복사하지 않고 결과 파일 경로만 안내한다(6절).
+코드와 환경만 다루며, 성능 수치는 5절의 논문 대조표를 제외하면 본문에 복사하지 않고 결과 파일 경로만 안내한다(6절). (2026-10-05 갱신: 10~15절에는 B1 결과 수치의 요약이 있다. 정리 문서의 읽는 순서는 docs/README.md를 따른다)
 확인하지 못한 값은 추측하지 않고 "미확인" 또는 "문서에서 확인되지 않음"으로 적고, 어떤 차이의 원인도 추정하지 않는다.
 
 ## 2. 기준점
@@ -30,13 +30,13 @@
 | 실행 방식 | `Training.py`를 직접 실행하면 5개 fold를 순환(`for i in range(5)`)하고 모델·로그를 현재 폴더에 쓴다. 한 fold씩 지정하는 인자는 없다 | 래퍼 스크립트가 `Training.py`를 텍스트로 읽어 `load=False` 줄을 기준으로 정의부와 fold 반복부로 나눈 뒤 메모리에서 치환해 `exec`한다. 디스크의 원본은 바뀌지 않는다. 치환 목록은 3.1절 | 의도적 변경 | — | Training.py:407-413. `src/repro/train_fold_seeds.py`, `src/repro/train_fold1_seeds.py`, `src/repro/reproduction_eval.py`, `src/repro/reproduction_train_fold1.py` | 해당 없음 |
 | epoch별 지표 기록 | 화면에 출력하고, 학습이 끝나면 `x/loss/accuracy*.npy` 6개를 저장한다. BSRE/VRE는 epoch 번호가 15의 배수이거나 79일 때만 출력된다 | `metrics.csv`에 epoch마다 1행을 추가한다. 열: `epoch`(1부터), `train_loss_sum`(epoch 안 배치 손실 합), `train_moving_acc`(배치 정확도 이동 평균), `BSA_loss`, `BSA_acc`, `VA`, `BSRE`, `VRE`(테스트 세트 기준). 기록 호출만 추가하고 계산은 바꾸지 않는다. 보고값은 마지막 epoch(80)의 값이며 최선 epoch 선택은 하지 않는다. 마지막 epoch가 80이 아니면 요약에서 미완료로 제외한다 | 의도적 변경 | — | Training.py:48,81,509-515. `src/repro/train_fold_seeds.py`(상단 열 설명), `src/repro/summarize_fold1_seeds.py`, `src/repro/summarize_folds.py` | 해당 없음 |
 | 체크포인트 | 공개 `my_model1~5`. 저장 호출은 학습 종료 후 1회뿐이다. 같은 줄의 주석은 "Saving every epoch"라고 되어 있어 코드와 다르다. `load=False`로 그대로 돌리면 `ii=i`(0부터)라 `my_model0`부터 저장되어 공개 `my_model1~4`를 덮어쓸 수 있다 | 공개 체크포인트는 `third_party/ghoddoosian/`에 있고 git이 추적하며 해시로 보호한다. 재학습 체크포인트는 `ii=i+1` 치환으로 `my_model<fold>.*`를 `experiments/01_fold1_seeds/`, `experiments/02_fold_seeds/`의 실행 폴더에 저장하며 `.gitignore`로 추적하지 않는다(`.npy`, `checkpoint`, `train.log`도 같다). 저장되는 모델은 마지막 epoch의 것이다. 공개 체크포인트가 어떤 실행·epoch에서 선택되었는지는 원본 저장소에 명시되지 않음 | 의도적 변경(저장 위치·이름), 공개 체크포인트의 선택 이력은 미확인 | 논문에 없음(체크포인트 선택 기준) | Training.py:395-396, 411. `.gitignore` | 논문에 없음 |
-| 입력 특징 | 저자가 제공한 `{Blinks, BlinksTest, Labels, LabelsTest}_30_Fold{1..5}.npy` 20개 | 같은 파일을 그대로 쓴다. 실행마다 해당 fold 입력 4개의 SHA-256을 `run_meta.json`에 기록한다 | 동일 | §5.2 p.7(T=30, stride 2) | `third_party/ghoddoosian/README.md:58-62`, Preprocessing.py:263-264. `src/repro/check_dataset.py` | 일치(윈도우). 피험자별 정규화 구간은 불일치, 제공 `.npy`는 1차 정규화 후·2차 정규화 전으로 판단(3.3절 g) |
-| 영상→특징 추출(`blink_video.py`, `Preprocessing.py`) | 영상에서 blink 특징을 뽑아 `.npy`를 만드는 단계. `Preprocessing.py`는 import하면 Fold3 고정으로 실행되고(262-272) 학습용 `np.save`는 주석 처리되어 있다(269-270). 학습 데이터 셔플은 시드가 없다(5) | 영상이 없어 실행하지 않았다. dlib 모델과 blink SVM이 로드되는지만 확인했다. `.npy`는 재생성하지 않았다 | 미확인(미재현) | Eq.1-5 | blink_video.py:74-92,179-181,455,464. Preprocessing.py:5,262-272. `src/repro/check_video_assets.py`, `src/repro/reproduction_blink_one_video.py` | 3.3절 g: Eq.1 불일치, Eq.2·3 일치, Eq.4 불일치, Eq.5 일치(구조)·세부 확인 불가. 이 저장소에서는 미재현 |
-| 데이터셋 | UTA-RLDD에 적용했다고만 적혀 있고 영상 수는 명시되지 않음. 원본 README·주석에 제외 영상이나 피험자 언급이 없다 | 영상은 저장소에 없고 사용하지 않는다(특징 `.npy`만 사용). 원본 `Training.py`의 fold별 `start_indices` 길이는 33, 36, 36, 36, 33이며 합은 174이다. 논문의 180이라는 수치와의 관계는 **미확정** | 미확인 | 60명, 영상 180개, 5 fold×12명(fold당 36개) p.5 §3.3. 일부 영상은 품질 사유로 무시(수 없음) p.4 §3.2 | Training.py:440-443,445,456,465,477,489. `third_party/ghoddoosian/README.md`, `data/README.md` | 불일치(fold당 영상 수, 합계). 제외 영상은 논문에 없음 |
+| 입력 특징 | 저자가 제공한 `{Blinks, BlinksTest, Labels, LabelsTest}_30_Fold{1..5}.npy` 20개 | 같은 파일을 그대로 쓴다. 실행마다 해당 fold 입력 4개의 SHA-256을 `run_meta.json`에 기록한다 | 동일 | §5.2 p.7(T=30, stride 2) | `third_party/ghoddoosian/README.md:58-62`, Preprocessing.py:263-264. `src/repro/check_dataset.py` | 일치(윈도우). 피험자별 정규화 구간은 불일치, 제공 `.npy`는 1차 정규화 후·2차 정규화 전으로 판단(3.3절 g) (2026-10-05 갱신: 이 행은 B0(저자 npy) 기준이다. B1은 우리가 만든 npy를 쓴다, 9~11절) |
+| 영상→특징 추출(`blink_video.py`, `Preprocessing.py`) | 영상에서 blink 특징을 뽑아 `.npy`를 만드는 단계. `Preprocessing.py`는 import하면 Fold3 고정으로 실행되고(262-272) 학습용 `np.save`는 주석 처리되어 있다(269-270). 학습 데이터 셔플은 시드가 없다(5) | 영상이 없어 실행하지 않았다. dlib 모델과 blink SVM이 로드되는지만 확인했다. `.npy`는 재생성하지 않았다 | 미확인(미재현) | Eq.1-5 | blink_video.py:74-92,179-181,455,464. Preprocessing.py:5,262-272. `src/repro/check_video_assets.py`, `src/repro/reproduction_blink_one_video.py` | 3.3절 g: Eq.1 불일치, Eq.2·3 일치, Eq.4 불일치, Eq.5 일치(구조)·세부 확인 불가. 이 저장소에서는 미재현 (2026-10-05 갱신: 영상 174개에 실행했다(로그 "일괄 추출 실행 결과 (2026-10-03)"). 저자 npy와 값이 일치한 영상은 피험자 2명이다(10.5절, 10.7절). 재현 여부는 미확정이다) |
+| 데이터셋 | UTA-RLDD에 적용했다고만 적혀 있고 영상 수는 명시되지 않음. 원본 README·주석에 제외 영상이나 피험자 언급이 없다 | 영상은 저장소에 없고 사용하지 않는다(특징 `.npy`만 사용). 원본 `Training.py`의 fold별 `start_indices` 길이는 33, 36, 36, 36, 33이며 합은 174이다. 논문의 180이라는 수치와의 관계는 **미확정** | 미확인 | 60명, 영상 180개, 5 fold×12명(fold당 36개) p.5 §3.3. 일부 영상은 품질 사유로 무시(수 없음) p.4 §3.2 | Training.py:440-443,445,456,465,477,489. `third_party/ghoddoosian/README.md`, `data/README.md` | 불일치(fold당 영상 수, 합계). 제외 영상은 논문에 없음 (2026-10-05 갱신: 영상 182개를 조사하고 174개를 추출했으며 B1에 167개를 포함했다(로그 "degenerate_reference 정책 변경 결과와 정정 (2026-10-03)"). 174와 180의 관계는 여전히 미확정이다) |
 | 환경(요약) | Ubuntu 16.04, TensorFlow 1.8에서 테스트. 설치 명령은 `tensorflow-gpu==1.8.0`. 패키지 버전은 TensorFlow 외에는 명시되지 않음. requirements 파일 없음 | Windows(버전은 문서에 적혀 있지 않음), CPU 전용, Python 3.6.13, TensorFlow 1.8.0. 자세한 버전은 3.2절 | OS는 의도적이지 않은 차이, TensorFlow는 동일, 나머지는 미확인 | 논문에 없음(소프트웨어 버전) | `third_party/ghoddoosian/README.md:7,23-43`, `envs/environment_tf1.yml`, `docs/REPRODUCTION_LOG.md`, `src/repro/check_environment.py` | 논문에 없음 |
 | 결정성 확인 | 원본은 시드가 없어 해당 없음 | 같은 시드로 2 epoch 스모크를 두 번 돌려 `metrics.csv`의 모든 열이 소수 6자리 문자열까지 같음을 확인했다. 시드가 다르면 epoch 1의 `train_loss_sum`이 달랐다. 이 비교는 `%.6f` 출력 기준이라 비트 단위 비교는 아니다. 다른 CPU, OS, GPU에서의 결정성은 확인하지 않았다 | 확인 범위가 한정됨 | 논문에 없음 | `docs/REPRODUCTION_LOG.md`(스모크 테스트 절) | 논문에 없음 |
 | 평가 지표 정의 | BSA는 `calc_accuracy_per_batch`, VA는 `vote_accuracy_per_video`, BSRE는 `regression_per_blink`, VRE는 `regression_per_video`. "BSA loss"는 테스트 세트에 대한 학습 손실 `loss`를 그대로 출력한 값이다 | 지표 함수는 수정하지 않고, 반환값만 감싸서 `metrics.csv`에 기록한다. 수치를 논문 값과 맞추려는 변경은 하지 않았다 | 동일(구현), 논문 대조는 3.3절 d | §5.1 p.7, Eq.12, Eq.13 | Training.py:13-51, 54-84, 87-117, 123-131, 313-335, 371-379 | BSA·BSRE·VA 일치, **VRE 불일치**, BSA loss는 논문에 없음 |
-| 재현 범위 밖(하지 않은 것) | - | 영상→특징 추출과 `.npy` 재생성, UTA-RLDD 영상 사용, 원본과 같은 OS·GPU 환경 재구성, 공개 체크포인트의 선택 이력 추적, 특징 추출 식(Eq.1~5)의 수치 재현(코드와의 읽기 대조만 수행) | 미확인 | — | 위 각 행 | 해당 없음 |
+| 재현 범위 밖(하지 않은 것) | - | 영상→특징 추출과 `.npy` 재생성, UTA-RLDD 영상 사용, 원본과 같은 OS·GPU 환경 재구성, 공개 체크포인트의 선택 이력 추적, 특징 추출 식(Eq.1~5)의 수치 재현(코드와의 읽기 대조만 수행) | 미확인 | — | 위 각 행 | 해당 없음 (2026-10-05 갱신: 영상→특징 추출, B1용 .npy 생성, UTA-RLDD 영상 사용은 S2, S3에서 했다(9~11절). 원본과 같은 OS·GPU 환경 재구성, 공개 체크포인트의 선택 이력 추적, Eq.1~5의 수치 재현은 하지 않았다) |
 
 ### 3.1 래퍼 스크립트의 메모리 치환 지점
 
@@ -54,7 +54,7 @@
 | `load=False` | `load=True` | 학습 없이 공개 체크포인트 복원·평가 | `reproduction_eval.py` |
 | 지표 함수 호출(네임스페이스 교체, 원문 치환 아님) | `regression_per_blink`, `regression_per_video`, `Train` 등을 반환값을 기록하는 함수로 감쌈 | BSRE, VRE와 평가 결과 수집 | 학습 스크립트 3종, `reproduction_eval.py` |
 | `print`(네임스페이스 교체) | 화면과 `train.log`에 함께 쓰는 함수 | 로그 보존 | `train_fold_seeds.py`, `train_fold1_seeds.py` |
-| `blink_video.py`의 `output_file = 'alert.txt'`, `path = ''`, dlib `.dat` 상대경로 | 출력 파일, 영상 경로, 환경변수로 받은 `.dat` 경로 | 영상 1개 실행. 영상이 없어 실행하지 않음 | `reproduction_blink_one_video.py` |
+| `blink_video.py`의 `output_file = 'alert.txt'`, `path = ''`, dlib `.dat` 상대경로 | 출력 파일, 영상 경로, 환경변수로 받은 `.dat` 경로 | 영상 1개 실행. 영상이 없어 실행하지 않음 | `reproduction_blink_one_video.py` (2026-10-05 갱신: `reproduction_blink_headless.py`와 `extract_blinks_batch.py`로 영상에 실행했다(로그 2026-10-02~03 항목)) |
 
 공통으로, 모든 래퍼는 작업 디렉터리를 `third_party/ghoddoosian/`로 바꿔 원본이 상대경로로 읽는 `.npy`·체크포인트가 열리게 하고, `sys.dont_write_bytecode = True`로 `__pycache__`가 생기지 않게 한다.
 근거: 위 표의 각 스크립트(`src/repro/` 아래).
@@ -195,12 +195,12 @@
 
 - **환경(요약)**: CPU 전용 실행이 원본과 다른지(원본 하드웨어가 명시되지 않음), Python, NumPy, SciPy, scikit-learn, scikit-image, dlib, OpenCV, imutils, matplotlib, protobuf 버전(원본이 명시하지 않음).
 - **체크포인트**: 공개 `my_model1~5`가 어떤 실행·epoch에서 선택되었는지.
-- **영상→특징 추출**: `blink_video.py`, `Preprocessing.py`의 재현 여부(미재현). Eq.4의 bottom 지점이 Eq.3과 같은지, Eq.5의 분모 프레임 수가 end_i까지의 값과 같은지(3.3절 g).
+- **영상→특징 추출**: `blink_video.py`, `Preprocessing.py`의 재현 여부(미재현). Eq.4의 bottom 지점이 Eq.3과 같은지, Eq.5의 분모 프레임 수가 end_i까지의 값과 같은지(3.3절 g). (2026-10-05 갱신: 영상 174개에 실행했고 저자 npy와의 일치는 피험자 2명이다(10절). Eq.4·Eq.5의 확인 불가 항목은 그대로 미확인이다)
 - **제공 `.npy`의 생성 이력**: 제공 파일이 `Preprocessing.py`로 만들어졌는지는 원본 README의 서술에 의존하며 코드만으로 확정할 수 없다(3.3절 g).
-- **데이터셋**: 174와 180의 관계, 제외 영상의 수와 목록.
+- **데이터셋**: 174와 180의 관계, 제외 영상의 수와 목록. (2026-10-05 갱신: 영상 182개, 추출 174개, B1 포함 167개는 측정됐으나 저자가 제외한 영상의 목록은 여전히 미확인이다)
 - **결정성 확인**: 다른 하드웨어·OS에서의 결정성.
 - **HM-LSTM 셀 내부**: 셀 내부 가중치 초기화(3.3절 a).
-- **재현 범위 밖(하지 않은 것)**: 3절의 해당 행에 적은 항목들.
+- **재현 범위 밖(하지 않은 것)**: 3절의 해당 행에 적은 항목들. (2026-10-05 갱신: 3절 해당 행의 갱신을 따른다)
 
 ### 논문(기준값)과 원본 코드 사이의 불일치
 
@@ -260,7 +260,7 @@
 
 ## 6. 결과 파일 안내
 
-수치는 아래 파일에서 확인한다(5절을 제외하면 이 문서에는 복사하지 않는다).
+수치는 아래 파일에서 확인한다(5절을 제외하면 이 문서에는 복사하지 않는다). (2026-10-05 갱신: B1(S2~S5)의 요약은 10~15절과 로그 2026-10-03~05 항목에 있고, 결과 파일은 저장소 밖 집계 폴더에 있다)
 
 - 공개 체크포인트 5-fold 평가: [`experiments/00_reproduction/regression_eval/`](../experiments/00_reproduction/regression_eval/)
   (이전 실행 기록과 25/25 일치한다는 기록: [`REPRODUCTION_LOG.md`](REPRODUCTION_LOG.md)의 "Stage 3 - regression test in the new structure" 절. 비교 대상의 의미는 5.5절)
@@ -269,7 +269,7 @@
 
 ## 7. 알려진 미해결 사항
 
-- **공개 체크포인트 대비 재학습 격차의 원인**: 미확인.
+- **공개 체크포인트 대비 재학습 격차의 원인**: 미확인. (2026-10-05 갱신: B1 관련 미해결과 한계는 docs/EVALUATION_PROTOCOL.md 10절과 로그 "기준선 단계 종료(B1) (2026-10-05)"를 따른다)
 - **논문 대비 공개 체크포인트 평가의 불일치 3칸(Fold3 VA, Fold3 VRE, 평균 VRE)의 원인**: 미확인(5절).
 - **논문과 원본 코드 사이의 불일치 7건**(이산화 경계, VRE 식, fold별 영상 수, 정규화 구간, Eq.1 계수, Eq.4 분모, Eq.7·8 batch norm)의 원인과 영향: 미확인(4절).
 - **영상 수 174/180**: 미확정(3.3절 e).
@@ -292,10 +292,10 @@
 | P-08 | 논문-코드 차이 | frequency 분모 `number_of_frames`는 얼굴이 검출된 프레임만 센다. [확실] (코드 읽기). 논문 Eq.5는 100 × (blink_i까지의 blink 수) / (end_i까지의 프레임 수)이고 누적 정의이다. [확실] (사용자 확인, 논문 PDF 본문 확인). 구조(100 × 누적 blink 수 / 누적 프레임 수)는 같고, 코드는 분모에 얼굴이 검출된 프레임만 센다는 점이 다르다. [확실]. (2026-10-03 갱신) 출력 한 줄은 `%.4f` 5열 [누적 blink 수, 100 × 누적 blink 수 / number_of_frames, 진폭, 지속 시간, 속도]이다(`third_party/ghoddoosian/blink_video.py:455-464`, 추적 분기 `third_party/ghoddoosian/blink_video.py:541-548`). 분모 `number_of_frames`는 검출기가 얼굴을 낸 프레임만 센다(`third_party/ghoddoosian/blink_video.py:379-380`). 추적으로 이어진 프레임은 세지 않는다. [확실] (코드 읽기) | `third_party/ghoddoosian/blink_video.py:350`, `third_party/ghoddoosian/blink_video.py:380`, `third_party/ghoddoosian/blink_video.py:455`, 논문 PDF 본문 확인(저장소에는 PDF 없음, 4~8쪽 및 §3.2) | [확실] (논문은 사용자 확인) | 얼굴 미검출 프레임이 많은 영상은 분모가 작아져 frequency 값이 커진다. [가능성 높음] (산술). 크기는 미검증 | 수정하지 않음 |
 | P-09 | 논문-코드 차이 | 피험자별 정규화 기준 구간: 코드는 alert blink의 **마지막 1/3**(`Freq[-bunch_size:]` 등)으로 평균·표준편차를 구하고 앞쪽 2/3만 학습·테스트에 쓴다. [확실] (코드 읽기). 논문 Eq.6의 정규화는 alert 상태 blink의 **처음 1/3**로 평균·표준편차를 구하며 그 구간은 학습·평가에 쓰지 않는다. [확실] (사용자 확인, 논문 PDF 본문 확인) | `third_party/ghoddoosian/Preprocessing.py:56-77`(`gen`), `third_party/ghoddoosian/Preprocessing.py:168-190`(`Preprocess`), `docs/IMPLEMENTATION_DIFF.md:157`, 논문 PDF 본문 확인(저장소에는 PDF 없음, 4~8쪽 및 §3.2) | [확실] (논문은 사용자 확인) | 정규화 통계가 달라져 특징 값이 달라진다. [가능성 높음]. 학습 성능에 미치는 영향은 미검증 | 수정하지 않음. 제공 `.npy`를 그대로 사용 |
 | P-10 | 논문-코드 차이 | 이산화 경계: 코드는 예측을 0~10으로 클립한 뒤 `out // 3.34`의 몫(0, 1, 2)으로 라벨을 고르므로 경계가 3.34와 6.68이다. 논문 Eq.10의 경계는 3.3과 6.6이다. [확실] (사용자 확인, 논문 PDF 본문 확인). 코드의 `6.68`은 상수로 적혀 있지 않고 몫 2의 시작점으로 정해진다. [확실] (코드 읽기). 회귀 오차의 S 상수는 3.3과 6.6을 따로 쓴다. [확실] | `third_party/ghoddoosian/Training.py:28`, `third_party/ghoddoosian/Training.py:72`, `third_party/ghoddoosian/Training.py:99`, `third_party/ghoddoosian/Training.py:108`, `third_party/ghoddoosian/Training.py:126`(3.34), `third_party/ghoddoosian/Training.py:31`, `third_party/ghoddoosian/Training.py:33`, `third_party/ghoddoosian/Training.py:40`, `third_party/ghoddoosian/Training.py:42`(S 상수), 논문 PDF 본문 확인(저장소에는 PDF 없음, 4~8쪽 및 §3.2) | [확실] (논문은 사용자 확인) | 3.3~3.34, 6.6~6.68 사이 예측의 라벨이 논문 정의와 달라진다. [확실] (산술). 지표 수치에 미치는 크기는 미검증 | 수정하지 않음 |
-| P-11 | 저자 코드 | 테스트 영상별 시퀀스 경계 `start_indices`는 fold별로 하드코딩돼 있고, 주석은 저자의 `Blinks`/`BlinksTest` 배열 기준이며 특징을 새로 만들면 다시 맞춰야 한다고 적는다. [확실] (코드 읽기) | `third_party/ghoddoosian/Training.py:440-443`(주석), `third_party/ghoddoosian/Training.py:444-498`(목록), `third_party/ghoddoosian/Training.py:502` | [확실] | 특징을 다시 만들면 경계를 재계산해야 VA, VRE, BSRE가 맞는다. [확실] (경계가 `Training.py:13-117`에서 쓰임). 재계산 도구는 없다 | 수정하지 않음. 재계산 도구는 미구현 |
+| P-11 | 저자 코드 | 테스트 영상별 시퀀스 경계 `start_indices`는 fold별로 하드코딩돼 있고, 주석은 저자의 `Blinks`/`BlinksTest` 배열 기준이며 특징을 새로 만들면 다시 맞춰야 한다고 적는다. [확실] (코드 읽기) | `third_party/ghoddoosian/Training.py:440-443`(주석), `third_party/ghoddoosian/Training.py:444-498`(목록), `third_party/ghoddoosian/Training.py:502` | [확실] | 특징을 다시 만들면 경계를 재계산해야 VA, VRE, BSRE가 맞는다. [확실] (경계가 `Training.py:13-117`에서 쓰임). 재계산 도구는 없다 | 수정하지 않음. 재계산 도구는 미구현 (2026-10-05 갱신: `reproduction_build_sequences.py`가 우리 npy용 start_indices JSON을 생성한다(9절). 저자 npy용 값은 하드코딩 그대로이다) |
 | P-12 | 저자 데이터 | 제공 `.npy`는 피험자별 정규화(1차) 후 값이라 원시 특징을 복원할 수 없다. 피험자별 평균·표준편차는 어디에도 저장되지 않는다. [가능성 높음] (코드에서 도출). 측정: 열 0의 최솟값 -108.51, 최댓값 705.64 등 음수를 포함한다. [확실] (측정) | `third_party/ghoddoosian/Preprocessing.py:11-21`, `third_party/ghoddoosian/Preprocessing.py:59-77`(통계는 지역 변수), `docs/IMPLEMENTATION_DIFF.md:33`, `third_party/ghoddoosian/Blinks_30_Fold1.npy` 등 20개 | [가능성 높음] | 영상에서 새로 뽑은 특징과 제공 `.npy`를 직접 비교하려면 같은 방식의 1차 정규화를 다시 해야 한다. [가능성 높음] | 수정하지 않음 |
 | P-13 | 논문-코드 일치(정정) | 2차 정규화는 코드와 논문 모두에 있다. 코드는 학습 `Blinks`의 특징별 평균·표준편차로 학습·테스트 모두 z-score를 한다. [확실] (코드 읽기). 논문에도 개인별 정규화 뒤 개인 간 2차 정규화(평균 0, 분산 1)가 있다. [확실] (사용자 확인, 논문 PDF 본문 확인). 평균·표준편차는 패딩 행(전부 0)을 포함한 전체 배열로 구한다. [확실] (코드 읽기). 패딩 행은 Fold1 train 221370행 중 193행(0.09%)이다. [확실] (측정) | `third_party/ghoddoosian/Training.py:420-431`, `docs/IMPLEMENTATION_DIFF.md:158`, `docs/REPRODUCTION_LOG.md:577-588`(정정 항목), 논문 PDF 본문 확인(저장소에는 PDF 없음, 4~8쪽 및 §3.2) | [확실] (논문은 사용자 확인) | `.npy`(1차 정규화 후)에 한 번 더 z-score가 걸린다. [확실] (코드 읽기). 패딩 포함이 통계에 주는 영향은 작아 보이나 미검증 | 정정으로 기록. 수정하지 않음 |
-| P-14 | 저자 데이터 | Fold3 test(`BlinksTest_30_Fold3.npy`)에 Fold1, 2, 4, 5의 train 파일 어디에도 없는 시퀀스 13개(인덱스 2183~2195 = 영상 34~36, 라벨 0/5/10이 1/6/6)가 있다. [확실] (측정). 영상 24와 27(둘 다 라벨 10, 시퀀스 93개씩)과 영상 35와 36(라벨 5와 10, 6개씩)은 시퀀스 단위로 바이트까지 일치한다. [확실] (측정). Fold3 train에는 중복이 없고 Fold1, 2, 4, 5 train에는 93쌍의 중복이 있다. [확실] (측정). 원인은 미검증이다. H1/H2의 정의와 사전 등록은 Fold3 재평가 작업 시 `docs/REPRODUCTION_LOG.md`에 기록될 예정이다(현재 로그에는 없다). | `third_party/ghoddoosian/BlinksTest_30_Fold3.npy`, `third_party/ghoddoosian/LabelsTest_30_Fold3.npy`, `third_party/ghoddoosian/Training.py:465-466`(Fold3 `start_indices`) | 측정 [확실], 원인 미검증 | Fold3의 VA·VRE가 논문과 다른 것(5.1절)과의 관련은 [추측], 미검증 | 검증 대기(미검증). 가설을 쓰려면 별도 사전 등록이 필요하다 |
+| P-14 | 저자 데이터 | Fold3 test(`BlinksTest_30_Fold3.npy`)에 Fold1, 2, 4, 5의 train 파일 어디에도 없는 시퀀스 13개(인덱스 2183~2195 = 영상 34~36, 라벨 0/5/10이 1/6/6)가 있다. [확실] (측정). 영상 24와 27(둘 다 라벨 10, 시퀀스 93개씩)과 영상 35와 36(라벨 5와 10, 6개씩)은 시퀀스 단위로 바이트까지 일치한다. [확실] (측정). Fold3 train에는 중복이 없고 Fold1, 2, 4, 5 train에는 93쌍의 중복이 있다. [확실] (측정). 원인은 미검증이다. H1/H2의 정의와 사전 등록은 Fold3 재평가 작업 시 `docs/REPRODUCTION_LOG.md`에 기록될 예정이다(현재 로그에는 없다). | `third_party/ghoddoosian/BlinksTest_30_Fold3.npy`, `third_party/ghoddoosian/LabelsTest_30_Fold3.npy`, `third_party/ghoddoosian/Training.py:465-466`(Fold3 `start_indices`) | 측정 [확실], 원인 미검증 | Fold3의 VA·VRE가 논문과 다른 것(5.1절)과의 관련은 [추측], 미검증 | 검증 대기(미검증). 가설을 쓰려면 별도 사전 등록이 필요하다 (2026-10-05 갱신: H1/H2는 로그에 정의된 적이 없다. 동일 블록 쌍의 위치는 10.2절, 10.6절, 우리 영상과 근사 일치하는 영상은 없다. 원인은 미검증이다) |
 | P-15 | 논문-코드 차이 | 영상 수: 디스크 182개. [확실] (측정). 논문은 60명 × 3 = 180개 영상이다. [확실] (사용자 확인, 논문 PDF 본문 확인). §3.2에 품질 때문에 일부 영상을 제외했다는 서술은 있으나 제외 개수는 논문에 명시적으로 보고되지 않음. 저자 코드의 테스트 영상 174개(fold별 33/36/36/36/33). [확실] (코드 읽기). ID 32(Fold3_part2)와 49(Fold5_part1)는 클래스 10 파일 `10_1`, `10_2`를 갖는다. [확실] (측정). 디스크 fold별 영상 수는 36/36/37/36/37이다. [확실] (측정). 저자가 어떤 영상을 제외했는지는 [추측], 미검증 | `configs/video_inventory.csv`, `third_party/ghoddoosian/Training.py:445-446`, `third_party/ghoddoosian/Training.py:456-457`, `third_party/ghoddoosian/Training.py:465-466`, `third_party/ghoddoosian/Training.py:477-478`, `third_party/ghoddoosian/Training.py:489-490`, 논문 PDF 본문 확인(저장소에는 PDF 없음, 4~8쪽 및 §3.2) | 측정·코드·논문 [확실] (논문은 사용자 확인), 제외 영상 [추측] | 영상 목록이 저자의 것과 다르면 영상 단위 지표를 직접 비교할 수 없다. [가능성 높음] | 미해결(3.3절 e) |
 | P-16 | 우리 도구 | 기존 단일 영상 래퍼는 `os.chdir(ROOT)`로 작업 폴더를 바꾼 뒤 출력 경로를 `os.path.abspath`로 만들어, 상대 출력 경로가 `third_party/ghoddoosian/` 안으로 해석된다. [확실] (코드 읽기). 헤드리스 러너는 출력 경로를 절대경로로 만드는 `resolve_output_path`를 `prepare_runtime`(`os.chdir`)보다 먼저 호출해 해결했다. [확실] (코드 읽기). 기존 래퍼는 수정하지 않았다 | `src/repro/reproduction_blink_one_video.py:19`(`chdir`), `src/repro/reproduction_blink_one_video.py:39`(`abspath`), `src/repro/reproduction_blink_headless.py:74`, `src/repro/reproduction_blink_headless.py:189`, `src/repro/reproduction_blink_headless.py:236`, `src/repro/reproduction_blink_headless.py:243` | [확실] | 기존 래퍼에 상대 출력 경로를 주면 추적 파일 영역에 쓸 수 있다. [확실] (코드 읽기) | 헤드리스 러너에서 해결됨. 기존 래퍼는 미수정(상대 출력 경로를 쓰지 않는다) |
 | P-17 | 우리 도구 | 재학습(시드 3개, 5-fold 평균)의 VA가 공개 체크포인트보다 낮다: 0.556 ± 0.036 대 0.649(논문 0.652), 표기값 차이 0.093. [확실] (측정, 표기값). BSRE 2.874 대 1.901, VRE 1.953 대 1.158도 같은 방향이다. [확실] (측정, 표기값). 원인은 알려지지 않았다 | `README.md:48-54`, `experiments/02_fold_seeds/aggregate_seeds123.md:14`, `docs/IMPLEMENTATION_DIFF.md:272` | 수치 [확실], 원인 미상 | 재현이 완전하지 않다. [확실] | 열린 문제. 원인 미검증 |
@@ -304,7 +304,7 @@
 | P-20 | 우리 도구(배치 실행 관측) | 서로 다른 영상의 소요 시간이 0.1초 차이로 묶인다(사용자 보고: 1920.5/1920.5/1920.6, 3748.7/3748.7/3748.8, 1188.0/1188.1, 1865.1/1865.1). 매니페스트에서 같은 시각에 시작해 같은 시각에 끝난 묶음 4개를 확인했다(예: Fold1_part1/04/0.mp4, Fold1_part1/04/10.mp4, Fold5_part1/49/10_1.mp4가 19:45:57에 시작해 20:17:58에 종료). 같은 묶음의 영상은 frame_count와 파일 크기가 달라 같은 파일이 아니다. 시각이 다른데 소요 값만 비슷한 경우(Fold1_part1/05/10.MOV, Fold1_part2/09/10.mp4와 Fold5_part1/52/10.MOV)도 있어 일부는 우연일 수 있다. [확실] (측정). 같은 시각에 끝난 묶음의 원인은 미검증이다. 여러 프로세스에 공통인 요인이 끝나는 시각을 정했을 가능성이 있다. [추측] | `docs/REPRODUCTION_LOG.md:738-755`(1절), 측정(매니페스트의 `started`, `ended`, `elapsed_s` 열, 저장소 밖) | 측정 [확실], 원인 미검증 | 소요 시간과 fps를 영상별 처리 속도로 해석할 수 없다. [가능성 높음]. 합산 처리량(전체 프레임 / 경과)은 영향이 적다. [가능성 높음] | 기록만 함. 원인 조사는 보류(방침, 8.3절) |
 | P-21 | 저자 코드(blink 추출 결과) | blink 행이 30 미만인 영상이 20개이다(alert 11, semisleepy 5, sleepy 4. blink 0행은 Fold2_part2/23/0.mp4 하나). [확실] (측정). 원인은 규명하지 않았다. 두 가설을 병기한다. (가설 1) 실제로 눈을 덜 깜빡이는 영상이다. 미검증. (가설 2) blink 후보가 SVM·진폭 기준으로 거부되거나 얼굴 검출이 부족해 기록이 적다. 미검증. 두 가설은 구분되지 않았다(사람이 직접 센 횟수와 콘솔의 승인·거부 로그를 비교하지 않았다). 20개 중 Fold2_part2/23/0, 23/5, 23/10과 Fold5_part1/49/0은 얼굴 검출 비율도 0.5 미만이다(P-19). [확실] (측정) | `docs/REPRODUCTION_LOG.md:738-755`(1절), `docs/REPRODUCTION_LOG.md:769-773`(4절), `third_party/ghoddoosian/blink_video.py:220-221`, `third_party/ghoddoosian/blink_video.py:232`, `third_party/ghoddoosian/blink_video.py:236`, `third_party/ghoddoosian/blink_video.py:239` | 측정 [확실], 원인 미검증 | blink가 30개 이하인 영상은 `Preprocessing.py`가 시퀀스 1개(앞쪽 0 패딩)로 만든다(`third_party/ghoddoosian/Preprocessing.py:27-30`). [확실] (코드 읽기). alert 영상은 앞 2/3만 쓰므로(n_eff = n − n//3, `third_party/ghoddoosian/Preprocessing.py:56-57`) blink 45행 이하이면 n_eff가 30 이하이다. [확실] (산술) | 기록만 함. 검출기 설정과 파이프라인은 바꾸지 않는다(방침) |
 | P-22 | 우리 도구(배치 매니페스트) | 매니페스트에서 `face_frames`가 비어 있는 영상이 2개이다: Fold4_part1/40/10.mp4, Fold1_part2/12/5.mp4. 둘 다 status ok, 종료 코드 0, blink 218행과 109행이다. [확실] (측정). 도구는 자식 출력에서 `not grabbed` 다음 줄의 숫자를 읽지 못하면 이 칸을 비운다. [확실] (코드 읽기). 읽지 못한 이유는 조사하지 않았다. 미검증 | `src/repro/extract_blinks_batch.py:294-305`(`parse_face_frames`), `third_party/ghoddoosian/blink_video.py:353-356`, `docs/REPRODUCTION_LOG.md:738-755`(1절) | 측정 [확실], 원인 미검증 | face_frames 집계(95.6%)에서 이 2개가 빠진다(frame_count 합 36,867). [확실] (계산) | 미조사. 보류(8.3절) |
-| P-23 | 우리 도구·데이터 구성 | 재추출 데이터의 피험자·영상 구성이 저자 데이터와 다를 수 있다. 우리는 디스크의 영상 182개 중 manual_flags 8개를 뺀 174개를 추출했고 저자 코드의 테스트 영상은 174개(33/36/36/36/33)이다(P-15). 개수가 같아도 같은 집합이라는 뜻은 아니다. 저자가 어떤 영상을 제외했는지는 확인된 바 없다. 미확인 [확실]. 검출이 잘 안 된 영상(피험자 23 포함)은 사용자 방침(2026-10-03)에 따라 기록만 하고 검출기 설정과 파이프라인은 바꾸지 않는다. 이런 영상을 포함한 결과와 뺀 결과를 나란히 보고(B0/B1 병행 보고)하는 것을 권고로 표시한다. B0/B1의 정의는 이 저장소 문서에 없다(미정의). 이후 단계에서 영상이 제외되더라도 기준 영상이 없다는 기계적 결과이며 저자의 제외에 대한 주장이 아니다. [확실] | `docs/REPRODUCTION_LOG.md:762-768`(3절), `third_party/ghoddoosian/Training.py:445-446`, `third_party/ghoddoosian/Training.py:456-457`, `third_party/ghoddoosian/Training.py:465-466`, `third_party/ghoddoosian/Training.py:477-478`, `third_party/ghoddoosian/Training.py:489-490`, 본 절의 P-15 | 저자 제외 여부 미확인 | 비교 대상이 달라지면 저자 값과의 직접 비교가 어려워진다. [가능성 높음] | 권고(병행 보고)이며 이번 단계에서는 하지 않음 |
+| P-23 | 우리 도구·데이터 구성 | 재추출 데이터의 피험자·영상 구성이 저자 데이터와 다를 수 있다. 우리는 디스크의 영상 182개 중 manual_flags 8개를 뺀 174개를 추출했고 저자 코드의 테스트 영상은 174개(33/36/36/36/33)이다(P-15). 개수가 같아도 같은 집합이라는 뜻은 아니다. 저자가 어떤 영상을 제외했는지는 확인된 바 없다. 미확인 [확실]. 검출이 잘 안 된 영상(피험자 23 포함)은 사용자 방침(2026-10-03)에 따라 기록만 하고 검출기 설정과 파이프라인은 바꾸지 않는다. 이런 영상을 포함한 결과와 뺀 결과를 나란히 보고(B0/B1 병행 보고)하는 것을 권고로 표시한다. B0/B1의 정의는 이 저장소 문서에 없다(미정의). 이후 단계에서 영상이 제외되더라도 기준 영상이 없다는 기계적 결과이며 저자의 제외에 대한 주장이 아니다. [확실] | `docs/REPRODUCTION_LOG.md:762-768`(3절), `third_party/ghoddoosian/Training.py:445-446`, `third_party/ghoddoosian/Training.py:456-457`, `third_party/ghoddoosian/Training.py:465-466`, `third_party/ghoddoosian/Training.py:477-478`, `third_party/ghoddoosian/Training.py:489-490`, 본 절의 P-15 | 저자 제외 여부 미확인 | 비교 대상이 달라지면 저자 값과의 직접 비교가 어려워진다. [가능성 높음] | 권고(병행 보고)이며 이번 단계에서는 하지 않음 (2026-10-05 갱신: B0/B1의 정의는 docs/EVALUATION_PROTOCOL.md 1절에 있다) |
 
 ### 8.1 --show 사용 메모 (2026-10-03)
 
@@ -547,3 +547,28 @@
 - 피험자 57명의 군집 부트스트랩 percentile 구간이 충분히 보수적인지(커버리지)는 확인하지 못했다. fold 구조(피험자가 하나의 fold에만 속함)와 fold별 학습 결과의 차이는 재표집에 반영되지 않았다. 미검증
 - 새 모델 대 B1의 ΔVA 구간 폭이 이번에 잰 쌍(반폭 0.075~0.085)과 비슷하다는 가정으로 검출 가능한 효과 크기를 "대략 0.08~0.09 이상"이라고 적었다. 이 값은 [추측]이다. 미검증
 - 0을 포함하는 구간은 "차이가 없다"의 증거가 아니라 이 표본으로는 검출할 수 없다는 뜻이다. [가능성 높음]
+
+
+## 16. 문서 정리 갱신 목록 (2026-10-05)
+
+문서 정리 작업(로그 "문서 정리 사전 등록 (2026-10-05)", "문서 정리 결과 (2026-10-05)")에서 오래된 서술을 지우지 않고 해당 줄에 "(2026-10-05 갱신: ...)"을 덧붙였다. 새 측정은 없고 근거는 기존 로그 항목이다. 새 정리 문서의 읽는 순서는 `docs/README.md`에 있다.
+
+| 줄(갱신 전 기준) | 갱신한 내용 | 근거 |
+|---|---|---|
+| 6 | 10~15절에 B1 결과 수치의 요약이 있다(성능 수치를 본문에 복사하지 않는다는 서술과 모순) | 10~15절 |
+| 33 | 입력 특징 행은 B0 기준이고 B1은 우리가 만든 npy를 쓴다 | 9~11절 |
+| 34 | 영상→특징 추출을 영상 174개에 실행했고 저자 npy와의 값 일치는 피험자 2명, 재현 여부는 미확정 | 로그 "일괄 추출 실행 결과 (2026-10-03)", 10.5절, 10.7절 |
+| 35 | 영상 182개 조사, 174개 추출, B1에 167개 포함. 174와 180의 관계는 미확정 | 로그 "degenerate_reference 정책 변경 결과와 정정 (2026-10-03)" |
+| 39 | 영상→특징 추출, B1용 npy 생성, 영상 사용은 S2, S3에서 했다. 환경 재구성, 선택 이력 추적, Eq.1~5 수치 재현은 하지 않았다 | 9~11절 |
+| 57 | 헤드리스 러너와 배치 도구로 영상에 실행했다 | 로그 2026-10-02~03 항목 |
+| 198 | 영상 174개에 실행, 저자 npy와의 일치는 피험자 2명. Eq.4·Eq.5 항목은 미확인 유지 | 10절 |
+| 200 | 영상 182/174/167개는 측정됐으나 저자가 제외한 영상은 미확인 | 로그 "degenerate_reference 정책 변경 결과와 정정 (2026-10-03)" |
+| 203 | 3절 해당 행의 갱신을 따른다 | 3절 |
+| 263 | B1 요약은 10~15절과 로그 항목, 결과 파일은 저장소 밖 집계 폴더 | 10~15절 |
+| 272 | B1 관련 미해결과 한계는 EVALUATION_PROTOCOL.md 10절과 로그 "기준선 단계 종료(B1) (2026-10-05)"를 따른다 | 같은 항목 |
+| 295 (P-11) | `reproduction_build_sequences.py`가 우리 npy용 start_indices JSON을 생성한다. 저자 npy용 값은 하드코딩 그대로 | 9절 |
+| 298 (P-14) | H1/H2는 로그에 정의된 적이 없다. 동일 블록 쌍의 위치와 근사 일치 결과는 10.2절, 10.6절 | 10절 |
+| 307 (P-23) | B0/B1의 정의는 EVALUATION_PROTOCOL.md 1절에 있다("미정의" 서술이 오래됨) | `EVALUATION_PROTOCOL.md` 1절 |
+
+- 같은 수치가 다르게 적힌 곳 중 바로잡지 않은 것: 보호 파일 수 41개(로그 Session 2)와 44개(이후)는 시점 차이이고, "174"는 저자 코드의 테스트 영상 174개, 우리 추출 대상 174개, 우리가 B1에 포함한 영상 167개로 뜻이 다르다(`docs/REPRODUCTION_REPORT.md` 3절에 구분해 적었다). VA 표기의 자릿수(0.649, 0.6495, 0.649495)와 B1 0.586(fold 평균) 대 0.5848(합산)은 정의가 다른 값이다.
+- 미확인으로 남긴 것: B1 VRE의 fold별 시드 SD(로그 항목에 없음), S3·S4·S5의 소요 시간(로그에 없음), 논문 원문과의 대조(논문 PDF는 저장소에 없음).

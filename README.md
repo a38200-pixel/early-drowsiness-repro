@@ -1,13 +1,15 @@
 # early-drowsiness-repro
 
-졸음 조기 탐지 논문(arXiv:1904.07312)의 baseline을 UTA-RLDD 데이터셋에서 재현한 프로젝트입니다. 원저자의 공개 코드를
+졸음 조기 탐지 논문(arXiv:1904.07312)의 baseline을 UTA-RLDD 데이터셋에서 재현하려고 시도한 프로젝트입니다(어디까지 일치하는지는 아래 "결과"와 `docs/REPRODUCTION_REPORT.md`에 있습니다). 원저자의 공개 코드를
 기반으로 하며, 투명하고 검증 가능한 재현 기록을 남기는 것이 목적입니다. 원본 코드는 수정 없이 vendoring했고,
 재현을 위해 추가한 것은 모두 별도의 스크립트와 로그로 분리했습니다.
 
 ## 현재 상태
 
-- **완료:** 공개 체크포인트(`my_model1..5`) 5-fold 평가와 논문 Table 2·3 대조, 재학습 3시드(80 epoch) 집계. 결과는 아래 "결과" 절에 있습니다.
-- **하지 않은 것:** 영상→특징 추출 재현, 영상 수 174/180 확정, 개선 실험.
+(2026-10-05 기준으로 정정했습니다. 단계 이름 S0~S5의 뜻은 [docs/REPRODUCTION_REPORT.md](docs/REPRODUCTION_REPORT.md), 문서 지도는 [docs/README.md](docs/README.md)에 있습니다.)
+
+- **완료:** S0 공개 체크포인트(`my_model1..5`) 5-fold 평가와 논문 Table 2·3 대조, S1 저자 npy 재학습 3시드(80 epoch) 집계(B0), S2 영상 174개 blink 재추출(회전 조사 포함), S3 시퀀스 생성, S4 우리 데이터(B1) 학습(시드 3개 × 5-fold), S5 체크포인트 영상별 평가·영상 단위 진단·불확실성 추정. 결과는 아래 "결과" 절에 있습니다.
+- **하지 않은 것:** 영상 수 174/180의 확정(저자가 어떤 영상을 제외했는지는 미확인), 개선 실험. 재추출한 특징은 저자 npy와 영상 단위로 거의 일치하지 않습니다(값이 일치한 영상은 피험자 2명이며 원인은 미검증).
 
 ## 결과
 
@@ -84,25 +86,56 @@ Fold1은 시드 1~5도 실행했습니다. 보고값은 각 실행의 마지막 
 - BSA loss는 논문에 정의가 없는 항목입니다. 정의는 [docs/IMPLEMENTATION_DIFF.md](docs/IMPLEMENTATION_DIFF.md)를 참고하세요.
 - 지표·전처리 정의가 논문 서술과 다른 부분이 있습니다. 세부는 [docs/IMPLEMENTATION_DIFF.md](docs/IMPLEMENTATION_DIFF.md)를 참고하세요.
 
-### 4. 이번 단계에서 하지 않은 것
+### 4. B1 기준선 결과 요약 (우리 재추출 데이터, 시드 3개, 마지막 epoch)
 
-- 영상→특징 추출 재현(입력은 저자가 제공한 특징 파일 `.npy`입니다)
-- 영상 수 174/180의 확정
+B1은 우리가 영상에서 다시 뽑은 blink로 만든 시퀀스(영상 167개, 피험자 57명)로 저자 코드·하이퍼파라미터 그대로 학습한 결과입니다. **위 1~3절의 저자 npy 기반 표와는 영상 집합이 달라 같은 비교가 아닙니다.** 상태는 "일치/불일치/미확정/미검증"으로만 적습니다. 상세와 근거는 [docs/REPRODUCTION_REPORT.md](docs/REPRODUCTION_REPORT.md)의 5절입니다.
+
+| 항목 | 값 | 출처 |
+|---|---|---|
+| 5-fold 평균 영상 단위 VA | 0.586 ± 0.015 (시드 3개, SD는 n−1) | 로그 "B1 기준선 학습 결과 집계 (2026-10-04)" |
+| 5-fold 평균 VRE | 1.498 ± 0.282 | 같은 항목 |
+| 클래스별 영상 정확도(시드 합산, 마지막 epoch 체크포인트) | 클래스 0 0.731, 5 0.327, 10 0.698 | 로그 "B1 체크포인트 영상별 평가 결과 (2026-10-04)" |
+| 영상 단위 진단(재현이 아닌 한계 분석) | 로지스틱 0.540, RF 0.559, 다수 클래스 0.341 | 로그 "영상 단위 진단 기준선 결과 (2026-10-04)" |
+| B1 VA의 95% 구간(피험자 군집 부트스트랩) | 0.5848 [0.5302, 0.6380] | 로그 "기준선 불확실성 추정 결과 (2026-10-05)" |
+| ΔVA B1 − RF | +0.0279 [−0.0575, 0.1118] (0 포함) | 같은 항목 |
+| 참고치: B0(저자 npy 재학습), 공개 체크포인트, 논문 | VA 0.556 ± 0.036, 0.649, 0.652 | 위 2절 표, `docs/IMPLEMENTATION_DIFF.md` P-17 |
+
+- 이 표본(영상 167개)으로는 B1과 영상 단위 진단 분류기의 VA 차이를 구분할 수 없습니다(구간이 0을 포함). 차이가 없다는 증거는 아닙니다.
+- 개선 실험은 B1 기준선 대비로 평가하며 규칙은 [docs/EVALUATION_PROTOCOL.md](docs/EVALUATION_PROTOCOL.md)에 있습니다.
+
+### 5. 하지 않은 것 (2026-10-05 기준)
+
+- 영상 수 174/180의 확정(저자가 어떤 영상을 제외했는지는 미확인)
 - 개선 실험
+- 재추출한 특징과 저자 npy의 영상 단위 일치(값이 일치한 영상은 피험자 2명, 원인 미검증)
 
 ## 구조
 
 ```
 third_party/ghoddoosian/   원본 코드, 체크포인트, 특징 파일(바이트 단위로 동일, MIT; THIRD_PARTY.md 참고)
-src/repro/                 환경/데이터셋/자산 점검, 공개 체크포인트 평가, 시드별 재학습, 집계(aggregate_seeds.py), 영상 1개 blink 실행
+src/repro/                 스크립트 27개. S0~S1: check_environment, check_dataset, check_video_assets, reproduction_eval,
+                           train_fold1_seeds, train_fold_seeds, reproduction_train_fold1(레거시), summarize_fold1_seeds, summarize_folds,
+                           aggregate_seeds. S2: inventory_videos, orientation_common, survey_orientation, review_orientation,
+                           reproduction_blink_one_video, reproduction_blink_headless, extract_blinks_batch, summarize_batch.
+                           S3: reproduction_build_sequences, compare_with_author_npy. S4: reproduction_train_baseline.
+                           S5: summarize_training, evaluate_baseline_checkpoints, diagnose_video_level_baseline,
+                           estimate_baseline_uncertainty. 공용: common, publish_guard. 각 스크립트 맨 위 주석에 역할과 사용법이 있음
+scripts/                   run_fold1_seeds.bat, run_folds_seed.bat (B0 재학습 일괄 실행)
 experiments/00_reproduction/   보관된 로그와 공개 체크포인트 평가 결과
 experiments/01_fold1_seeds/    Fold1 시드 1~5 재학습 결과
 experiments/02_fold_seeds/     Fold2~5 재학습 결과와 집계 파일(aggregate_seeds123.md/.csv)
-configs/                   protected_manifest.sha256(해시 44개), image_publishable.csv
+configs/                   protected_manifest.sha256(해시 44개), image_publishable.csv, video_inventory.csv,
+                           video_manual_flags.csv, video_orientation_survey.csv, video_orientation_overrides.csv
 envs/environment_tf1.yml   conda 환경(Python 3.6, TensorFlow 1.8)
 data/README.md             데이터 입수 방법(저장소에는 데이터를 넣지 않음)
-docs/REPRODUCTION_LOG.md   오류를 포함한 단계별 기록
+docs/README.md             문서 지도(기록류와 정리 문서, 독자별 읽는 순서)
+docs/REPRODUCTION_LOG.md   오류를 포함한 날짜순 단계별 기록(추가만 함)
+docs/IMPLEMENTATION_DIFF.md  원본 대비 차이, 문제점 목록, 단계별 메모
+docs/REPRODUCTION_REPORT.md  재현 보고서, docs/CLAIMS_LEDGER.md 주장 장부, docs/PIPELINE_RUNBOOK.md 실행 안내,
+                           docs/DECISIONS.md 결정 기록, docs/EVALUATION_PROTOCOL.md 개선 실험 평가 규칙
 ```
+
+S2~S5의 산출물(blink txt, 시퀀스 npy, B1 학습 출력, 집계 결과)은 용량과 데이터 이용 지침 때문에 저장소 밖에 둡니다(경로는 환경변수로 받음, [docs/PIPELINE_RUNBOOK.md](docs/PIPELINE_RUNBOOK.md) 참고).
 
 원본 대비 차이: [docs/IMPLEMENTATION_DIFF.md](docs/IMPLEMENTATION_DIFF.md)
 
@@ -133,7 +166,10 @@ python src/repro/check_video_assets.py
 python src/repro/reproduction_blink_one_video.py <영상 경로>
 ```
 
-재학습은 `src/repro/train_fold1_seeds.py`(Fold1)와 `src/repro/train_fold_seeds.py`(지정 fold)로 하고,
+S2~S5(영상 재추출, 시퀀스 생성, B1 학습, 평가)의 명령과 환경변수는 [docs/PIPELINE_RUNBOOK.md](docs/PIPELINE_RUNBOOK.md)에 있습니다.
+포트폴리오 형식으로의 재구성은 데모 이후에 합니다.
+
+재학습(B0)은 `src/repro/train_fold1_seeds.py`(Fold1)와 `src/repro/train_fold_seeds.py`(지정 fold)로 하고,
 `scripts/run_fold1_seeds.bat`, `scripts/run_folds_seed.bat`가 이를 순서대로 실행합니다.
 `src/repro/reproduction_train_fold1.py`는 **레거시**입니다. 다시 실행하면 `experiments/00_reproduction/fold1_training/`의
 기존 파일을 덮어쓸 수 있으니 쓰지 마세요.
@@ -154,8 +190,8 @@ UTA-RLDD 영상, dlib 랜드마크 모델, 그로부터 만든 프레임은 **�
 
 - 재학습: 시드 1~3 결과는 위 "결과" 절에 있고, 공개 체크포인트와의 차이의 원인은 확인하지 못했습니다. 이전 Fold1 단일 실행 로그가
   `experiments/00_reproduction/fold1_training/`에 보관돼 있지만 위 집계에는 포함하지 않았습니다.
-- 입력은 저자가 제공한 특징 파일(`.npy`)입니다. 영상에서 특징을 뽑는 파이프라인(`blink_video.py`)은 자산 로딩만 점검했고,
-  이 저장소에서 데이터셋 전체에 다시 돌리지 않았습니다.
+- 위 1~3절의 입력은 저자가 제공한 특징 파일(`.npy`)입니다. 영상에서 특징을 뽑는 파이프라인(`blink_video.py`)은 영상 174개에 다시 돌렸고
+  (B1의 입력, 4절), 재추출한 특징은 저자 npy와 영상 단위로 거의 일치하지 않습니다(값이 일치한 영상은 피험자 2명, 원인 미검증).
 - 환경이 오래되었고(Python 3.6, TensorFlow 1.8) Windows에서만 실행해 봤습니다.
 - 확정되지 않은 수치는 위 "결과" 절에 적은 것 외에는 의도적으로 싣지 않았습니다.
 
