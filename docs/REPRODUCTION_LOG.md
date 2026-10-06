@@ -1,13 +1,13 @@
-# Ghoddoosian et al. CVPRW 2019 reproduction log
+# Ghoddoosian et al. CVPRW 2019 재현 기록 (reproduction log)
 
-Date: 2026-09-30  
-Platform: Windows, CPU-only  
-Project: `Early-Drowsiness-Detection`
+날짜: 2026-09-30  
+플랫폼: Windows, CPU 전용  
+프로젝트: `Early-Drowsiness-Detection`
 
-## Environment
+## 환경 (Environment)
 
-- Conda environment: `ghoddoosian_tf1`
-- Environment path: `C:\Users\<USER>\anaconda3\envs\ghoddoosian_tf1`
+- Conda 환경: `ghoddoosian_tf1`
+- 환경 경로: `C:\Users\<USER>\anaconda3\envs\ghoddoosian_tf1`
 - Python: 3.6.13
 - pip: 21.2.2
 - setuptools: 58.0.4
@@ -15,9 +15,8 @@ Project: `Early-Drowsiness-Detection`
 - TensorFlow: 1.8.0 (CPU)
 - NumPy: 1.14.6
 
-Activate the environment before running any command. Activation is important
-because Conda-provided DLLs, including dlib dependencies, are added to `PATH`
-during activation.
+어떤 명령이든 실행하기 전에 환경을 활성화한다. 활성화하면 dlib 의존성을 포함해 Conda가 제공하는 DLL이
+`PATH`에 추가되므로 활성화가 중요하다.
 
 ```powershell
 conda activate ghoddoosian_tf1
@@ -25,15 +24,15 @@ python --version
 where.exe python
 ```
 
-The first `where.exe python` result must be:
+`where.exe python`의 첫 번째 결과는 다음과 같아야 한다.
 
 ```text
 C:\Users\<USER>\anaconda3\envs\ghoddoosian_tf1\python.exe
 ```
 
-## Installed major packages
+## 설치한 주요 패키지 (Installed major packages)
 
-| Package | Version | Source |
+| 패키지 | 버전 | 출처 |
 |---|---:|---|
 | tensorflow | 1.8.0 | pip |
 | tensorboard | 1.8.0 | pip |
@@ -47,35 +46,30 @@ C:\Users\<USER>\anaconda3\envs\ghoddoosian_tf1\python.exe
 | protobuf | 3.19.6 | pip |
 | grpcio | 1.48.2 | pip |
 
-`python -m pip check` reports no broken requirements.
+`python -m pip check`는 깨진 의존성이 없다고 보고한다.
 
-## Static source inspection
+## 소스 정적 점검 (Static source inspection)
 
-The baseline consists of `Training.py`, `HMSLSTM_Main.py`,
-`HMSLSTM_cell.py`, and `MultiHMSLSTM.py`.
+기준선은 `Training.py`, `HMSLSTM_Main.py`, `HMSLSTM_cell.py`, `MultiHMSLSTM.py`로 이루어진다.
 
-- All four files parse with Python 3.6; no Python 2-only syntax was found.
-- The implementation is TensorFlow 1.x-specific.
-- It uses `tf.contrib`, `tf.Session`, `tf.placeholder`, `tf.scan`,
-  `tf.variable_scope`, and TensorFlow internal RNN APIs.
-- The baseline files do not use `tf.nn.rnn_cell` or `np.int`.
-- `blink_video.py` uses the removed/deprecated `np.int` alias, but this is
-  available in the selected NumPy 1.14.x environment.
-- `HMSLSTM_cell.py` contains two references to the undefined
-  `self.hstate_size_size` in the `state_size` and `output_size` properties.
-  This is a likely source typo. Neither property was reached by the tested
-  TensorFlow 1.8 graph/evaluation/training paths, so the source was not changed.
+- 네 파일 모두 Python 3.6으로 파싱되며 Python 2 전용 문법은 발견되지 않았다.
+- 구현은 TensorFlow 1.x 전용이다.
+- `tf.contrib`, `tf.Session`, `tf.placeholder`, `tf.scan`, `tf.variable_scope`와 TensorFlow 내부 RNN API를 쓴다.
+- 기준선 파일은 `tf.nn.rnn_cell`이나 `np.int`를 쓰지 않는다.
+- `blink_video.py`는 제거되었거나 더 이상 권장되지 않는 `np.int` 별칭을 쓰지만, 선택한 NumPy 1.14.x 환경에서는
+  사용할 수 있다.
+- `HMSLSTM_cell.py`의 `state_size`와 `output_size` 속성에 정의되지 않은 `self.hstate_size_size`에 대한 참조가 두 곳 있다.
+  소스의 오타일 가능성이 높다. 시험한 TensorFlow 1.8의 그래프 구성, 평가, 학습 경로에서는 두 속성 모두 실행되지 않았으므로
+  소스를 바꾸지 않았다.
 
-No original Python source file was modified, and no backup source file was
-needed.
+원본 Python 소스 파일은 수정하지 않았고, 백업 소스 파일도 필요하지 않았다.
 
-## Dataset verification
+## 데이터 확인 (Dataset verification)
 
-All Fold1 through Fold5 files are present. Every blink input has shape
-`(N, 30, 4)` and every label input has shape `(N, 1)`. All arrays have dtype
-`float64`.
+Fold1부터 Fold5까지 모든 파일이 있다. 모든 blink 입력의 shape은 `(N, 30, 4)`, 모든 라벨 입력의 shape은
+`(N, 1)`이다. 모든 배열의 dtype은 `float64`이다.
 
-| Fold | Training input | Test input | Training labels | Test labels |
+| Fold | 학습 입력 | 테스트 입력 | 학습 라벨 | 테스트 라벨 |
 |---:|---:|---:|---:|---:|
 | 1 | `(7379, 30, 4)` | `(1269, 30, 4)` | `(7379, 1)` | `(1269, 1)` |
 | 2 | `(6605, 30, 4)` | `(2043, 30, 4)` | `(6605, 1)` | `(2043, 1)` |
@@ -83,31 +77,28 @@ All Fold1 through Fold5 files are present. Every blink input has shape
 | 4 | `(7186, 30, 4)` | `(1462, 30, 4)` | `(7186, 1)` | `(1462, 1)` |
 | 5 | `(6957, 30, 4)` | `(1691, 30, 4)` | `(6957, 1)` | `(1691, 1)` |
 
-## Original Training.py defaults
+## 원본 Training.py 기본값 (Original Training.py defaults)
 
 - `load=False`
-- five folds: `for i in range(5)`
-- epochs: 80
-- batch size: 64
-- learning rate: 0.000053
-- sequence length: 30
-- feature count: 4
-- hidden state sizes: `[32, 32, 32, 32]`
-- checkpoint path: project root (`./`)
+- 5개 fold: `for i in range(5)`
+- epoch: 80
+- 배치 크기: 64
+- 학습률: 0.000053
+- 시퀀스 길이: 30
+- 특징 수: 4
+- 은닉 상태 크기: `[32, 32, 32, 32]`
+- 체크포인트 경로: 프로젝트 루트(`./`)
 
-There is no command-line evaluation option. Setting `load=True` restores the
-provided checkpoint and breaks after one evaluation epoch. With the original
-`load=False`, `save_variables()` writes to the project root. Because training
-uses zero-based `ii=i`, an unmodified full training run creates `my_model0`
-and can overwrite `my_model1` through `my_model4`. Therefore the original
-script was not executed directly in training mode.
+명령줄 평가 옵션은 없다. `load=True`로 설정하면 제공된 체크포인트를 복원하고 평가 epoch 한 번을 마친 뒤 반복을 끝낸다.
+원본의 `load=False`에서는 `save_variables()`가 프로젝트 루트에 쓴다. 학습이 0부터 시작하는 `ii=i`를 쓰기 때문에, 수정하지 않은
+전체 학습을 실행하면 `my_model0`이 만들어지고 `my_model1`~`my_model4`가 덮어써질 수 있다. 따라서 원본 스크립트는 학습
+모드로 직접 실행하지 않았다.
 
-## Pretrained Fold1 evaluation
+## 공개 체크포인트 Fold1 평가 (Pretrained Fold1 evaluation)
 
-The source was transformed only in memory to use `load=True` and
-`range(1)`. No file was edited and no save branch was entered.
+소스를 메모리에서만 변환해 `load=True`와 `range(1)`을 쓰게 했다. 파일은 수정하지 않았고 저장 분기에는 들어가지 않았다.
 
-Result:
+결과:
 
 ```text
 checkpoint restore: success (my_model1)
@@ -118,15 +109,12 @@ BSRE: 3.185322
 VRE: 2.419539
 ```
 
-Graph construction, checkpoint restoration, tensor shapes, and all four
-reported evaluation metrics succeeded.
+그래프 구성, 체크포인트 복원, 텐서 shape, 보고된 평가 지표 4개가 모두 실행에 성공했다.
 
-## Fold1 training smoke test
+## Fold1 학습 스모크 테스트 (Fold1 training smoke test)
 
-A one-epoch CPU smoke test was run after successful checkpoint evaluation.
-The code was transformed only in memory to select Fold1, set one epoch, and
-redirect every output to `reproduction_artifacts`. Original checkpoints were
-not overwritten.
+체크포인트 평가에 성공한 뒤 CPU에서 1 epoch 스모크 테스트를 실행했다. 코드를 메모리에서만 변환해 Fold1을 고르고, epoch를 1로
+설정하고, 모든 출력을 `reproduction_artifacts`로 돌렸다. 원본 체크포인트는 덮어쓰지 않았다.
 
 ```text
 training moving accuracy: 0.35362551043557167
@@ -138,108 +126,99 @@ test VRE: 2.650519
 checkpoint save: success
 ```
 
-Smoke-test files are under:
+스모크 테스트 파일의 위치:
 
 - `reproduction_artifacts/checkpoints_smoke/`
 - `reproduction_artifacts/training_smoke/`
 
-The complete original 80-epoch, five-fold training was not run.
+원본 설정의 80 epoch, 5-fold 전체 학습은 실행하지 않았다.
 
-## Video-stage verification
+## 영상 단계 확인 (Video-stage verification)
 
-- `shape_predictor_68_face_landmarks.dat` is present in the project root.
-- Predictor size: 99,693,937 bytes.
-- `Trained_SVM_C=1000_gamma=0.1_for 7kNegSample.sav` loads successfully.
-- Loaded estimator: `sklearn.svm.classes.SVC`
-- Expected SVM input width: 13 features.
-- A dummy 13-feature prediction completed successfully.
+- `shape_predictor_68_face_landmarks.dat`가 프로젝트 루트에 있다.
+- predictor 크기: 99,693,937 bytes.
+- `Trained_SVM_C=1000_gamma=0.1_for 7kNegSample.sav`가 정상적으로 로드된다.
+- 로드된 추정기: `sklearn.svm.classes.SVC`
+- SVM이 기대하는 입력 폭: 특징 13개.
+- 더미 13-특징 예측이 정상적으로 끝났다.
 
-The SVM emits this compatibility warning:
+SVM은 다음 호환성 경고를 낸다.
 
 ```text
 Trying to unpickle estimator SVC from version pre-0.18 when using version
 0.19.2. This might lead to breaking code or invalid results.
 ```
 
-The artifact is therefore older than scikit-learn 0.18. It works with 0.19.2,
-but video predictions should be treated as compatibility-sensitive. Do not
-upgrade scikit-learn without validating predictions.
+따라서 이 파일은 scikit-learn 0.18 이전 버전에서 만들어진 것이다. 0.19.2에서 동작하지만 영상 예측은 호환성에 민감한 것으로
+다뤄야 한다. 예측을 검증하지 않고 scikit-learn을 업그레이드하지 않는다.
 
-`blink_video.py` was not launched because its default input video path is
-empty and it opens interactive Tk/OpenCV windows. A real input video path must
-be assigned before running it.
+`blink_video.py`는 기본 입력 영상 경로가 비어 있고 대화형 Tk/OpenCV 창을 열기 때문에 실행하지 않았다. 실행하기 전에 실제
+입력 영상 경로를 지정해야 한다.
 
-## Installation issues and resolutions
+## 설치 문제와 해결 (Installation issues and resolutions)
 
-1. `dlib=19.16` was not available from the current conda-forge Windows
-   channel. `dlib=19.15` was also unavailable.
-   - Resolution: use the available Python 3.6 build `dlib=19.17`.
-2. The dlib 19.17 Conda package requires `numpy>=1.14.6`.
-   - Resolution: move from NumPy 1.14.5 to 1.14.6. TensorFlow 1.8 import and
-     Fold1 evaluation were rerun successfully with identical metrics.
-3. Invoking the environment's `python.exe` directly after installing the
-   Conda dlib package caused a NumPy MKL DLL lookup error.
-   - Cause: direct invocation did not add the environment's Conda DLL paths.
-   - Resolution: use `conda activate ghoddoosian_tf1` or `conda run -n
-     ghoddoosian_tf1 ...`.
-4. Conda's NumPy update initially left pip metadata reporting 1.14.5 while the
-   imported runtime reported 1.14.6.
-   - Resolution: force-reinstall the NumPy 1.14.6 wheel without dependencies.
-     Runtime and package metadata now both report 1.14.6.
-5. TensorFlow reports that the CPU supports AVX2 but the distributed binary
-   was not compiled to use it.
-   - This is informational and does not prevent execution.
+1. 현재 conda-forge Windows 채널에서 `dlib=19.16`을 구할 수 없었다. `dlib=19.15`도 구할 수 없었다.
+   - 해결: 구할 수 있는 Python 3.6 빌드 `dlib=19.17`을 쓴다.
+2. dlib 19.17 Conda 패키지는 `numpy>=1.14.6`을 요구한다.
+   - 해결: NumPy 1.14.5에서 1.14.6으로 옮긴다. TensorFlow 1.8 import와 Fold1 평가를 다시 실행했고 지표가 똑같이 나왔다.
+3. Conda dlib 패키지를 설치한 뒤 환경의 `python.exe`를 직접 실행하면 NumPy MKL DLL 조회 오류가 났다.
+   - 원인: 직접 실행하면 환경의 Conda DLL 경로가 추가되지 않는다.
+   - 해결: `conda activate ghoddoosian_tf1`을 쓰거나 `conda run -n ghoddoosian_tf1 ...`을 쓴다.
+4. Conda의 NumPy 업데이트 후 pip 메타데이터는 1.14.5로 보고하는데 import된 런타임은 1.14.6으로 보고했다.
+   - 해결: 의존성 없이 NumPy 1.14.6 wheel을 강제로 다시 설치한다. 이제 런타임과 패키지 메타데이터 모두 1.14.6으로 보고한다.
+5. TensorFlow가 CPU는 AVX2를 지원하지만 배포된 바이너리는 이를 쓰도록 컴파일되지 않았다고 알린다.
+   - 정보성 메시지이며 실행을 막지 않는다.
 
-## Reproduction status (updated in session 2, see below)
+## 재현 상태 (Reproduction status, 세션 2에서 갱신, 아래 참고)
 
-- Isolated legacy environment: complete
-- Existing Python 3.12 installations: unchanged
-- TensorFlow 1.8 baseline graph: successful
-- Pretrained Fold1 restore/evaluation: successful
-- Pretrained 5-fold evaluation: successful (session 2)
-- Fold1 one-epoch training/data-flow smoke test: successful
-- Fold1 full 80-epoch retraining: done, ONE run only (session 2)
-- Full five-fold retraining: not run (estimate below, awaiting approval)
-- Video dependency imports and legacy SVM load: successful
-- Actual video processing: pending selection of an input video
+- 격리된 레거시 환경: 완료
+- 기존 Python 3.12 설치: 변경 없음
+- TensorFlow 1.8 기준선 그래프: 성공
+- 공개 체크포인트 Fold1 복원/평가: 성공
+- 공개 체크포인트 5-fold 평가: 성공(세션 2)
+- Fold1 1 epoch 학습/데이터 흐름 스모크 테스트: 성공
+- Fold1 80 epoch 전체 재학습: 완료, 1회만 실행(세션 2)
+- 5-fold 전체 재학습: 실행하지 않음(아래 추정치, 승인 대기)
+- 영상 의존성 import와 레거시 SVM 로드: 성공
+- 실제 영상 처리: 입력 영상 선택 대기
 
 ---
 
-# Session 2: baseline reproduction (2026-09-30)
+# 세션 2: 기준선 재현 (Session 2: baseline reproduction) (2026-09-30)
 
-## New helper files (originals untouched)
+## 새 보조 파일, 원본은 그대로 (New helper files, originals untouched)
 
-| File | Purpose |
+| 파일 | 용도 |
 |---|---|
-| `check_environment.py` | interpreter + package version check (result: ENVIRONMENT_OK) |
-| `check_dataset.py` | source files, Fold1-5 npy shapes/dtypes, checkpoint files (result: DATASET_OK) |
-| `reproduction_eval.py` | pretrained evaluation; executes Training.py in memory with `load=True` |
-| `reproduction_train_fold1.py` | Fold1 retraining; output redirected to `reproduction_artifacts/fold1_training/` |
-| `check_video_assets.py` | loads the dlib predictor and SVM (result: VIDEO_ASSETS_OK) |
-| `reproduction_blink_one_video.py` | runs blink_video.py on one video via in-memory path substitution |
+| `check_environment.py` | 인터프리터와 패키지 버전 점검(결과: ENVIRONMENT_OK) |
+| `check_dataset.py` | 소스 파일, Fold1-5 npy shape/dtype, 체크포인트 파일 점검(결과: DATASET_OK) |
+| `reproduction_eval.py` | 공개 체크포인트 평가. `load=True`로 Training.py를 메모리에서 실행 |
+| `reproduction_train_fold1.py` | Fold1 재학습. 출력은 `reproduction_artifacts/fold1_training/`으로 돌림 |
+| `check_video_assets.py` | dlib predictor와 SVM을 로드(결과: VIDEO_ASSETS_OK) |
+| `reproduction_blink_one_video.py` | 메모리 안 경로 치환으로 blink_video.py를 영상 한 개에 실행 |
 
-All scripts hash-check 41 protected files (my_model*, *.npy, the six core .py files) before and
-after each run: **changed: none, added: none** for every run.
+모든 스크립트는 매 실행 전후에 보호 파일 41개(my_model*, *.npy, 핵심 .py 6개)의 해시를 확인한다. 모든 실행에서
+**changed: none, added: none**이었다.
 
-## Environment (step 1)
+## 환경 (Environment, step 1)
 
-`where.exe python` first hit is `...\envs\ghoddoosian_tf1\python.exe`. Versions: Python 3.6.13, numpy 1.14.6,
-scipy 1.2.1, sklearn 0.19.2, tensorflow 1.8.0, matplotlib 2.2.5, cv2 3.4.5, dlib 19.17.0, imutils 0.5.4. All match.
+`where.exe python`의 첫 결과는 `...\envs\ghoddoosian_tf1\python.exe`이다. 버전: Python 3.6.13, numpy 1.14.6,
+scipy 1.2.1, sklearn 0.19.2, tensorflow 1.8.0, matplotlib 2.2.5, cv2 3.4.5, dlib 19.17.0, imutils 0.5.4. 모두 일치한다.
 
-## Data and checkpoints (steps 2-3)
+## 데이터와 체크포인트 (Data and checkpoints, steps 2-3)
 
-Fold1-5 shapes match the table above (X `(N,30,4)`, y `(N,1)`, float64, label values {0, 5, 10}).
-my_model1..5 each have `.meta`, `.index`, `.data-00000-of-00001` and hold 96 variables (~54k non-optimizer parameters,
-matching the paper's "approximately 50,000"). The `checkpoint` state file is absent, which is harmless: Training.py
-restores by explicit prefix.
+Fold1-5의 shape은 위 표와 일치한다(X `(N,30,4)`, y `(N,1)`, float64, 라벨 값 {0, 5, 10}).
+my_model1..5는 각각 `.meta`, `.index`, `.data-00000-of-00001`을 갖고 변수 96개(옵티마이저 제외 파라미터 약 54k개,
+논문의 "approximately 50,000"과 같은 규모)를 담고 있다. `checkpoint` 상태 파일은 없지만 무해하다. Training.py가
+명시한 접두어로 복원하기 때문이다.
 
-Fold-number wiring in Training.py: with `load=True` fold `i` restores `my_model{i+1}`; with `load=False` it trains
-fold `i` but saves `my_model{i}` (zero-based), so an unmodified training run would write `my_model0` and overwrite
-`my_model1..4`. This is why training was always run through the in-memory wrapper with a redirected path.
+Training.py의 fold 번호 연결: `load=True`에서는 fold `i`가 `my_model{i+1}`을 복원한다. `load=False`에서는 fold `i`를
+학습하지만 `my_model{i}`(0부터 시작)로 저장하므로, 수정하지 않은 학습을 실행하면 `my_model0`을 쓰고 `my_model1..4`를
+덮어쓴다. 그래서 학습은 언제나 경로를 돌린 메모리 래퍼로 실행했다.
 
-## Pretrained 5-fold evaluation (steps 4-5)
+## 공개 체크포인트 5-fold 평가 (Pretrained 5-fold evaluation, steps 4-5)
 
-Fold1 reproduces the earlier values exactly (max |diff| 2.8e-7). Files:
+Fold1은 앞의 값과 정확히 같은 값이 나왔다(최대 |차이| 2.8e-7). 파일:
 `reproduction_artifacts/pretrained_5fold_results.csv`, `pretrained_5fold_summary.txt`, `pretrained_eval_stdout.log`.
 
 | Fold | BSA loss | BSA acc | VA | BSRE | VRE |
@@ -249,26 +228,26 @@ Fold1 reproduces the earlier values exactly (max |diff| 2.8e-7). Files:
 | 3 | 13.314880 | 0.560565 | 0.694444 | 2.153216 | 0.667389 |
 | 4 | 11.508018 | 0.544460 | 0.638889 | 1.599456 | 0.849650 |
 | 5 | 10.249504 | 0.528681 | 0.666667 | 1.176440 | 0.812155 |
-| mean | 12.271469 | 0.541082 | 0.649495 | 1.901040 | 1.157673 |
-| std (ddof=1) | 2.262427 | 0.038759 | 0.031912 | 0.804573 | 0.717788 |
+| 평균 | 12.271469 | 0.541082 | 0.649495 | 1.901040 | 1.157673 |
+| 표준편차 (ddof=1) | 2.262427 | 0.038759 | 0.031912 | 0.804573 | 0.717788 |
 
-## Comparison with the paper (step 6)
+## 논문과의 비교 (Comparison with the paper, step 6)
 
-The repository README states no numeric results. Paper numbers below are from arXiv 1904.07312 (Table 2 / Table 3)
-as returned by a fetch of the ar5iv HTML page, which was processed by a summarising model, not read verbatim.
-**Verify against the PDF before citing.** The PDF itself could not be parsed locally (no PDF tooling installed).
+저장소 README에는 수치 결과가 없다. 아래 논문 수치는 arXiv 1904.07312(Table 2 / Table 3)에서 가져온 것이며, ar5iv HTML
+페이지를 가져온 결과를 요약 모델이 처리한 것이어서 원문을 그대로 읽은 것이 아니다.
+**인용하기 전에 PDF로 확인할 것.** PDF 자체는 로컬에서 파싱하지 못했다(PDF 도구가 설치되어 있지 않음).
 
-| Metric | Paper result | Reproduced (pretrained, 5-fold mean) | Difference |
+| 지표 | 논문 결과 | 재현 측정값(공개 체크포인트, 5-fold 평균) | 차이 |
 |---|---:|---:|---:|
 | VA | 65.2% | 64.95% | -0.25 pt |
 | BSA | 54% | 54.11% | +0.11 pt |
 | BSRE | 1.90 | 1.901 | +0.001 |
 | VRE | 1.14 | 1.158 | +0.018 |
-| BSA loss | not explicitly reported | 12.27 | n/a |
+| BSA loss | not explicitly reported | 12.27 | 해당 없음 |
 
-Per fold (paper reports only VA and VRE per fold; BSA / BSRE / loss per fold: not explicitly reported):
+fold별(논문은 fold별로 VA와 VRE만 보고함. fold별 BSA / BSRE / loss는 not explicitly reported):
 
-| Fold | VA paper | VA repro | VRE paper | VRE repro |
+| Fold | VA 논문 | VA 재현 측정 | VRE 논문 | VRE 재현 측정 |
 |---:|---:|---:|---:|---:|
 | 1 | 0.64 | 0.636 | 2.42 | 2.420 |
 | 2 | 0.61 | 0.611 | 1.04 | 1.040 |
@@ -276,27 +255,27 @@ Per fold (paper reports only VA and VRE per fold; BSA / BSRE / loss per fold: no
 | 4 | 0.64 | 0.639 | 0.85 | 0.850 |
 | 5 | 0.67 | 0.667 | 0.81 | 0.812 |
 
-Everything agrees within rounding except Fold3 VRE (0.58 paper vs 0.667 here). The cause is not determined.
+Fold3 VRE(논문 0.58, 여기 0.667)를 뺀 모든 값이 반올림 범위 안에서 일치한다. 원인은 정해지지 않았다.
 
-## Fold1 original settings and retraining (step 7)
+## Fold1 원본 설정과 재학습 (Fold1 original settings and retraining, step 7)
 
-Original Training.py settings (unchanged in the retraining run): epochs 80; batch size 64 (last partial batch is
-kept, no shuffling between epochs); Adam, lr 0.000053; hidden sizes [32,32,32,32], 4 HM-LSTM layers; sequence length
-30; 4 input features [Freq, Amp, Dur, Vel]; dropout `drop_out_p=1.0` (keep_prob 1.0 = no dropout); loss
-`mean(max(0, |y-yhat|^2 - 1.253)) + 0.1 * sum(L2 of 6 weight groups)`; output `10*sigmoid`; Pre_fc1 32, Post_fc1 16
-per layer, embeddings 16/16, Post_fc2 8; feature-wise z-score using training statistics; no random seed.
+원본 Training.py 설정(재학습 실행에서 바꾸지 않음): epoch 80, 배치 크기 64(마지막 일부 배치는 유지하며 epoch 사이 셔플 없음),
+Adam, 학습률 0.000053, 은닉 크기 [32,32,32,32], HM-LSTM 4층, 시퀀스 길이 30, 입력 특징 4개 [Freq, Amp, Dur, Vel],
+dropout `drop_out_p=1.0`(keep_prob 1.0 = dropout 없음), 손실
+`mean(max(0, |y-yhat|^2 - 1.253)) + 0.1 * sum(L2 of 6 weight groups)`, 출력 `10*sigmoid`, 층별 Pre_fc1 32,
+Post_fc1 16, 임베딩 16/16, Post_fc2 8, 학습 통계를 쓴 특징별 z-score, 랜덤 시드 없음.
 
-In-memory changes only: fold range 5->1, `ii=i` -> `ii=i+1`, save path and npy outputs redirected.
-Output dir: `reproduction_artifacts/fold1_training/` (`my_model1.*`, `training_history.csv`, `training_stdout.log`,
-`x1/loss1/accuracy1*.npy`). Wall time 20.8 min on CPU (about 16 s/epoch). Original `my_model1` sha256 unchanged.
-`reproduction_artifacts/fold1_training_1epoch_check/` is a 1-epoch trial of the script, kept separate.
+메모리에서만 바꾼 것: fold 범위 5->1, `ii=i` -> `ii=i+1`, 저장 경로와 npy 출력 경로 돌리기.
+출력 폴더: `reproduction_artifacts/fold1_training/`(`my_model1.*`, `training_history.csv`, `training_stdout.log`,
+`x1/loss1/accuracy1*.npy`). 소요 시간은 CPU에서 20.8분(epoch당 약 16초). 원본 `my_model1`의 sha256은 바뀌지 않았다.
+`reproduction_artifacts/fold1_training_1epoch_check/`는 이 스크립트의 1 epoch 시험이며 따로 보관했다.
 
-Note: Training.py saves the checkpoint only once, after the last epoch (the "saving every epoch" comment is
-inaccurate), so the saved retrained checkpoint is the epoch-80 model.
+참고: Training.py는 체크포인트를 마지막 epoch 뒤에 한 번만 저장한다("saving every epoch"라는 주석은 부정확하다). 따라서
+저장된 재학습 체크포인트는 epoch 80 모델이다.
 
-## Comparison A / B / C on Fold1 (step 8)
+## Fold1 비교 A / B / C (Comparison A / B / C on Fold1, step 8)
 
-| Metric | A. Paper | B. Provided pretrained | C. Retrained, epoch 80 | (C at epoch 13, best VA) |
+| 지표 | A. 논문 | B. 제공된 공개 체크포인트 | C. 재학습, epoch 80 | (C의 epoch 13, 최고 VA) |
 |---|---:|---:|---:|---:|
 | VA | 0.64 | 0.636 | **0.485** | 0.636 |
 | BSA acc | not explicitly reported | 0.484 | 0.437 | 0.459 |
@@ -304,118 +283,115 @@ inaccurate), so the saved retrained checkpoint is the epoch-80 model.
 | BSRE | not explicitly reported | 3.185 | 2.800 | 2.231 |
 | VRE | 2.42 | 2.420 | 1.449 | 1.579 |
 
-Column "epoch 13" is only for illustration: picking an epoch by test VA is selection on the test set and is not a
-valid performance estimate.
+"epoch 13" 열은 설명용일 뿐이다. 테스트 VA로 epoch를 고르는 것은 테스트 세트로 선택하는 것이어서 유효한 성능 추정이 아니다.
 
-Training curve: training moving accuracy rises from 0.39 to 0.70 and training loss falls monotonically, while test
-BSA peaks around epoch 20 (0.475) and then drifts down (last 20 epochs mean 0.435), and VA fluctuates between 0.45
-and 0.64 (last 20 epochs mean 0.49). With only 33 test videos, one video changes VA by 3.0 points.
-Regression errors are not uniformly worse: BSRE and VRE of the retrained model are lower than the pretrained one
-even though VA/BSA are lower.
+학습 곡선: 학습 이동 정확도는 0.39에서 0.70으로 오르고 학습 손실은 단조 감소한다. 반면 테스트 BSA는 epoch 20 근처에서
+최고(0.475)를 찍은 뒤 내려가고(마지막 20 epoch 평균 0.435), VA는 0.45와 0.64 사이에서 오르내린다(마지막 20 epoch 평균
+0.49). 테스트 영상이 33개뿐이라 영상 한 개가 VA를 3.0 포인트 움직인다. 회귀 오차가 모두 더 나쁜 것은 아니다. 재학습 모델의
+BSRE와 VRE는 VA/BSA가 낮은데도 공개 체크포인트보다 낮다.
 
-### Cause analysis (only one retraining run exists, so nothing below is proven)
+### 원인 분석 (Cause analysis, 재학습 실행이 1회뿐이므로 아래 내용은 어느 것도 증명되지 않았다)
 
-- Random seed / weight initialisation / batch ordering: no seed is set (Xavier init unseeded). Batch order is fixed
-  (no shuffling), so init is the only stochastic input. Run-to-run spread is not measured yet, so it cannot be
-  separated from a systematic gap with n=1. This is the most likely explanation but is a hypothesis.
-- Checkpoint selection: the final-epoch model is saved. The provided pretrained model may come from a different
-  epoch or a selected run; Training.py itself says to "run each fold a few times to see the best performance".
-  How the provided checkpoints were chosen is not documented, so this is unverified.
-- CPU vs GPU, Windows vs Ubuntu, TF non-determinism: cannot be quantified without repeat runs; the pretrained model
-  evaluates identically to the paper on the same CPU/Windows stack, so the evaluation path itself is sound.
-- Preprocessing: the provided .npy files are used unchanged for both A/B/C, so preprocessing is not a factor here.
-- Nothing in the code or hyper-parameters was altered to close the gap.
+- 랜덤 시드 / 가중치 초기화 / 배치 순서: 시드를 설정하지 않았다(Xavier 초기화에 시드 없음). 배치 순서는 고정이므로(셔플
+  없음) 초기화가 유일한 확률적 입력이다. 실행 간 변동은 아직 측정하지 않아서, n=1로는 체계적 격차와 구분할 수 없다. 가장 가능성이
+  높은 설명이지만 가설이다.
+- 체크포인트 선택: 마지막 epoch 모델이 저장된다. 제공된 공개 모델은 다른 epoch나 선택된 실행에서 나왔을 수 있다. Training.py
+  자체가 "run each fold a few times to see the best performance"라고 적고 있다. 제공된 체크포인트를 어떻게 골랐는지는
+  문서화되어 있지 않아서 미검증이다.
+- CPU와 GPU, Windows와 Ubuntu, TF 비결정성: 반복 실행 없이는 정량화할 수 없다. 공개 체크포인트는 같은 CPU/Windows
+  구성에서 논문과 같은 값으로 평가되므로 평가 경로 자체는 문제가 없다.
+- 전처리: A/B/C 모두 제공된 .npy 파일을 그대로 쓰므로 여기서는 전처리가 요인이 아니다.
+- 격차를 줄이려고 코드나 하이퍼파라미터를 바꾼 것은 없다.
 
-Suggested check (not run): 3-5 repeat Fold1 runs (about 21 min each) to obtain the run-to-run spread.
+제안하는 확인(실행하지 않음): Fold1을 3~5회 반복 실행(각 약 21분)해 실행 간 변동을 얻는다.
 
-## Full five-fold training estimate (step 9)
+## 5-fold 전체 학습 추정 (Full five-fold training estimate, step 9)
 
-Fold1 ended in a plausible-but-lower range than the pretrained model, so the go/no-go is the user's call.
-Estimate if run sequentially on this CPU: about 21 min per fold, roughly 1.8 h for five folds (folds 2-5 have
-similar training-set sizes, 6.5k-7.2k sequences). Storage about 2.4 MB per fold (12 MB total). Must use the
-redirected-path wrapper (a `range(5)` generalisation of `reproduction_train_fold1.py`); the original script would
-write my_model0..4 to the project root. **Not started.**
+Fold1은 공개 모델보다 낮지만 그럴듯한 범위에서 끝났으므로, 진행 여부는 사용자가 정한다. 이 CPU에서 순차 실행하면 fold당 약 21분,
+5개 fold에 약 1.8시간으로 추정한다(fold 2-5의 학습 세트 크기는 비슷하며 6.5k-7.2k 시퀀스). 저장 용량은 fold당 약 2.4 MB(합계
+12 MB). 경로를 돌린 래퍼(`reproduction_train_fold1.py`를 `range(5)`로 일반화한 것)를 써야 한다. 원본 스크립트는 my_model0..4를
+프로젝트 루트에 쓴다. **시작하지 않았다.**
 
-## blink_video.py static analysis (step 10)
+## blink_video.py 정적 분석 (blink_video.py static analysis, step 10)
 
-Pipeline with line references (`blink_video.py`):
+줄 번호를 단 파이프라인(`blink_video.py`):
 
-| Stage | Where |
+| 단계 | 위치 |
 |---|---|
-| Video read + resize to width 450 | 348, 352, 359 |
-| Grayscale + gamma 1.5 | 368, 370 (`adjust_gamma` 29-37) |
-| dlib frontal face detector | created 311, applied 378 |
-| dlib 68 landmarks | predictor 313, applied 386-387 |
-| eye landmarks (left/right) | 318-319, sliced 415-416 |
-| EAR per eye, averaged | `eye_aspect_ratio` 74-92, used 417-421 (clamped to 0.45) |
-| 13-frame EAR window | `EAR_series` 330, updated by `shift` at 423 |
-| No face: optical-flow eye tracking (LK) | 487-523 |
-| SVM eye-closed classifier | loaded 315, `predict` on the 13-frame window 444 |
-| Blink candidate tracking | `Blink_Tracker` 190-291 (frame of interest `EAR_series[6]`, line 447) |
-| Noise/imbalance rejection, merging close blinks | 213-240, 244-283 (`MIN_AMPLITUDE=0.04` line 51) |
-| 3-tap smoothing + extrema based blink extraction | 225, `Ultimate_Blink_Check` 128-186 |
-| Feature file write | 461-464 and 546-548 (`np.savetxt`, append mode) |
+| 영상 읽기 + 너비 450으로 리사이즈 | 348, 352, 359 |
+| 그레이스케일 + 감마 1.5 | 368, 370 (`adjust_gamma` 29-37) |
+| dlib 정면 얼굴 검출기 | 생성 311, 적용 378 |
+| dlib 68 랜드마크 | predictor 313, 적용 386-387 |
+| 눈 랜드마크(왼쪽/오른쪽) | 318-319, 자르기 415-416 |
+| 눈별 EAR, 평균 | `eye_aspect_ratio` 74-92, 사용 417-421 (0.45로 제한) |
+| 13프레임 EAR 윈도우 | `EAR_series` 330, 423의 `shift`로 갱신 |
+| 얼굴 없음: 광학 흐름 눈 추적(LK) | 487-523 |
+| SVM 눈 감김 분류기 | 로드 315, 13프레임 윈도우에 `predict` 444 |
+| blink 후보 추적 | `Blink_Tracker` 190-291 (관심 프레임 `EAR_series[6]`, 447줄) |
+| 잡음/불균형 제거, 가까운 blink 병합 | 213-240, 244-283 (`MIN_AMPLITUDE=0.04` 51줄) |
+| 3-tap 평활화 + 극값 기반 blink 추출 | 225, `Ultimate_Blink_Check` 128-186 |
+| 특징 파일 쓰기 | 461-464, 546-548 (`np.savetxt`, 이어쓰기 모드) |
 
-Features (columns written: `TOTAL_BLINKS, Freq*100, Amp, Dur, Vel`; Preprocessing.py reads columns 1-4, column 0 is
-ignored, and reorders to the model input order [Freq, Amp, Dur, Vel] at `Preprocessing.py:13-19`):
+특징(쓰이는 열: `TOTAL_BLINKS, Freq*100, Amp, Dur, Vel`. Preprocessing.py는 열 1-4를 읽고 열 0은 무시하며,
+`Preprocessing.py:13-19`에서 모델 입력 순서 [Freq, Amp, Dur, Vel]로 재배열한다):
 
-- Duration: `detected_blink.duration = end - start + 1` (line 179); candidate-level 248/267.
-- Amplitude: `0.5*(startEAR-peakEAR) + 0.5*(endEAR-peakEAR)` (line 180); candidate-level 247/266.
-- Eye opening velocity: `(endEAR - selected_EAR_First[2j+1]) / (end - selected_index_First[2j+1] + 1)` (line 181).
-- Frequency: `BLINK_FRAME_FREQ = TOTAL_BLINKS / number_of_frames` (lines 455, 541), written x100; `TOTAL_BLINKS` updated at 229;
-  `number_of_frames` counts only frames where a face is detected (line 380).
+- 지속 시간: `detected_blink.duration = end - start + 1`(179줄), 후보 수준은 248/267.
+- 진폭: `0.5*(startEAR-peakEAR) + 0.5*(endEAR-peakEAR)`(180줄), 후보 수준은 247/266.
+- 눈 뜸 속도: `(endEAR - selected_EAR_First[2j+1]) / (end - selected_index_First[2j+1] + 1)`(181줄).
+- 빈도: `BLINK_FRAME_FREQ = TOTAL_BLINKS / number_of_frames`(455, 541줄), x100으로 기록. `TOTAL_BLINKS`는 229에서 갱신.
+  `number_of_frames`는 얼굴이 검출된 프레임만 센다(380줄).
 
-Observations (not fixed, source untouched): (1) the face-detected branch drops blinks with `velocity <= 0` (line 461)
-but the optical-flow branch (541-548) does not; (2) in that optical-flow branch the `Blink_Tracker` call sits inside
-`if Counter4blinks==0:` (531-536), unlike the face branch (445-450); (3) yawning/MAR code (94-107, 389-407) runs but
-does not feed the 4 features; (4) `np.int` at line 499 works only with NumPy < 1.24.
+관찰(고치지 않음, 소스는 그대로): (1) 얼굴 검출 분기는 `velocity <= 0`인 blink를 버리지만(461줄) 광학 흐름 분기(541-548)는
+버리지 않는다. (2) 그 광학 흐름 분기에서는 `Blink_Tracker` 호출이 `if Counter4blinks==0:` 안에 있다(531-536). 얼굴 분기(445-450)와
+다르다. (3) 하품/MAR 코드(94-107, 389-407)는 실행되지만 4개 특징에 들어가지 않는다. (4) 499줄의 `np.int`는 NumPy < 1.24에서만
+동작한다.
 
-## Single-video preprocessing test preparation (step 11)
+## 단일 영상 전처리 시험 준비 (Single-video preprocessing test preparation, step 11)
 
-- `shape_predictor_68_face_landmarks.dat` (99,693,937 bytes) and `Trained_SVM_C=1000_gamma=0.1_for 7kNegSample.sav`
-  both load. SVM: SVC, C=1000, gamma=0.1, rbf, 13 input features, classes {-1, +1}; a flat 0.30 EAR window
-  predicts open (-1), a flat 0.10 window predicts closed (+1). The pre-0.18 pickle warning still applies.
-- Input/output variables are hard-coded at `blink_video.py:579` (`output_file`, opened in append mode) and `:580`
-  (`path = ''`). The wrapper replaces only those two lines in memory.
-- Run (from the project root, env activated):
+- `shape_predictor_68_face_landmarks.dat`(99,693,937 bytes)와 `Trained_SVM_C=1000_gamma=0.1_for 7kNegSample.sav` 모두
+  로드된다. SVM: SVC, C=1000, gamma=0.1, rbf, 입력 특징 13개, 클래스 {-1, +1}. 평평한 0.30 EAR 윈도우는 열림(-1)으로,
+  평평한 0.10 윈도우는 감김(+1)으로 예측한다. 0.18 이전 pickle 경고는 그대로 적용된다.
+- 입력/출력 변수는 `blink_video.py:579`(`output_file`, 이어쓰기 모드로 열림)와 `:580`(`path = ''`)에 고정되어 있다. 래퍼는 이 두
+  줄만 메모리에서 바꾼다.
+- 실행(프로젝트 루트에서, 환경 활성화 상태):
   `python reproduction_blink_one_video.py "<path\to\one_video.mp4>"`
-  Output goes to `reproduction_artifacts/blink_test/<video>_blinks.txt`; it refuses to append to an existing file.
-  It opens Tk/OpenCV windows; press any key in the "Frame" window to stop. Not executed: **no UTA-RLDD video is on
-  this machine** (only the SUST Driver Drowsiness Dataset was found), and `blink_video.py` was tuned for UTA-RLDD.
+  출력은 `reproduction_artifacts/blink_test/<video>_blinks.txt`로 가며, 이미 있는 파일에는 이어쓰기를 거부한다.
+  Tk/OpenCV 창을 열며 "Frame" 창에서 아무 키나 누르면 멈춘다. 실행하지 않음: **이 컴퓨터에는 UTA-RLDD 영상이 없고**
+  (SUST Driver Drowsiness Dataset만 찾았다) `blink_video.py`는 UTA-RLDD에 맞춰 조정되었다.
 
-## Source modification policy
+## 소스 수정 방침 (Source modification policy)
 
-No original file was modified (git shows no modified tracked files; hash checks pass). No backups or diffs needed.
-Known typo `self.hstate_size_size` in HMSLSTM_cell.py is unreachable in the tested paths and left as is.
+원본 파일은 수정하지 않았다(git에 수정된 추적 파일이 없고 해시 확인을 통과한다). 백업이나 diff는 필요하지 않다.
+HMSLSTM_cell.py의 알려진 오타 `self.hstate_size_size`는 시험한 경로에서 실행되지 않으며 그대로 둔다.
 
 
 ---
 
-# Repository consolidation log (new portfolio repository)
+# 저장소 통합 기록 (Repository consolidation log, new portfolio repository)
 
-## Stage 0 - read-only checks (2026-09-30)
-- OLD HEAD = 2bafc985c46526fa0dfe3a93bb96fcee1d8d7ac4, `status -sb` = `master...origin/master` (no ahead/behind).
-- OLD tracked files: 44 (.py 6, .npy 20, my_model* 15, LICENSE, README.md, Trained_SVM_C=1000_gamma=0.1_for 7kNegSample.sav).
-- NEW: git repository, user.name/user.email set, origin = https://github.com/a38200-pixel/early-drowsiness-repro.git.
-- OLD `core.autocrlf` = true (system gitconfig). The 6 tracked .py files have identical CR counts in blob and working tree (no difference).
+## Stage 0 - 읽기 전용 점검 (Stage 0 - read-only checks) (2026-09-30)
+- OLD HEAD = 2bafc985c46526fa0dfe3a93bb96fcee1d8d7ac4, `status -sb` = `master...origin/master`(ahead/behind 없음).
+- OLD 추적 파일: 44개(.py 6, .npy 20, my_model* 15, LICENSE, README.md, Trained_SVM_C=1000_gamma=0.1_for 7kNegSample.sav).
+- NEW: git 저장소, user.name/user.email 설정됨, origin = https://github.com/a38200-pixel/early-drowsiness-repro.git.
+- OLD `core.autocrlf` = true(시스템 gitconfig). 추적된 .py 6개는 blob과 작업 트리의 CR 개수가 같다(차이 없음).
 
-## Stage 1 - skeleton and vendoring
-- Commit "Add repository skeleton": .gitattributes (`third_party/** -text`), .gitkeep placeholders.
-- 44 blobs written byte-for-byte via `git cat-file blob HEAD:<name>` into third_party/ghoddoosian/.
-  `git hash-object --no-filters` == OLD `rev-parse HEAD:<name>` for 44/44 files. The dlib .dat, .vscode and __pycache__ are not included.
-- configs/protected_manifest.sha256 generated (44 entries, `sha256sum -c` all OK).
-- Note: the first vendoring attempt failed before writing anything (`capture_output` is unavailable in the Python 3.6 env); fixed the helper script and re-ran.
+## Stage 1 - 골격과 vendoring (Stage 1 - skeleton and vendoring)
+- 커밋 "Add repository skeleton": .gitattributes(`third_party/** -text`), .gitkeep 자리표시자.
+- `git cat-file blob HEAD:<name>`으로 blob 44개를 third_party/ghoddoosian/에 바이트 단위로 그대로 썼다.
+  `git hash-object --no-filters` == OLD `rev-parse HEAD:<name>`이 44/44개 파일에서 성립한다. dlib .dat, .vscode, __pycache__는 포함하지 않았다.
+- configs/protected_manifest.sha256 생성(항목 44개, `sha256sum -c` 모두 OK).
+- 참고: 첫 vendoring 시도는 아무것도 쓰기 전에 실패했다(Python 3.6 환경에는 `capture_output`이 없다). 보조 스크립트를 고치고 다시 실행했다.
 
-## Stage 2 - scripts and records moved
-- 6 scripts copied to src/repro/ (CRLF normalised to LF). Only path constants / env-var handling / manifest-based integrity check changed; see the diffs in the hand-off report.
-- reproduction_eval.py writes its regression re-run to experiments/00_reproduction/regression_eval/ so the archived original results are not overwritten.
-- 9 text artifacts (.csv/.log/.txt) copied from OLD reproduction_artifacts (77,293 bytes total); checkpoints and .npy files excluded.
-- This log was copied from the old working clone with its absolute project paths replaced by `<PROJECT_ROOT>` and the local user name replaced by `<USER>`.
+## Stage 2 - 스크립트와 기록 이동 (Stage 2 - scripts and records moved)
+- 스크립트 6개를 src/repro/로 복사(CRLF를 LF로 정규화). 경로 상수 / 환경변수 처리 / 매니페스트 기반 무결성 확인만 바꿨다. 인수인계 보고서의 diff 참고.
+- reproduction_eval.py는 회귀 재실행 결과를 experiments/00_reproduction/regression_eval/에 쓰므로 보관된 원래 결과를 덮어쓰지 않는다.
+- OLD reproduction_artifacts에서 텍스트 산출물 9개(.csv/.log/.txt)를 복사(합계 77,293 bytes). 체크포인트와 .npy 파일은 제외.
+- 이 로그는 이전 작업 클론에서 복사했으며, 절대 프로젝트 경로는 `<PROJECT_ROOT>`로, 로컬 사용자 이름은 `<USER>`로 바꿨다.
 
-## Stage 3 - regression test in the new structure (no training)
-- Command: `python src/repro/reproduction_eval.py 5` in the `ghoddoosian_tf1` env (pretrained my_model1..5, load=True, evaluation only).
-- Integrity: 44 protected files checked, changed: none, added: none. third_party/ still 44 files, no __pycache__.
-- Results (rounded to the reference-table precision) - all 25 values match:
+## Stage 3 - 새 구조에서 회귀 시험, 학습 없음 (Stage 3 - regression test in the new structure, no training)
+- 명령: `ghoddoosian_tf1` 환경에서 `python src/repro/reproduction_eval.py 5`(공개 my_model1..5, load=True, 평가만).
+- 무결성: 보호 파일 44개 확인, changed: none, added: none. third_party/는 여전히 파일 44개이고 __pycache__ 없음.
+- 결과(참조 표의 정밀도로 반올림) - 25개 값이 모두 일치한다:
 
 | Fold | BSA loss | BSA acc | VA | BSRE | VRE |
 |---|---|---|---|---|---|
@@ -425,23 +401,23 @@ Known typo `self.hstate_size_size` in HMSLSTM_cell.py is unreachable in the test
 | 4 | 11.508 | 0.5445 | 0.6389 | 1.599 | 0.850 |
 | 5 | 10.250 | 0.5287 | 0.6667 | 1.176 | 0.812 |
 
-- Outputs saved to experiments/00_reproduction/regression_eval/ (CSV, summary, stdout log). The CSV is identical (6 decimals) to the archived
-  original pretrained_5fold_results.csv; the summary differs only in "41 hashed" (old glob) vs "44 hashed" (manifest).
-- Stderr only contained the TensorFlow AVX2 CPU-feature notice (harmless).
+- 출력은 experiments/00_reproduction/regression_eval/에 저장(CSV, 요약, stdout 로그). CSV는 보관된 원래
+  pretrained_5fold_results.csv와 같다(소수 6자리). 요약은 "41 hashed"(이전 glob)와 "44 hashed"(매니페스트)만 다르다.
+- stderr에는 TensorFlow AVX2 CPU 기능 안내만 있었다(무해).
 
-## Stage 4 - documents and configuration
-- Added LICENSE (MIT, copyright holder left as `<YOUR NAME>`), THIRD_PARTY.md, .gitignore, data/README.md, README.md,
-  configs/image_publishable.csv (36 subject_ids), src/repro/publish_guard.py, envs/environment_tf1.yml
-  (`conda env export -n ghoddoosian_tf1 --no-builds`, prefix line removed).
-- Checks: image_publishable.csv has 36 rows; publish_guard raises for non-listed subjects (nothing written) and saves for listed ones;
-  .gitignore leaves third_party/ tracked (44 files) and ignores foo.png, *.dat, *.mp4, new my_model* outside third_party, config.local.yaml, .vscode/.
-- New-structure runs: check_environment.py -> ENVIRONMENT_OK, check_dataset.py -> DATASET_OK;
-  check_video_assets.py without DLIB_LANDMARK_PATH exits with a message naming that variable (video/dlib assets not run: no data in the repo).
-- README reports only the confirmed regression table; Fold1 retraining is stated as TBD; BibTeX left as a TODO block.
+## Stage 4 - 문서와 설정 (Stage 4 - documents and configuration)
+- 추가: LICENSE(MIT, 저작권자는 `<YOUR NAME>`으로 남김), THIRD_PARTY.md, .gitignore, data/README.md, README.md,
+  configs/image_publishable.csv(subject_id 36개), src/repro/publish_guard.py, envs/environment_tf1.yml
+  (`conda env export -n ghoddoosian_tf1 --no-builds`, prefix 줄 제거).
+- 확인: image_publishable.csv는 36행이다. publish_guard는 목록에 없는 피험자에게는 예외를 내고(아무것도 쓰지 않음) 목록에 있는 피험자는 저장한다.
+  .gitignore는 third_party/를 추적 상태(파일 44개)로 두고 foo.png, *.dat, *.mp4, third_party 밖의 새 my_model*, config.local.yaml, .vscode/를 무시한다.
+- 새 구조에서 실행: check_environment.py -> ENVIRONMENT_OK, check_dataset.py -> DATASET_OK.
+  DLIB_LANDMARK_PATH 없이 실행한 check_video_assets.py는 그 변수를 지목하는 메시지를 내고 종료한다(영상/dlib 자산은 실행하지 않음: 저장소에 데이터 없음).
+- README에는 확인된 회귀 표만 싣고, Fold1 재학습은 TBD로 적었다. BibTeX는 TODO 블록으로 남겼다.
 
-## Stage 5 - privacy / size check
-- Searched all tracked files (including binaries) for the local user name, `C:\Users` paths, e-mail-like strings and token/key patterns:
-  no hits in third_party/; no hits in the rest except one self-referencing line in this log, which was rewritten with placeholders.
+## Stage 5 - 개인정보 / 크기 점검 (Stage 5 - privacy / size check)
+- 추적된 모든 파일(바이너리 포함)에서 로컬 사용자 이름, `C:\Users` 경로, 이메일 형태 문자열, 토큰/키 패턴을 검색했다:
+  third_party/에서는 발견되지 않았고, 나머지에서는 이 로그의 자기 참조 한 줄을 빼고 발견되지 않았다. 그 한 줄은 자리표시자로 고쳐 썼다.
 
 # Fold1 다중 시드 재학습 준비 (2026-09-30)
 
