@@ -26,6 +26,9 @@
 |---|---|---|
 | [IMPROVEMENT_LOG.md](IMPROVEMENT_LOG.md) | 날짜순 기록(사전 등록, 결과, 정정) | **추가만 한다** |
 | [DECISIONS.md](DECISIONS.md) | 개선 결정과 결정 대기 | 로그에 있는 결정만 옮긴다 |
+| [RULE_SPEC.md](RULE_SPEC.md) | 규칙 가지 명세(EAR 정의, 닫힘 판정, 감김 구간 상태기계, 유효성 검사, 민감도 분석 계획, 부록 문헌 표) | 버전을 올리고 변경 이력에 남긴다 |
+| [BASELINE_OUTPUTS.md](BASELINE_OUTPUTS.md) | B1 기준 출력 보관 명세(생성은 후속 작업) | 변경 이력에 남긴다 |
+| [D1_REQUIREMENTS.md](D1_REQUIREMENTS.md) | D1 구현 단계 C1~C5의 요구사항(코드 없음) | 변경 이력에 남긴다 |
 
 ## 4. 읽는 순서
 
