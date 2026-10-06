@@ -7,7 +7,11 @@ import unittest
 from improve.rules import session_log
 
 PACKAGE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-FORBIDDEN_TOKENS = ("imwrite", "imsave", "VideoWriter", "cv2", "PIL", "ImageGrab", "save_frame", "snapshot")
+# 프레임·이미지를 저장하는 기능을 가리키는 토큰은 패키지의 모든 파일에서 금지한다.
+FORBIDDEN_TOKENS = ("imwrite", "imsave", "VideoWriter", "ImageGrab", "save_frame", "snapshot")
+# 영상을 읽는 C1b 추출기 복제본만 cv2 를 쓸 수 있다(영상 읽기와 전처리용이며 저장 호출은 위 토큰으로 막는다). 다른 파일은 금지한다.
+IMAGE_LIBRARY_TOKENS = ("cv2", "PIL")
+IMAGE_LIBRARY_ALLOWED_FILES = ("blink_video_dump.py",)
 
 
 class SessionLogTest(unittest.TestCase):
@@ -93,6 +97,10 @@ class NoFrameStorageTest(unittest.TestCase):
             for token in FORBIDDEN_TOKENS:
                 if token in source:
                     offenders.append((name, token))
+            if name not in IMAGE_LIBRARY_ALLOWED_FILES:
+                for token in IMAGE_LIBRARY_TOKENS:
+                    if token in source:
+                        offenders.append((name, token))
         self.assertEqual(offenders, [])
 
 
