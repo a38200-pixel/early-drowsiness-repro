@@ -133,7 +133,13 @@ docs/REPRODUCTION_LOG.md   오류를 포함한 날짜순 단계별 기록(추가
 docs/IMPLEMENTATION_DIFF.md  원본 대비 차이, 문제점 목록, 단계별 메모
 docs/REPRODUCTION_REPORT.md  재현 보고서, docs/CLAIMS_LEDGER.md 주장 장부, docs/PIPELINE_RUNBOOK.md 실행 안내,
                            docs/DECISIONS.md 결정 기록, docs/EVALUATION_PROTOCOL.md 개선 실험 평가 규칙
+docs/improvement/          개선 트랙 문서(README, IMPROVEMENT_LOG, DECISIONS), 안내: docs/improvement/README.md
+src/improve/               개선 트랙 코드(rules/, demo/, 아직 비어 있음)
+experiments/improve/       개선 트랙 실험 결과(아직 비어 있음)
+configs/improve/           개선 트랙 설정(아직 비어 있음)
 ```
+
+개선 트랙의 범위, 재현 트랙과의 경계, 의존 방향은 [docs/improvement/README.md](docs/improvement/README.md)에 있습니다.
 
 S2~S5의 산출물(blink txt, 시퀀스 npy, B1 학습 출력, 집계 결과)은 용량과 데이터 이용 지침 때문에 저장소 밖에 둡니다(경로는 환경변수로 받음, [docs/PIPELINE_RUNBOOK.md](docs/PIPELINE_RUNBOOK.md) 참고).
 
