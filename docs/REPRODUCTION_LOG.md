@@ -1502,3 +1502,95 @@ B1 기준선 단계를 여기서 마친다. 이 항목은 이전 날짜 항목�
 6. 이미 쓰인 "데모 점검 사전 등록 (2026-10-05)", "데모 점검 결과 (2026-10-05)", "데모 영상 3초 이상 blink 육안 확인 (2026-10-05)" 항목은 이 로그에 그대로 두며 개선 트랙의 입력으로 제목과 날짜로 인용된다. [확실]
 7. 방침: 이후 이 로그에는 정정만 추가한다. 개선 작업의 사전 등록, 결과, 결정은 `docs/improvement/`에 쓴다. [확실] (방침)
 8. 태그 `baseline-b1-v1` 존재 확인(`git tag -l`). 해시는 이 항목에 쓰지 않는다. [확실]
+
+
+# 로그 앞부분 번역과 영향 점검 (2026-10-06)
+
+이 항목은 사용자 지시로 이 로그의 앞부분(영문이던 구간)이 한국어로 번역되어 커밋된 뒤, 그 영향을 점검한 기록이다. 이 항목은 새 측정이 아니며, 점검은 읽기 전용으로 했다. 번역 전 판과 번역 후 판의 비교는 두 커밋의 이 파일끼리 했다. [확실]
+
+1. 예외 기록: 사용자 지시로 앞부분이 번역되었고, 이는 이 로그의 추가 전용 규칙에 대한 1회 예외이다(결정 D-15). 번역 커밋은 `5cb32d2`(커밋 제목 "Update REPRODUCTION_LOG.md", 이 파일 269줄 삭제, 245줄 추가)이고 그 부모 커밋은 `ad561f6`이다. 번역된 구간은 번역 전 판 1~445줄이며 번역 후 판 1~421줄이다. 번역 후 판 422줄("Fold1 다중 시드 재학습 준비 (2026-09-30)")부터는 번역 전 판 446줄부터와 완전히 같다. 같다는 확인에는 번역 전 판에 이미 들어 있던 "재현 트랙 동결과 개선 트랙 분리 (2026-10-06)" 항목이 포함된다. [확실]
+2. 원문 복원: 번역 전 원문은 두 곳에서 복원할 수 있다. 태그 `baseline-b1-v1`(커밋 `a88ae27`)의 이 파일과 번역 커밋의 부모 커밋 `ad561f6`의 이 파일이다. 두 상태의 차이를 `git diff`로 확인한 결과, 부모 커밋 쪽에 파일 끝 14줄(항목 "재현 트랙 동결과 개선 트랙 분리 (2026-10-06)")이 더해졌을 뿐 삭제나 수정된 줄은 없다(추가 14, 삭제 0, 변경 구간 1개). 따라서 번역 전 원문 구간(1~445줄)은 두 곳에서 같다. [확실]
+3. 제목 대응표: 번역된 구간의 `#` 제목은 모두 한국어 제목에 영문 원제를 괄호로 남기는 형식으로 바뀌었다. 제목 줄 전체 186개 중 31개가 바뀌었고 155개는 바뀌지 않았다(번역 구간 밖). 이후 이 로그의 영문 제목을 인용한 곳은 아래 표를 통해 해석한다. 줄 번호는 "번역 전 판 줄 → 번역 후 판 줄"이다. [확실]
+
+| 번호 | 번역 전 제목 (줄) | 번역 후 제목 (줄) |
+|---:|---|---|
+| 1 | Ghoddoosian et al. CVPRW 2019 reproduction log (1) | Ghoddoosian et al. CVPRW 2019 재현 기록 (reproduction log) (1) |
+| 2 | Environment (7) | 환경 (Environment) (7) |
+| 3 | Installed major packages (34) | 설치한 주요 패키지 (Installed major packages) (33) |
+| 4 | Static source inspection (52) | 소스 정적 점검 (Static source inspection) (51) |
+| 5 | Dataset verification (72) | 데이터 확인 (Dataset verification) (67) |
+| 6 | Original Training.py defaults (86) | 원본 Training.py 기본값 (Original Training.py defaults) (80) |
+| 7 | Pretrained Fold1 evaluation (105) | 공개 체크포인트 Fold1 평가 (Pretrained Fold1 evaluation) (97) |
+| 8 | Fold1 training smoke test (124) | Fold1 학습 스모크 테스트 (Fold1 training smoke test) (114) |
+| 9 | Video-stage verification (148) | 영상 단계 확인 (Video-stage verification) (136) |
+| 10 | Installation issues and resolutions (172) | 설치 문제와 해결 (Installation issues and resolutions) (158) |
+| 11 | Reproduction status (updated in session 2, see below) (193) | 재현 상태 (Reproduction status, 세션 2에서 갱신, 아래 참고) (172) |
+| 12 | Session 2: baseline reproduction (2026-09-30) (208) | 세션 2: 기준선 재현 (Session 2: baseline reproduction) (2026-09-30) (187) |
+| 13 | New helper files (originals untouched) (210) | 새 보조 파일, 원본은 그대로 (New helper files, originals untouched) (189) |
+| 14 | Environment (step 1) (224) | 환경 (Environment, step 1) (203) |
+| 15 | Data and checkpoints (steps 2-3) (229) | 데이터와 체크포인트 (Data and checkpoints, steps 2-3) (208) |
+| 16 | Pretrained 5-fold evaluation (steps 4-5) (240) | 공개 체크포인트 5-fold 평가 (Pretrained 5-fold evaluation, steps 4-5) (219) |
+| 17 | Comparison with the paper (step 6) (255) | 논문과의 비교 (Comparison with the paper, step 6) (234) |
+| 18 | Fold1 original settings and retraining (step 7) (281) | Fold1 원본 설정과 재학습 (Fold1 original settings and retraining, step 7) (260) |
+| 19 | Comparison A / B / C on Fold1 (step 8) (297) | Fold1 비교 A / B / C (Comparison A / B / C on Fold1, step 8) (276) |
+| 20 | Cause analysis (only one retraining run exists, so nothing below is proven) (316) | 원인 분석 (Cause analysis, 재학습 실행이 1회뿐이므로 아래 내용은 어느 것도 증명되지 않았다) (293) |
+| 21 | Full five-fold training estimate (step 9) (331) | 5-fold 전체 학습 추정 (Full five-fold training estimate, step 9) (308) |
+| 22 | blink_video.py static analysis (step 10) (339) | blink_video.py 정적 분석 (blink_video.py static analysis, step 10) (315) |
+| 23 | Single-video preprocessing test preparation (step 11) (373) | 단일 영상 전처리 시험 준비 (Single-video preprocessing test preparation, step 11) (349) |
+| 24 | Source modification policy (386) | 소스 수정 방침 (Source modification policy) (362) |
+| 25 | Repository consolidation log (new portfolio repository) (394) | 저장소 통합 기록 (Repository consolidation log, new portfolio repository) (370) |
+| 26 | Stage 0 - read-only checks (2026-09-30) (396) | Stage 0 - 읽기 전용 점검 (Stage 0 - read-only checks) (2026-09-30) (372) |
+| 27 | Stage 1 - skeleton and vendoring (402) | Stage 1 - 골격과 vendoring (Stage 1 - skeleton and vendoring) (378) |
+| 28 | Stage 2 - scripts and records moved (409) | Stage 2 - 스크립트와 기록 이동 (Stage 2 - scripts and records moved) (385) |
+| 29 | Stage 3 - regression test in the new structure (no training) (415) | Stage 3 - 새 구조에서 회귀 시험, 학습 없음 (Stage 3 - regression test in the new structure, no training) (391) |
+| 30 | Stage 4 - documents and configuration (432) | Stage 4 - 문서와 설정 (Stage 4 - documents and configuration) (408) |
+| 31 | Stage 5 - privacy / size check (442) | Stage 5 - 개인정보 / 크기 점검 (Stage 5 - privacy / size check) (418) |
+
+   다른 문서와 코드 주석이 이 로그를 인용한 제목(로그 언급 줄의 큰따옴표 인용 후보 233개)을 번역 후 판의 제목과 대조했다. 대조 규칙: 인용 문자열(또는 쉼표로 이은 복합 인용의 각 조각, 모든 조각이 있어야 함)이 제목의 부분 문자열이거나 앞부분 일치이면 "찾음"이다. 결과: 번역 전과 후 모두 찾은 것 153개, **번역 전에는 찾았으나 번역 후에는 못 찾은 것 5개**, 번역 전과 후 모두 못 찾은 것 75개이다. 못 찾은 5개는 다음과 같다. 이 5개는 위 대응표의 번호로 해석한다. [확실]
+
+| 인용한 문서와 줄 | 인용 제목 | 번역 전 판 위치 | 번역 후 판에서 못 찾은 이유(기계적) | 해석에 쓸 대응표 번호 |
+|---|---|---|---|---|
+| `docs/DECISIONS.md` 9줄 | "Repository consolidation log, Stage 1 - skeleton and vendoring (2026-09-30)" | 394, 402 | 번역 후 제목에 날짜 표기가 없고 한국어가 끼어 있음 | 25, 27 |
+| `docs/DECISIONS.md` 10줄 | "Fold1 original settings and retraining (step 7)" | 281 | 영문 원제가 괄호 안으로 들어가 "(step 7)"의 위치가 바뀜 | 18 |
+| `docs/DECISIONS.md` 11줄 | "Comparison A / B / C on Fold1 (step 8)" | 297 | 같음 | 19 |
+| `docs/REPRODUCTION_REPORT.md` 33줄 | "Environment (2026-09-30)" | 7 (제목 "Environment"에 앞부분 일치) | 번역 후 제목은 "환경 (Environment)" | 2 또는 14 |
+| `docs/REPRODUCTION_REPORT.md` 70줄 | "Session 2: baseline reproduction (2026-09-30)" | 208 | 날짜가 영문 원제 괄호 뒤로 밀림 | 12 |
+
+   번역 전과 후 모두 못 찾은 75개 중 번역된 구간을 가리키는 복합·생략 표기는 `docs/REPRODUCTION_REPORT.md` 70줄 "Repository consolidation log, Stage 3 (2026-09-30)", 같은 문서 81줄 "Session 2 ... Fold1 original settings and retraining", `docs/PIPELINE_RUNBOOK.md` 34줄 "Session 2 ... step 7, step 9"이다. 이들은 번역 전 판에서도 한 문자열로는 찾아지지 않았고, 해석에는 위 대응표 12, 18, 21, 25, 29를 쓴다. 나머지는 번역하지 않은 구간(번역 후 판 422줄 이후)의 한국어 제목을 쉼표나 줄임표로 이은 표기이거나 제목이 아닌 인용이며, 번역의 영향을 받지 않는다(번역 후 판 422줄 이후는 번역 전과 같음). 개별 확인은 하지 않았다(미검증). [확실]
+4. 기계적 비교 결과: 번역된 구간(번역 전 1~445줄, 번역 후 1~421줄)에서 토큰을 뽑아 다중 집합을 비교했다. 의미 변경 여부는 판단하지 않는다. [확실]
+   - 숫자(정수와 소수): 두 자리 이상의 정수와 소수는 개수까지 모두 같다. 한 자리 정수 7개의 개수가 다르다(번역 전 → 번역 후): 0은 16 → 19, 1은 86 → 96, 2는 30 → 32, 3은 15 → 16, 4는 35 → 37, 5는 31 → 38, 6은 16 → 17. [가능성 높음] 원인은 제목에 영문 원제를 병기하면서 "Stage 0", "step 7" 같은 숫자가 겹친 것과 "3-5"를 "3~5"로 옮긴 것이다(개별 확인은 하지 않았다).
+   - 16진 해시(7자 이상): 해시는 한쪽에만 있는 것이 없다. 정규식이 영단어 "succeeded"의 일부 "cceeded"를 잡은 것이 번역 전 1개 → 번역 후 0개로 보이며, 이는 해당 영단어가 번역된 결과이다.
+   - 백틱 조각: 번역 후에만 있는 것 1개 `conda run -n ghoddoosian_tf1 ...`(번역 전에는 한 줄이 둘로 나뉘어 있었다). 한쪽에만 있는 다른 백틱 조각은 없다.
+   - 경로 형태 토큰: 번역 전에만 있는 16개는 `.vscode/.`, `Input/output`, `Noise/imbalance`, `go/no-go`, `graph/evaluation/training`, `left/right`, `n/a`, `removed/deprecated`, `restore/evaluation`, `s/epoch`, `shapes/dtypes`, `third_party/ghoddoosian/.`(끝의 마침표 포함), `token/key`, `training/data-flow`, `video/dlib`, `yawning/MAR`이다(영문 문장 속 슬래시 표현이 번역되었거나 문장 부호가 바뀐 것). 번역 후에만 있는 것은 `shape/dtype`, `third_party/ghoddoosian/` 2개이다. 파일 경로와 폴더 경로로 쓰인 토큰은 이 목록 밖에서 모두 같다.
+   - 코드 블록과 오류 메시지: 코드 블록(``` 안) 내용은 번역 전 29줄과 번역 후 29줄이 완전히 같다. 즉 명령, 로그 출력, TensorFlow/scikit-learn 경고 원문은 번역되지 않았다. 논문과 소스에서 가져온 영어 인용("not explicitly reported", "approximately 50,000", "run each fold a few times to see the best performance")도 그대로 남아 있다.
+5. 번역의 충실도는 사용자 확인 전까지 **미검증**이다. 위 4번은 토큰 수준의 기계적 비교이며 번역이 의미를 바꾸지 않았다는 근거가 아니다. [확실]
+
+## 줄 번호 대응
+
+다른 문서가 이 로그를 줄 번호로 인용한 곳을 모두 찾아 번역 후 판(`5cb32d2`)의 줄 번호로 바꾸는 방법을 적는다. 인용한 문서는 수정하지 않았으므로, 그 문서의 줄 번호는 번역 전 판(`ad561f6`) 기준 그대로이다. 줄 번호 인용은 `docs/IMPLEMENTATION_DIFF.md`에만 있었고(17건) `src/` 주석과 다른 문서에는 없었다. 이 점검의 검색 패턴은 `N-M행`, `N줄`, `N행`, `lines N`, `REPRODUCTION_LOG.md:N-M` 형태이며, 로그 줄 번호를 이 밖의 형태로 인용한 곳은 못 찾았다(미검증). [확실]
+
+- (i) 규칙: 번역 전 판 446줄 이상은 번역 후 판 줄 번호 = 번역 전 줄 번호 − 24이다. 검증 샘플 3곳(번역 전 줄 → 번역 후 줄, 줄 내용 일치): 446 → 422(제목 "Fold1 다중 시드 재학습 준비 (2026-09-30)"), 900 → 876(문장 "사전 등록(위 \"저자 .npy ..."로 시작하는 줄), 1500 → 1476(빈 줄이므로 일치의 근거가 약하다). 샘플을 보강하려고 아래 (ii)에서 인용된 범위 11개를 줄 단위로 전부 대조했고 모두 내용이 같았다. 이 규칙은 번역 전 판과 번역 후 판 사이의 대응이며, 이 항목이 추가되기 전의 번역 후 판 기준이다. [확실]
+- (ii) 인용 목록과 번역 후 줄 번호: 번역 전 446줄 미만은 내용 대조로 찾았다(대응 불확실은 없음).
+
+| 인용한 문서와 줄 | 인용한 로그 줄(번역 전) | 가리키는 내용 | 번역 후 줄 |
+|---|---|---|---|
+| `docs/IMPLEMENTATION_DIFF.md` 257 | 245-253행 | "Pretrained 5-fold evaluation" 절의 표(헤더 줄부터 std 줄까지 9줄. 행 라벨 mean→평균, std→표준편차만 번역됨) | 224-232 (절 제목은 219) |
+| 287 | 537-575 | "회전 조사 사전 등록 (2026-10-02)"과 "배치 시험과 회전 조사 결과 (2026-10-02)" | 513-551 |
+| 287 | 590-632 | "방향 판정 규칙 v2 사전 등록 (2026-10-02)"부터 | 566-608 |
+| 287 | 634-651 | "회전 옵션 시험 사전 등록 (2026-10-02)" | 610-627 |
+| 287 | 663-675 | "회전 옵션 시험 결과 (2026-10-02)" | 639-651 |
+| 287 | 677-696 | "review 14개 육안 판정 결과 (2026-10-02)" | 653-672 |
+| 297 | 577-588 | "정정 (2026-10-02)" | 553-564 |
+| 302 | 590-632 | 위와 같음 | 566-608 |
+| 303 | 677-696 | 위와 같음 | 653-672 |
+| 303 | 734-784 | "일괄 추출 실행 결과 (2026-10-03)" | 710-760 |
+| 304 | 738-755 | 같은 항목의 1절 "배치 실행 결과" | 714-731 |
+| 305 | 738-755 | 위와 같음 | 714-731 |
+| 305 | 769-773 | 같은 항목의 4절 "사용자 육안 인상" | 745-749 |
+| 306 | 738-755 | 위와 같음 | 714-731 |
+| 307 | 762-768 | 같은 항목의 3절 "사용자 방침 (2026-10-03)" | 738-744 |
+| 317 | 711-732 | "--show 옵션 사전 등록 (2026-10-03)" | 687-708 |
+| 337 | 762-768 | 위와 같음 | 738-744 |
+
+  각 범위의 번역 전 줄 a..b와 번역 후 줄 a−24..b−24를 대조한 결과(범위 11개: 537-575, 577-588, 590-632, 634-651, 663-675, 677-696, 711-732, 734-784, 738-755, 762-768, 769-773) 전부 줄 내용이 같다. [확실] 표의 "가리키는 내용"은 각 범위의 시작 줄(제목)을 읽은 것이며, 인용한 문장이 의도한 범위와 같은지는 검토하지 않았다(미검증).
+- (iii) 제목 인용: 영문 제목을 인용한 곳은 영문 원제에서 날짜 접미사를 뺀 부분(예: "Session 2: baseline reproduction", "Stage 1 - skeleton and vendoring")으로 찾는다. 번역 후 제목에는 영문 원제가 괄호 안에 그대로 있으므로 이 문자열로 검색하면 찾을 수 있다. 날짜까지 포함해 검색하면 날짜 위치가 달라져 못 찾을 수 있다(예: "Session 2: baseline reproduction (2026-09-30)"는 번역 후 제목에서 ") (2026-09-30)"로 이어진다). 위 3번의 제목 대응표에 번호별 번역 후 제목이 있다. [확실]
