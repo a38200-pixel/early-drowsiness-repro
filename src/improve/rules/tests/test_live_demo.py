@@ -1,7 +1,7 @@
 # 실시간 데모의 규칙 처리부(live_demo.LiveRules)가 샘플을 프레임 단위로 흘려 넣어도 일괄 재생(episode_machine.run_samples,
 # replay.py 의 재생)과 같은 알람을 내는지 한 번 확인한다(웹캠, 화면, cv2 를 쓰지 않는다). 별도의 검증 항목은 더하지 않았다.
 # 입력: 기본은 합성 샘플(불규칙한 프레임 간격). 환경 변수가 있으면 실제 덤프로 확인한다.
-#   LIVE_DEMO_EAR_DUMP=<ear_dump.csv 경로>, LIVE_DEMO_REPLAY_DIR=<replay.py 출력 폴더(alarms_thr_0.15, 0.21, 0.25 .csv)>
+#   LIVE_DEMO_EAR_DUMP=<ear_dump.csv 경로>, LIVE_DEMO_REPLAY_DIR=<replay.py 출력 폴더(alarms_thr_<임계값>.csv)>
 #   두 변수를 모두 주면 스트리밍 알람 시각을 기존 재생 산출물의 alarm_time_s(소수 6자리)와도 대조한다.
 import contextlib
 import csv
@@ -18,7 +18,7 @@ from improve.rules import replay
 
 def synthetic_samples():
     """결정적 합성 샘플(불규칙 간격 0.030~0.050초). 닫힘 4초, 0.2초 열림이 낀 닫힘 3.5초, 얼굴 없음 1.5초,
-    임계값 사이(EAR 0.20)의 닫힘 4초, 출처 tracked 구간을 넣는다."""
+    후보 임계값 사이(EAR 0.165: 0.17만 닫힘)의 닫힘 4초, 출처 tracked 구간을 넣는다."""
     samples = []
     t = 0.0
     index = 0
@@ -30,7 +30,7 @@ def synthetic_samples():
         elif 17.0 <= t < 18.5:
             sample = (None, "none")
         elif 19.0 <= t < 23.0:
-            sample = (0.20, "detected")
+            sample = (0.165, "detected")
         elif 25.0 <= t < 25.5:
             sample = (0.10, "tracked")
         else:
@@ -70,10 +70,15 @@ class StreamingMatchesBatchTest(unittest.TestCase):
         self.assertGreater(total, 0)
         replay_dir = os.environ.get("LIVE_DEMO_REPLAY_DIR")
         if replay_dir and os.environ.get("LIVE_DEMO_EAR_DUMP"):
-            for threshold in rules.thresholds:
-                expected = read_alarm_times(os.path.join(replay_dir, "alarms_thr_%s.csv" % replay.threshold_label(threshold)))
+            compared = 0
+            for threshold in rules.thresholds:                              # 재생 산출물이 있는 임계값만 대조한다
+                path = os.path.join(replay_dir, "alarms_thr_%s.csv" % replay.threshold_label(threshold))
+                if not os.path.exists(path):
+                    continue
+                compared += 1
                 got = ["%.6f" % alarm.alarm_time_s for alarm in streamed[threshold]]
-                self.assertEqual(got, expected, "재생 산출물과 알람 시각 불일치, 임계값 %.2f" % threshold)
+                self.assertEqual(got, read_alarm_times(path), "재생 산출물과 알람 시각 불일치, 임계값 %.2f" % threshold)
+            self.assertGreater(compared, 0, "대조할 재생 산출물이 없습니다.")
 
 
 class StickyDisplayTest(unittest.TestCase):
@@ -136,18 +141,23 @@ class DisplaySettingsDoNotChangeAlarmsTest(unittest.TestCase):
         for threshold in live_demo.THRESHOLDS:
             batch = EM.run_samples(samples, threshold=threshold, valid_sources=live_demo.VALID_SOURCES)
             self.assertEqual(reference[threshold], batch.alarms)
-        # 소리 설정: 기본은 꺼짐이고, --beep 없이 --beep-all 만 주면 소리 없음, --beep 은 0.21만, 함께 주면 모두
-        alarm = reference[live_demo.MAIN_THRESHOLD][0]
+        # 소리 설정: 기본은 꺼짐이고, --beep 없이 --beep-all 만 주면 소리 없음, --beep 은 주 임계값(목록의 첫 값)만, 함께 주면 모두
+        main, second, third = live_demo.THRESHOLDS[:3]
+        alarm = reference[main][0]
         calls = []
-        self.assertFalse(live_demo.Beeper(backend=lambda: calls.append(1)).on_new_alarms([(0.21, alarm)]))
-        self.assertFalse(live_demo.Beeper(beep_all=True, backend=lambda: calls.append(1)).on_new_alarms([(0.21, alarm)]))
+        self.assertFalse(live_demo.Beeper(backend=lambda: calls.append(1)).on_new_alarms([(main, alarm)]))
+        self.assertFalse(live_demo.Beeper(beep_all=True, backend=lambda: calls.append(1)).on_new_alarms([(main, alarm)]))
         self.assertEqual(calls, [])
         beeper = live_demo.Beeper(enabled=True, backend=lambda: calls.append(1))
-        self.assertFalse(beeper.on_new_alarms([(0.15, alarm)]))
-        self.assertTrue(beeper.on_new_alarms([(0.21, alarm)]))
+        self.assertFalse(beeper.on_new_alarms([(second, alarm)]))
+        self.assertTrue(beeper.on_new_alarms([(main, alarm)]))
         beeper_all = live_demo.Beeper(enabled=True, beep_all=True, backend=lambda: calls.append(1))
-        self.assertTrue(beeper_all.on_new_alarms([(0.15, alarm), (0.25, alarm)]))
+        self.assertTrue(beeper_all.on_new_alarms([(second, alarm), (third, alarm)]))
         self.assertEqual(calls, [1, 1])                                   # 같은 갱신의 여러 알람에도 한 번만 울린다
+        beeper_other = live_demo.Beeper(enabled=True, backend=lambda: calls.append(1), primary=second)    # 주 임계값은 목록의 첫 값에서 온다
+        self.assertFalse(beeper_other.on_new_alarms([(main, alarm)]))
+        self.assertTrue(beeper_other.on_new_alarms([(second, alarm)]))
+        self.assertEqual(calls, [1, 1, 1])
         self.assertEqual(live_demo.Beeper().label(), "sound: off")
         self.assertEqual(live_demo.Beeper(enabled=True).label(), "sound: on")
         self.assertEqual(live_demo.Beeper(enabled=True, muted=True).label(), "sound: off")
@@ -226,7 +236,7 @@ class SirenPlaybackTest(unittest.TestCase):
         fake = FakeWinsound()
         with mock.patch.object(live_demo, "_winsound_module", return_value=fake):
             beeper = live_demo.Beeper(enabled=True)
-            self.assertTrue(beeper.on_new_alarms([(0.21, alarm), (0.25, alarm)]))     # 같은 갱신의 두 알람
+            self.assertTrue(beeper.on_new_alarms([(live_demo.THRESHOLDS[0], alarm), (live_demo.THRESHOLDS[2], alarm)]))   # 같은 갱신의 두 알람
             beeper.player.join(10.0)
         self.assertIsNone(beeper.player.error)
         self.assertEqual(len(fake.calls), live_demo.SIREN_PIECE_COUNT)       # 스레드 하나가 조각 12개를 재생한다
@@ -243,7 +253,7 @@ class SirenPlaybackTest(unittest.TestCase):
         stopper_fake = FakeWinsound(on_call=lambda number: holder["beeper"].stop() if number == 1 else None)
         with mock.patch.object(live_demo, "_winsound_module", return_value=stopper_fake):
             holder["beeper"] = live_demo.Beeper(enabled=True)
-            holder["beeper"].on_new_alarms([(0.21, alarm)])
+            holder["beeper"].on_new_alarms([(live_demo.MAIN_THRESHOLD, alarm)])
             holder["beeper"].player.join(10.0)
         self.assertEqual(len(stopper_fake.calls), 1)
 
@@ -263,6 +273,70 @@ class SirenPlaybackTest(unittest.TestCase):
         for threshold in rules.thresholds:
             batch = EM.run_samples(samples, threshold=threshold, valid_sources=live_demo.VALID_SOURCES)
             self.assertEqual(list(rules.machines[threshold].alarms), batch.alarms)
+
+
+class ThresholdListTest(unittest.TestCase):
+    def test_default_thresholds_and_first_value_is_primary(self):
+        """(a) --thresholds 의 기본값은 0.15,0.16,0.17 이고 목록의 첫 값이 주 임계값이다(0.21, 0.25 도 다시 쓸 수 있다)."""
+        self.assertEqual(live_demo.THRESHOLDS, (0.15, 0.16, 0.17))
+        arguments = live_demo.parse_args(["--predictor", "unused"])
+        self.assertEqual(arguments.thresholds, "0.15,0.16,0.17")
+        parsed = live_demo.parse_thresholds(arguments.thresholds)
+        self.assertEqual(parsed, (0.15, 0.16, 0.17))
+        self.assertEqual(live_demo.LiveRules(parsed).primary, 0.15)
+        self.assertEqual(live_demo.LiveRules(live_demo.parse_thresholds("0.21,0.25")).primary, 0.21)
+        self.assertEqual(live_demo.LiveRules(live_demo.parse_thresholds("0.17,0.15")).primary, 0.17)
+        self.assertEqual(live_demo.MAIN_THRESHOLD, live_demo.THRESHOLDS[0])
+        self.assertEqual(live_demo.threshold_label(0.16), "0.16")
+        self.assertEqual(live_demo.threshold_label(0.155), "0.155")
+
+    def test_threshold_list_format_errors(self):
+        """(b) 형식 오류(빈 값, 실수 아님, 범위 밖, 개수 초과, 중복)는 한 줄 메시지를 내고, main 은 한 줄을 출력하고 2 로 끝난다."""
+        for text in ("", "   ", "abc", "0.15,,0.16", "0.15,", ",0.15", "0", "1", "1.2", "-0.1", "nan", "inf",
+                     "0.1,0.2,0.3,0.4,0.5", "0.15,0.15", "0.15, 0.150"):
+            with self.subTest(text=text):
+                with self.assertRaises(ValueError) as caught:
+                    live_demo.parse_thresholds(text)
+                message = str(caught.exception)
+                self.assertTrue(message.startswith("--thresholds"))
+                self.assertNotIn("\n", message)
+        self.assertEqual(live_demo.parse_thresholds("0.16"), (0.16,))
+        self.assertEqual(live_demo.parse_thresholds(" 0.15 , 0.17 "), (0.15, 0.17))
+        self.assertEqual(len(live_demo.parse_thresholds("0.1,0.2,0.3,0.4")), 4)
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer):
+            code = live_demo.main(["--predictor", "unused", "--thresholds", "0.15,0.15"])
+        self.assertEqual(code, 2)
+        lines = buffer.getvalue().splitlines()
+        self.assertEqual(len(lines), 1)
+        self.assertTrue(lines[0].startswith("--thresholds"))
+
+    def test_threshold_list_does_not_change_alarm_times_and_matches_batch(self):
+        """(c) 임계값 목록을 바꿔도(순서, 개수, 값) 같은 입력에서 임계값별 알람이 같고 일괄 처리(같은 상태기계)와 일치한다.
+        EAR now / min 3s 표시 값(RecentMinimum)을 함께 계산해도 규칙은 그대로이다. 모두 메모리 안에서만 하고 파일을 만들지 않는다."""
+        samples = synthetic_samples()
+        reference = {}
+        for thresholds in ((0.16, 0.17), (0.17, 0.16), (0.15, 0.16, 0.17), (0.16,), (0.21, 0.25), (0.15, 0.16, 0.17, 0.21)):
+            rules = live_demo.LiveRules(thresholds)
+            recent = live_demo.RecentMinimum()
+            observed = []
+            for timestamp_s, ear_mean, source in samples:
+                if ear_mean is not None and source == "detected":
+                    recent.add(timestamp_s, ear_mean)
+                    observed.append((timestamp_s, ear_mean))
+                    self.assertEqual(recent.minimum(timestamp_s), min(v for t, v in observed if timestamp_s - t <= 3.0))
+                rules.update(timestamp_s, ear_mean, source)
+            self.assertEqual(rules.primary, thresholds[0])
+            for threshold in thresholds:
+                alarms = list(rules.machines[threshold].alarms)
+                batch = EM.run_samples(samples, threshold=threshold, valid_sources=live_demo.VALID_SOURCES)
+                self.assertEqual(alarms, batch.alarms, "목록 %s, 임계값 %.2f" % (thresholds, threshold))
+                self.assertEqual(reference.setdefault(threshold, alarms), alarms)
+        window = live_demo.RecentMinimum()
+        self.assertIsNone(window.minimum(10.0))
+        window.add(0.0, 0.3)
+        self.assertEqual(window.minimum(3.0), 0.3)
+        self.assertIsNone(window.minimum(3.1))                              # 3.0초가 지나면 창에서 빠진다
 
 
 if __name__ == "__main__":

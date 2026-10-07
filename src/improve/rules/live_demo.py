@@ -1,15 +1,17 @@
 # 역할: 웹캠 실시간 데모(C4 일부, 결정 I-20). 사용자가 눈으로 확인하는 도구이며 규칙의 평가, 측정, 검증 도구가 아니다.
 #   알람 횟수와 시각은 육안 확인용 표시이고 어떤 결과의 근거로도 쓰지 않는다.
 # 규칙: docs/improvement/RULE_SPEC.md v1, 13절, 결정 I-17을 그대로 쓴다. episode_machine.EpisodeMachine 을 임계값마다 하나씩
-#   (0.15, 0.21, 0.25) 동시에 돌린다. 3.0초 알람, 열림 0.3초 해제, 얼굴 없음 1초 이상 "판정 불가"는 기존 규칙과 같다.
+#   --thresholds 목록(1~4개, 기본 0.15, 0.16, 0.17, 결정 I-21)의 모든 값에 대해 동시에 돌린다. 3.0초 알람, 열림 0.3초 해제,
+#   얼굴 없음 1초 이상 "판정 불가"는 기존 규칙과 같다. 목록의 첫 값이 주 임계값(가장 큰 줄, 테두리 깜빡임, --beep 의 기본 소리 대상)이다.
 #   이 파일의 표시와 소리 설정(DISPLAY_LATCH_S, 깜빡임, --beep)은 규칙 판정(알람 시각, 에피소드, 해제)과 섞이지 않는다.
 # 시간: 프레임이 들어온 시각(time.monotonic)을 timestamp 로 쓴다. 프레임 번호를 쓰지 않는다.
 # 입력: 웹캠. 얼굴 검출, 랜드마크, EAR 계산은 blink_video_dump.py 와 같은 방식이다(전처리: 너비 450 리사이즈, 회색, 감마 1.5,
 #   dlib 정면 검출기 detector(gray, 0)의 첫 얼굴, 같은 predictor). 감마 함수는 blink_video_dump 에서 가져오고, EAR 은 ear_math 를 쓴다.
 #   광학 흐름 추적(tracked)은 만들지 않았다: 기본 유효 출처가 detected 하나이므로(I-W-14 제안) 검출이 실패한 프레임은 source none 으로 넣는다.
-# 화면: 위에서부터 세 임계값(0.21 주 조건이 가장 큰 줄, 0.15, 0.25) 각각 화면 폭 전체의 줄, 얼굴 없음/판정 불가 노란 띠, 영상,
+# 화면: 위에서부터 임계값 목록(주 임계값이 가장 큰 줄) 각각 화면 폭 전체의 줄, 얼굴 없음/판정 불가 노란 띠, 영상(왼쪽 위에 EAR now: 현재
+#   프레임의 EAR 평균(detected 일 때만), min 3s: 최근 3.0초의 EAR 최솟값, 얼굴이 없으면 "-"; 둘 다 표시 전용이며 최근 3초분만 메모리에 둔다),
 #   키 안내 한 줄. 각 줄에는 임계값, 닫힘 진행 막대(0~3.0초), 알람 횟수(큰 숫자), "last alarm: N.N s ago"(없으면 "-")가 있다.
-#   알람이 난 줄은 빨강/주황이 0.25초 간격으로 번갈아 깜빡이며 R 키를 누를 때까지 유지된다(0.21은 화면 테두리도 같이).
+#   알람이 난 줄은 빨강/주황이 0.25초 간격으로 번갈아 깜빡이며 R 키를 누를 때까지 유지된다(주 임계값은 화면 테두리도 같이).
 #   알람 횟수는 R 키로 지워지지 않는다. 글자는 영문이다(화면 글꼴이 한글을 그리지 못한다). 구석에 sound: on/off/error 를 표시한다.
 # 표시 유지: R 키를 누를 때까지 유지가 기본이다. DISPLAY_LATCH_S 는 "R 없이 자동으로 꺼지는 시간(초)"이며 기본값 None(자동 꺼짐 없음)이다.
 #   이 값과 깜빡임 주기는 표시 전용이며 규칙 상수와 이름과 코드가 분리되어 있다. 규칙 판정에는 쓰지 않는다.
@@ -36,8 +38,10 @@ import time
 from . import ear_math
 from . import episode_machine as EM
 
-THRESHOLDS = (0.15, 0.21, 0.25)
-MAIN_THRESHOLD = 0.21                     # 가장 크게 표시하는 주 조건
+THRESHOLDS = (0.15, 0.16, 0.17)           # 기본 후보군(I-21, 사용자 판단, 선택 미확정). --thresholds 로 바꾼다(예: 0.21,0.25).
+MAIN_THRESHOLD = THRESHOLDS[0]            # 기본 목록의 첫 값(주 임계값). 실행 중에는 목록의 첫 값(LiveRules.primary)을 쓴다.
+MAX_THRESHOLDS = 4
+EAR_MIN_WINDOW_S = 3.0                    # "min 3s" 표시 창. 표시 전용이며 규칙 상수와 별개이고 규칙 판정에 쓰지 않는다.
 VALID_SOURCES = ("detected",)             # 기본 유효 출처(I-W-14 제안, 미확정)
 DISPLAY_LATCH_S = None                    # R 없이 자동으로 꺼지는 시간(초), None 이면 자동 꺼짐 없음. 표시 전용이며 규칙 상수와 별개이고 규칙 판정에 쓰지 않는다.
 BLINK_PERIOD_S = 0.25                     # 알람 줄의 빨강/주황 깜빡임 간격(표시 전용)
@@ -74,6 +78,9 @@ class LiveRules(object):
 
     def __init__(self, thresholds=THRESHOLDS, valid_sources=VALID_SOURCES):
         self.thresholds = tuple(thresholds)
+        if not self.thresholds:
+            raise ValueError("임계값 목록이 비어 있습니다.")
+        self.primary = self.thresholds[0]         # 목록의 첫 값이 주 임계값이다(가장 큰 줄, 테두리 깜빡임, 기본 소리 대상)
         self.machines = collections.OrderedDict(
             (threshold, EM.EpisodeMachine(threshold=threshold, valid_sources=valid_sources)) for threshold in self.thresholds)
         self._seen = dict((threshold, 0) for threshold in self.thresholds)
@@ -155,6 +162,53 @@ class DisplayLatch(object):
 def blink_is_red(now, period_s=BLINK_PERIOD_S):
     """알람 줄의 깜빡임 위상(표시 전용): period_s 마다 빨강과 주황이 번갈아 나온다. now 는 time.monotonic 값이다."""
     return int(now // period_s) % 2 == 0
+
+
+def threshold_label(threshold):
+    """화면에 쓰는 임계값 표기(소수 둘째 자리, 그것으로 구분되지 않으면 셋째 자리)."""
+    return "%.2f" % threshold if round(threshold, 2) == threshold else "%.3f" % threshold
+
+
+def parse_thresholds(text):
+    """쉼표로 구분한 임계값 목록을 튜플로 바꾼다. 1~4개, 각 값은 0 초과 1 미만의 실수, 중복 없음. 오류는 한 줄짜리 ValueError 이다."""
+    parts = [part.strip() for part in str(text).split(",")]
+    if not str(text).strip() or any(part == "" for part in parts):
+        raise ValueError("--thresholds 오류: 쉼표로 구분한 실수를 1~%d개 주세요(빈 값 없음)." % MAX_THRESHOLDS)
+    values = []
+    for part in parts:
+        try:
+            value = float(part)
+        except ValueError:
+            raise ValueError("--thresholds 오류: %r 은(는) 실수가 아닙니다." % part)
+        if not (0.0 < value < 1.0):
+            raise ValueError("--thresholds 오류: %r 은(는) 0 초과 1 미만이어야 합니다." % part)
+        values.append(value)
+    if len(values) > MAX_THRESHOLDS:
+        raise ValueError("--thresholds 오류: 임계값은 최대 %d개입니다(받은 개수 %d)." % (MAX_THRESHOLDS, len(values)))
+    if len(set(values)) != len(values):
+        raise ValueError("--thresholds 오류: 같은 값이 중복되어 있습니다.")
+    return tuple(values)
+
+
+class RecentMinimum(object):
+    """최근 window_s 초 동안의 값의 최솟값(표시 전용). 최근분만 메모리의 deque 에 두며 파일로 쓰지 않고 규칙 판정에 쓰지 않는다."""
+
+    def __init__(self, window_s=EAR_MIN_WINDOW_S):
+        self.window_s = window_s
+        self._items = collections.deque()
+
+    def _prune(self, now):
+        while self._items and now - self._items[0][0] > self.window_s:
+            self._items.popleft()
+
+    def add(self, timestamp_s, value):
+        self._items.append((timestamp_s, value))
+        self._prune(timestamp_s)
+
+    def minimum(self, now):
+        """now 기준 최근 window_s 초(경계 포함) 안의 최솟값. 값이 없으면 None."""
+        self._prune(now)
+        return min(value for _timestamp, value in self._items) if self._items else None
 
 
 _SIREN_CACHE = {}
@@ -280,8 +334,9 @@ class Beeper(object):
     backend 와 stopper 는 시험이나 다른 환경에서 재생과 정지 함수를 바꿔 끼우는 용도이다(없으면 SirenPlayer).
     """
 
-    def __init__(self, enabled=False, beep_all=False, muted=False, backend=None, stopper=None, player=None):
+    def __init__(self, enabled=False, beep_all=False, muted=False, backend=None, stopper=None, player=None, primary=None):
         self.enabled = enabled
+        self.primary = primary if primary is not None else MAIN_THRESHOLD     # 기본 소리 대상(목록의 첫 값)
         self.beep_all = beep_all
         self.muted = muted
         self._backend = backend
@@ -295,7 +350,7 @@ class Beeper(object):
         return self.enabled and not self.muted
 
     def wants(self, threshold):
-        return self.beep_all or threshold == MAIN_THRESHOLD
+        return self.beep_all or threshold == self.primary
 
     def toggle_mute(self):
         """음소거를 전환한다. 음소거로 바뀌면 재생 중인 소리에 정지 신호를 올린다."""
@@ -356,11 +411,14 @@ def _put_centered(cv2, canvas, text, x0, x1, y_center, scale, thickness, color):
                 color, thickness, cv2.LINE_AA)
 
 
-def draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, sound_label, now):
-    """화면 한 장을 그려 돌려준다(저장하지 않는다). 구성: 임계값별 전체 폭 줄(0.21이 가장 큼), 얼굴 상태 띠, 영상, 키 안내."""
+def draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, ear_min, sound_label, now):
+    """화면 한 장을 그려 돌려준다(저장하지 않는다). 구성: 임계값별 전체 폭 줄(주 임계값이 가장 큼), 얼굴 상태 띠, 영상, 키 안내.
+
+    ear_value 는 현재 프레임의 EAR 평균(detected 일 때만, 없으면 None), ear_min 은 최근 3.0초의 EAR 최솟값(없으면 None)이다. 둘 다 표시 전용이다.
+    """
     height, width = frame.shape[:2]
-    order = [t for t in rules.thresholds if t == MAIN_THRESHOLD] + [t for t in rules.thresholds if t != MAIN_THRESHOLD]
-    rows_h = sum(ROW_MAIN_H if t == MAIN_THRESHOLD else ROW_OTHER_H for t in order)
+    order = [t for t in rules.thresholds if t == rules.primary] + [t for t in rules.thresholds if t != rules.primary]
+    rows_h = sum(ROW_MAIN_H if t == rules.primary else ROW_OTHER_H for t in order)
     total_h = rows_h + STRIP_H + height + HINT_H
     canvas = np.zeros((total_h, width, 3), dtype=np.uint8)
     canvas[:] = COLOR_DARK
@@ -369,14 +427,14 @@ def draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, sound_label, 
     top = 0
     main_latched = False
     for threshold in order:
-        is_main = threshold == MAIN_THRESHOLD
+        is_main = threshold == rules.primary
         row_h = ROW_MAIN_H if is_main else ROW_OTHER_H
         mid = top + row_h // 2
         latched = latch.active(threshold, now)
         main_latched = main_latched or (is_main and latched)
         canvas[top:top + row_h, :] = flash if latched else (COLOR_GRAY if is_main else COLOR_GRAY_DARK)
 
-        label = "%.2f ALARM" % threshold if latched else "%.2f" % threshold
+        label = "%s ALARM" % threshold_label(threshold) if latched else threshold_label(threshold)
         label_thickness = 4 if is_main else 2
         label_scale = _fit_scale(cv2, label, label_thickness, int(width * 0.38), 2.0 if is_main else 1.0)
         cv2.putText(canvas, label, (14, top + (row_h * 11) // 20), cv2.FONT_HERSHEY_SIMPLEX, label_scale, COLOR_WHITE,
@@ -417,8 +475,11 @@ def draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, sound_label, 
     video = frame.copy()
     for polygon in eye_polygons:
         cv2.polylines(video, [polygon], True, (0, 255, 0), 1)
-    ear_text = "EAR --" if ear_value is None else "EAR %.3f" % ear_value
-    cv2.putText(video, ear_text, (10, 36), cv2.FONT_HERSHEY_SIMPLEX, 1.1, COLOR_WHITE, 3, cv2.LINE_AA)
+    ear_text = "EAR now: -" if ear_value is None else "EAR now: %.3f" % ear_value
+    min_text = "min 3s: -" if (ear_value is None or ear_min is None) else "min 3s: %.3f" % ear_min
+    ear_scale = _fit_scale(cv2, "EAR now: 0.000", 2, width - 20, 1.0)
+    cv2.putText(video, ear_text, (10, 34), cv2.FONT_HERSHEY_SIMPLEX, ear_scale, COLOR_WHITE, 2, cv2.LINE_AA)
+    cv2.putText(video, min_text, (10, 34 + int(36 * ear_scale) + 8), cv2.FONT_HERSHEY_SIMPLEX, ear_scale, COLOR_WHITE, 2, cv2.LINE_AA)
     sound_width, _sound_height = _text_size(cv2, sound_label, 0.6, 2)
     cv2.putText(video, sound_label, (max(10, width - sound_width - 10), height - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
                 COLOR_RED if sound_label == "sound: error" else COLOR_YELLOW, 2, cv2.LINE_AA)
@@ -433,7 +494,7 @@ def draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, sound_label, 
     return canvas
 
 
-def run(camera, predictor_path, beep=False, beep_all=False):
+def run(camera, predictor_path, beep=False, beep_all=False, thresholds=THRESHOLDS):
     """웹캠을 열어 실시간 데모를 실행한다. 종료 코드를 돌려준다."""
     import cv2
     import dlib
@@ -455,9 +516,10 @@ def run(camera, predictor_path, beep=False, beep_all=False):
     predictor = dlib.shape_predictor(predictor_path)
     (l_start, l_end) = face_utils.FACIAL_LANDMARKS_IDXS["left_eye"]
     (r_start, r_end) = face_utils.FACIAL_LANDMARKS_IDXS["right_eye"]
-    rules = LiveRules()
+    rules = LiveRules(thresholds)
     latch = DisplayLatch()
-    beeper = Beeper(enabled=beep, beep_all=beep_all)
+    beeper = Beeper(enabled=beep, beep_all=beep_all, primary=rules.primary)
+    recent = RecentMinimum()                         # 최근 3초 EAR 최솟값(표시 전용, 메모리만, R 키로 지워지지 않는다)
     try:
         while True:
             grabbed, frame = capture.read()
@@ -478,13 +540,15 @@ def run(camera, predictor_path, beep=False, beep_all=False):
                 scale = frame.shape[1] / float(small.shape[1])
                 for start, end in ((l_start, l_end), (r_start, r_end)):
                     eye_polygons.append((shape[start:end] * scale).astype(np.int32))
+                recent.add(arrival, ear_value)
                 new_alarms = rules.update(arrival, ear_value, "detected")
             else:
                 new_alarms = rules.update(arrival, None, "none")
             for threshold, _alarm in new_alarms:
                 latch.trigger(threshold, arrival)
             beeper.on_new_alarms(new_alarms)
-            cv2.imshow("live_demo", draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, beeper.label(), arrival))
+            ear_min = recent.minimum(arrival) if ear_value is not None else None
+            cv2.imshow("live_demo", draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, ear_min, beeper.label(), arrival))
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
                 break
@@ -504,15 +568,23 @@ def parse_args(argv=None):
     parser = argparse.ArgumentParser(description="웹캠 실시간 졸음 규칙 데모(사용자 육안 확인용, 아무것도 저장하지 않음).")
     parser.add_argument("--predictor", required=True, help="dlib 랜드마크 모델(.dat) 경로")
     parser.add_argument("--camera", type=int, default=0, help="웹캠 인덱스(기본 0, 640x480 요청)")
-    parser.add_argument("--beep", action="store_true", help="알람 순간에 경보음(2음 사이렌, 3.0초)을 낸다(기본 꺼짐, 기본은 0.21만)")
+    parser.add_argument("--beep", action="store_true", help="알람 순간에 경보음(2음 사이렌, 3.0초)을 낸다(기본 꺼짐, 기본은 주 임계값만)")
     parser.add_argument("--beep-all", dest="beep_all", action="store_true",
-                        help="--beep 과 함께 쓰면 세 임계값 모두 경보음(--beep 없이는 소리 없음)")
+                        help="--beep 과 함께 쓰면 모든 임계값에서 경보음(--beep 없이는 소리 없음)")
+    parser.add_argument("--thresholds", default=",".join(str(value) for value in THRESHOLDS),
+                        help="닫힘 임계값 목록(쉼표로 구분한 1~%d개, 0 초과 1 미만, 첫 값이 주 임계값, 기본 %s)"
+                             % (MAX_THRESHOLDS, ",".join(str(value) for value in THRESHOLDS)))
     return parser.parse_args(argv)
 
 
 def main(argv=None):
     arguments = parse_args(argv)
-    return run(arguments.camera, arguments.predictor, arguments.beep, arguments.beep_all)
+    try:
+        thresholds = parse_thresholds(arguments.thresholds)
+    except ValueError as error:
+        print(error)                                  # 한 줄 메시지를 출력하고 끝낸다
+        return 2
+    return run(arguments.camera, arguments.predictor, arguments.beep, arguments.beep_all, thresholds)
 
 
 if __name__ == "__main__":
