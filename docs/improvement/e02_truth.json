@@ -1,0 +1,29 @@
+{
+  "video": "20261007_2",
+  "source": "DATA_REGISTRY.md 2절(구간)과 3절(실제 시각), 사용자 기입 2026-10-07",
+  "time_note": "시각은 영상 재생기 표시 기준 초 단위이며 ±1초 오차가 있다(사용자 확인 대기). 의도한 길이와 실제 길이는 다를 수 있다.",
+  "classification": {
+    "positive_min_length_s": 3.5,
+    "negative_max_length_s": 2.5,
+    "note": "길이 = 끝 - 시작. 3.5초 이상 양성, 2.5초 이하 음성, 그 사이 경계. 눈 감기 종류의 사건에만 적용하고 동작(D, E)은 비대상이다."
+  },
+  "intervals": [
+    {"id": "A", "label": "정상", "start_s": 0, "end_s": 30, "start_text": "0초(처음)", "end_text": "30초"},
+    {"id": "B", "label": "3.5초 눈 감기 ×3(의도)", "start_s": 31, "end_s": 54, "start_text": "31초", "end_text": "54초"},
+    {"id": "C", "label": "2.5초 눈 감기 ×2(의도)", "start_s": 59, "end_s": 68, "start_text": "59초", "end_text": "68초(1분 8초)"},
+    {"id": "D", "label": "아래 보기 5초 ×2(의도)", "start_s": 72, "end_s": 87, "start_text": "72초(1분 12초)", "end_text": "87초(1분 27초)"},
+    {"id": "E", "label": "찡그리기 5초 ×2(의도)", "start_s": 90, "end_s": 107, "start_text": "90초(1분 30초)", "end_text": "107초(1분 47초)"},
+    {"id": "F", "label": "평소 깜빡임", "start_s": 108, "end_s": null, "start_text": "108초(1분 48초)", "end_text": "영상 끝"}
+  ],
+  "events": [
+    {"id": "B1", "interval": "B", "kind": "눈 감기", "start_s": 31, "end_s": 37, "length_s": 6, "class": "양성", "start_text": "31초", "end_text": "37초"},
+    {"id": "B2", "interval": "B", "kind": "눈 감기", "start_s": 39, "end_s": 45, "length_s": 6, "class": "양성", "start_text": "39초", "end_text": "45초"},
+    {"id": "B3", "interval": "B", "kind": "눈 감기", "start_s": 47, "end_s": 54, "length_s": 7, "class": "양성", "start_text": "47초", "end_text": "54초"},
+    {"id": "C1", "interval": "C", "kind": "눈 감기", "start_s": 59, "end_s": 61, "length_s": 2, "class": "음성", "start_text": "59초", "end_text": "1분 1초"},
+    {"id": "C2", "interval": "C", "kind": "눈 감기", "start_s": 65, "end_s": 68, "length_s": 3, "class": "경계", "start_text": "1분 5초", "end_text": "1분 8초"},
+    {"id": "D1", "interval": "D", "kind": "동작", "start_s": 72, "end_s": 77, "length_s": 5, "class": "비대상", "start_text": "1분 12초", "end_text": "1분 17초"},
+    {"id": "D2", "interval": "D", "kind": "동작", "start_s": 80, "end_s": 87, "length_s": 7, "class": "비대상", "start_text": "1분 20초", "end_text": "1분 27초"},
+    {"id": "E1", "interval": "E", "kind": "동작", "start_s": 90, "end_s": 96, "length_s": 6, "class": "비대상", "start_text": "1분 30초", "end_text": "1분 36초"},
+    {"id": "E2", "interval": "E", "kind": "동작", "start_s": 100, "end_s": 107, "length_s": 7, "class": "비대상", "start_text": "1분 40초", "end_text": "1분 47초"}
+  ]
+}
