@@ -1,7 +1,7 @@
 # 역할: 웹캠 실시간 데모(C4 일부, 결정 I-20). 사용자가 눈으로 확인하는 도구이며 규칙의 평가, 측정, 검증 도구가 아니다.
 #   알람 횟수와 시각은 육안 확인용 표시이고 어떤 결과의 근거로도 쓰지 않는다.
 # 규칙: docs/improvement/RULE_SPEC.md v1, 13절, 결정 I-17을 그대로 쓴다. episode_machine.EpisodeMachine 을 임계값마다 하나씩
-#   --thresholds 목록(1~4개, 기본 0.15, 0.16, 0.17, 결정 I-21)의 모든 값에 대해 동시에 돌린다. 3.0초 알람, 열림 0.3초 해제,
+#   --thresholds 목록(1~4개, 기본 0.15 하나(결정 I-22), 다른 값은 --thresholds 0.15,0.21,0.25 처럼 줄 수 있다)의 모든 값에 대해 동시에 돌린다. 3.0초 알람, 열림 0.3초 해제,
 #   얼굴 없음 1초 이상 "판정 불가"는 기존 규칙과 같다. 목록의 첫 값이 주 임계값(가장 큰 줄, 테두리 깜빡임, --beep 의 기본 소리 대상)이다.
 #   이 파일의 표시와 소리 설정(DISPLAY_LATCH_S, 깜빡임, --beep)은 규칙 판정(알람 시각, 에피소드, 해제)과 섞이지 않는다.
 # 시간: 프레임이 들어온 시각(time.monotonic)을 timestamp 로 쓴다. 프레임 번호를 쓰지 않는다.
@@ -12,13 +12,13 @@
 #   프레임의 EAR 평균(detected 일 때만), min 3s: 최근 3.0초의 EAR 최솟값, 얼굴이 없으면 "-"; 둘 다 표시 전용이며 최근 3초분만 메모리에 둔다),
 #   키 안내 한 줄. 각 줄에는 임계값, 닫힘 진행 막대(0~3.0초), 알람 횟수(큰 숫자), "last alarm: N.N s ago"(없으면 "-")가 있다.
 #   알람이 난 줄은 빨강/주황이 0.25초 간격으로 번갈아 깜빡이며 R 키를 누를 때까지 유지된다(주 임계값은 화면 테두리도 같이).
-#   알람 횟수는 R 키로 지워지지 않는다. 글자는 영문이다(화면 글꼴이 한글을 그리지 못한다). 구석에 sound: on/off/error 를 표시한다.
+#   알람 횟수는 R 키로 지워지지 않는다. 글자는 영문이다(화면 글꼴이 한글을 그리지 못한다). 영상 오른쪽 위에 primary: <주 임계값>, 오른쪽 아래에 sound: on/off/error 를 표시한다.
 # 표시 유지: R 키를 누를 때까지 유지가 기본이다. DISPLAY_LATCH_S 는 "R 없이 자동으로 꺼지는 시간(초)"이며 기본값 None(자동 꺼짐 없음)이다.
 #   이 값과 깜빡임 주기는 표시 전용이며 규칙 상수와 이름과 코드가 분리되어 있다. 규칙 판정에는 쓰지 않는다.
 # 소리: 기본 꺼짐. --beep 을 주면 Windows 에서 알람 순간에 경보음(2음 사이렌, 880/1320 Hz 사각파를 0.25초씩 번갈아 총 3.0초)을 낸다.
 #   소리는 0.25초 조각 둘(880 Hz 조각, 1320 Hz 조각)을 표준 라이브러리 struct 로 메모리에서 조립해 캐시하고, 알람마다 데몬 스레드가
 #   조각을 번갈아 winsound.PlaySound(조각, SND_MEMORY | SND_NODEFAULT)로 동기 재생한다(SND_MEMORY 는 SND_ASYNC 와 함께 쓸 수 없고,
-#   SND_ASYNC, SND_LOOP, 정지용 플래그는 쓰지 않는다). 메인 영상 루프를 막지 않는다. 기본은 0.21만, --beep 과 함께 --beep-all 을
+#   SND_ASYNC, SND_LOOP, 정지용 플래그는 쓰지 않는다). 메인 영상 루프를 막지 않는다. 기본은 주 임계값만, --beep 과 함께 --beep-all 을
 #   주면 세 임계값 모두(--beep 없이 --beep-all 만 주면 소리 없음). 같은 갱신의 알람은 스레드 하나만 시작한다.
 #   정지: R 키(표시 끄기), m 키(음소거로 전환), q 종료, 새 알람이 정지 신호(세대 번호)를 올리면 재생 스레드가 조각 사이에 확인해
 #   현재 조각이 끝난 뒤(최대 0.25초) 멈춘다. 새 알람은 이전 재생을 정지시키고 새 재생을 시작한다.
@@ -38,7 +38,7 @@ import time
 from . import ear_math
 from . import episode_machine as EM
 
-THRESHOLDS = (0.15, 0.16, 0.17)           # 기본 후보군(I-21, 사용자 판단, 선택 미확정). --thresholds 로 바꾼다(예: 0.21,0.25).
+THRESHOLDS = (0.15,)                      # 기본 임계값 0.15 하나(I-22, 사용자 결정). 다른 값은 --thresholds 로 준다(예: 0.15,0.21,0.25).
 MAIN_THRESHOLD = THRESHOLDS[0]            # 기본 목록의 첫 값(주 임계값). 실행 중에는 목록의 첫 값(LiveRules.primary)을 쓴다.
 MAX_THRESHOLDS = 4
 EAR_MIN_WINDOW_S = 3.0                    # "min 3s" 표시 창. 표시 전용이며 규칙 상수와 별개이고 규칙 판정에 쓰지 않는다.
@@ -480,6 +480,10 @@ def draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, ear_min, soun
     ear_scale = _fit_scale(cv2, "EAR now: 0.000", 2, width - 20, 1.0)
     cv2.putText(video, ear_text, (10, 34), cv2.FONT_HERSHEY_SIMPLEX, ear_scale, COLOR_WHITE, 2, cv2.LINE_AA)
     cv2.putText(video, min_text, (10, 34 + int(36 * ear_scale) + 8), cv2.FONT_HERSHEY_SIMPLEX, ear_scale, COLOR_WHITE, 2, cv2.LINE_AA)
+    primary_text = "primary: %s" % threshold_label(rules.primary)         # 지금 주 임계값(목록의 첫 값)
+    primary_width, _primary_height = _text_size(cv2, primary_text, 0.6, 2)
+    cv2.putText(video, primary_text, (max(10, width - primary_width - 10), 28), cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLOR_WHITE, 2,
+                cv2.LINE_AA)
     sound_width, _sound_height = _text_size(cv2, sound_label, 0.6, 2)
     cv2.putText(video, sound_label, (max(10, width - sound_width - 10), height - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
                 COLOR_RED if sound_label == "sound: error" else COLOR_YELLOW, 2, cv2.LINE_AA)

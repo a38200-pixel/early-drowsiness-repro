@@ -16,6 +16,9 @@ from improve.rules import live_demo
 from improve.rules import replay
 
 
+TEST_THRESHOLDS = (0.15, 0.16, 0.17)       # 시험이 명시적으로 쓰는 목록(데모의 기본값은 0.15 하나이므로 여러 줄 시험은 목록을 직접 준다)
+
+
 def synthetic_samples():
     """결정적 합성 샘플(불규칙 간격 0.030~0.050초). 닫힘 4초, 0.2초 열림이 낀 닫힘 3.5초, 얼굴 없음 1.5초,
     후보 임계값 사이(EAR 0.165: 0.17만 닫힘)의 닫힘 4초, 출처 tracked 구간을 넣는다."""
@@ -56,7 +59,7 @@ def read_alarm_times(path):
 class StreamingMatchesBatchTest(unittest.TestCase):
     def test_streaming_alarms_equal_batch_replay(self):
         samples, kind = load_samples()
-        rules = live_demo.LiveRules()
+        rules = live_demo.LiveRules(TEST_THRESHOLDS)
         streamed = dict((threshold, []) for threshold in rules.thresholds)
         for timestamp_s, ear_mean, source in samples:                   # 프레임이 들어오는 대로 하나씩
             for threshold, alarm in rules.update(timestamp_s, ear_mean, source):
@@ -85,7 +88,7 @@ class StickyDisplayTest(unittest.TestCase):
     """알람 표시는 R(reset) 전에는 꺼지지 않고, reset 후 꺼지며, 알람 횟수는 reset 으로 지워지지 않는다(표시 전용 상태)."""
 
     def run_synthetic(self, latch):
-        rules = live_demo.LiveRules()
+        rules = live_demo.LiveRules(TEST_THRESHOLDS)
         last_ts = 0.0
         for timestamp_s, ear_mean, source in synthetic_samples():
             last_ts = timestamp_s
@@ -123,7 +126,7 @@ class DisplaySettingsDoNotChangeAlarmsTest(unittest.TestCase):
         reference = None
         for latch_s in (None, 3.0, 0.1):
             for enabled, beep_all, muted in ((False, False, False), (True, False, False), (True, True, True)):
-                rules = live_demo.LiveRules()
+                rules = live_demo.LiveRules(TEST_THRESHOLDS)
                 latch = live_demo.DisplayLatch(duration_s=latch_s)
                 calls = []
                 beeper = live_demo.Beeper(enabled=enabled, beep_all=beep_all, muted=muted, backend=lambda: calls.append(1))
@@ -138,11 +141,11 @@ class DisplaySettingsDoNotChangeAlarmsTest(unittest.TestCase):
                 if reference is None:
                     reference = alarms
                 self.assertEqual(alarms, reference, "표시/소리 설정 (%s, %s, %s, %s)" % (latch_s, enabled, beep_all, muted))
-        for threshold in live_demo.THRESHOLDS:
+        for threshold in TEST_THRESHOLDS:
             batch = EM.run_samples(samples, threshold=threshold, valid_sources=live_demo.VALID_SOURCES)
             self.assertEqual(reference[threshold], batch.alarms)
         # 소리 설정: 기본은 꺼짐이고, --beep 없이 --beep-all 만 주면 소리 없음, --beep 은 주 임계값(목록의 첫 값)만, 함께 주면 모두
-        main, second, third = live_demo.THRESHOLDS[:3]
+        main, second, third = TEST_THRESHOLDS
         alarm = reference[main][0]
         calls = []
         self.assertFalse(live_demo.Beeper(backend=lambda: calls.append(1)).on_new_alarms([(main, alarm)]))
@@ -236,7 +239,7 @@ class SirenPlaybackTest(unittest.TestCase):
         fake = FakeWinsound()
         with mock.patch.object(live_demo, "_winsound_module", return_value=fake):
             beeper = live_demo.Beeper(enabled=True)
-            self.assertTrue(beeper.on_new_alarms([(live_demo.THRESHOLDS[0], alarm), (live_demo.THRESHOLDS[2], alarm)]))   # 같은 갱신의 두 알람
+            self.assertTrue(beeper.on_new_alarms([(TEST_THRESHOLDS[0], alarm), (TEST_THRESHOLDS[2], alarm)]))   # 같은 갱신의 두 알람
             beeper.player.join(10.0)
         self.assertIsNone(beeper.player.error)
         self.assertEqual(len(fake.calls), live_demo.SIREN_PIECE_COUNT)       # 스레드 하나가 조각 12개를 재생한다
@@ -263,7 +266,7 @@ class SirenPlaybackTest(unittest.TestCase):
         fake = FakeWinsound(error=OSError("no sound device"))
         buffer = io.StringIO()
         with mock.patch.object(live_demo, "_winsound_module", return_value=fake), contextlib.redirect_stdout(buffer):
-            rules = live_demo.LiveRules()
+            rules = live_demo.LiveRules(TEST_THRESHOLDS)
             beeper = live_demo.Beeper(enabled=True, beep_all=True)
             for timestamp_s, ear_mean, source in samples:
                 beeper.on_new_alarms(rules.update(timestamp_s, ear_mean, source))
@@ -277,13 +280,16 @@ class SirenPlaybackTest(unittest.TestCase):
 
 class ThresholdListTest(unittest.TestCase):
     def test_default_thresholds_and_first_value_is_primary(self):
-        """(a) --thresholds 의 기본값은 0.15,0.16,0.17 이고 목록의 첫 값이 주 임계값이다(0.21, 0.25 도 다시 쓸 수 있다)."""
-        self.assertEqual(live_demo.THRESHOLDS, (0.15, 0.16, 0.17))
+        """(a) --thresholds 의 기본값은 0.15 하나이고 목록의 첫 값이 주 임계값이다(여러 값, 0.21, 0.25 도 다시 쓸 수 있다)."""
+        self.assertEqual(live_demo.THRESHOLDS, (0.15,))
         arguments = live_demo.parse_args(["--predictor", "unused"])
-        self.assertEqual(arguments.thresholds, "0.15,0.16,0.17")
+        self.assertEqual(arguments.thresholds, "0.15")
         parsed = live_demo.parse_thresholds(arguments.thresholds)
-        self.assertEqual(parsed, (0.15, 0.16, 0.17))
+        self.assertEqual(parsed, (0.15,))
         self.assertEqual(live_demo.LiveRules(parsed).primary, 0.15)
+        self.assertEqual(live_demo.LiveRules().primary, 0.15)               # 인자 없이 만들어도 기본은 0.15 하나
+        self.assertEqual(live_demo.LiveRules().thresholds, (0.15,))
+        self.assertEqual(live_demo.LiveRules(live_demo.parse_thresholds("0.15,0.16,0.17")).primary, 0.15)
         self.assertEqual(live_demo.LiveRules(live_demo.parse_thresholds("0.21,0.25")).primary, 0.21)
         self.assertEqual(live_demo.LiveRules(live_demo.parse_thresholds("0.17,0.15")).primary, 0.17)
         self.assertEqual(live_demo.MAIN_THRESHOLD, live_demo.THRESHOLDS[0])
@@ -337,6 +343,28 @@ class ThresholdListTest(unittest.TestCase):
         window.add(0.0, 0.3)
         self.assertEqual(window.minimum(3.0), 0.3)
         self.assertIsNone(window.minimum(3.1))                              # 3.0초가 지나면 창에서 빠진다
+
+    def test_single_threshold_screen_draws_without_error(self):
+        """임계값이 하나(기본 0.15)일 때 큰 줄 하나로 화면 그리기가 오류 없이 되고 알람 표시가 켜진다. 메모리 안에서만 그린다(창, 파일 없음)."""
+        try:
+            import cv2
+            import numpy as np
+        except ImportError as error:
+            self.skipTest("cv2 또는 numpy 를 가져올 수 없어 건너뜁니다: %s" % error)
+        rules = live_demo.LiveRules()                                       # 기본값: 0.15 하나
+        latch = live_demo.DisplayLatch()
+        timestamp_s = 100.0
+        for _ in range(200):                                                # 닫힘 6초 -> 알람
+            for threshold, _alarm in rules.update(timestamp_s, 0.10, "detected"):
+                latch.trigger(threshold, timestamp_s)
+            timestamp_s += 0.03
+        self.assertEqual(rules.alarm_count(0.15), 1)
+        frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        expected_height = live_demo.ROW_MAIN_H + live_demo.STRIP_H + 480 + live_demo.HINT_H     # 큰 줄 하나
+        for ear_value, ear_min in ((0.10, 0.09), (None, None)):
+            image = live_demo.draw_ui(cv2, np, frame, [], rules, latch, ear_value, ear_min, "sound: off", timestamp_s)
+            self.assertEqual(image.shape, (expected_height, 640, 3))
+            self.assertIn(tuple(int(v) for v in image[2, 320]), (live_demo.COLOR_RED, live_demo.COLOR_ORANGE))   # 알람 테두리
 
 
 if __name__ == "__main__":
