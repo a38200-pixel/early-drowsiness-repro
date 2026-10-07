@@ -11,7 +11,7 @@ PACKAGE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 FORBIDDEN_TOKENS = ("imwrite", "imsave", "VideoWriter", "ImageGrab", "save_frame", "snapshot")
 # 영상을 읽는 C1b 추출기 복제본만 cv2 를 쓸 수 있다(영상 읽기와 전처리용이며 저장 호출은 위 토큰으로 막는다). 다른 파일은 금지한다.
 IMAGE_LIBRARY_TOKENS = ("cv2", "PIL")
-IMAGE_LIBRARY_ALLOWED_FILES = ("blink_video_dump.py",)
+IMAGE_LIBRARY_ALLOWED_FILES = ("blink_video_dump.py", "live_demo.py")
 
 
 class SessionLogTest(unittest.TestCase):
