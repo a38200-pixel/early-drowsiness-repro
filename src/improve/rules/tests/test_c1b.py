@@ -277,15 +277,22 @@ class StaticChecksTest(unittest.TestCase):
         self.assertIn("Q = Queue(maxsize=7)", self.clone_text)
 
     def test_four_required_arguments(self):
+        # 기존 시험 1건 수정(사용자 승인 2026-10-07, 결정 I-19): 필수 인자는 여전히 정확히 4개여야 하고, 선택 인자는 --rotate 하나만 허용한다.
         names = {}
+        keywords = {}
         for node in ast.walk(self.tree):
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == "add_argument":
                 name = node.args[0].s
                 required = [kw.value.value for kw in node.keywords if kw.arg == "required"]
                 names[name] = required
-        self.assertEqual(sorted(names), ["--out-dir", "--predictor", "--svm", "--video"])
-        for name, required in names.items():
-            self.assertEqual(required, [True], name)
+                keywords[name] = dict((kw.arg, kw.value) for kw in node.keywords)
+        self.assertEqual(sorted(names), ["--out-dir", "--predictor", "--rotate", "--svm", "--video"])
+        required_names = sorted(name for name, required in names.items() if required == [True])
+        self.assertEqual(required_names, ["--out-dir", "--predictor", "--svm", "--video"])
+        # --rotate 는 필수가 아니고(required 키워드 없음), 기본값은 "0", 선택지는 {0, 90, 180, 270, auto}이다.
+        self.assertEqual(names["--rotate"], [])
+        self.assertEqual(keywords["--rotate"]["default"].s, "0")
+        self.assertEqual([item.s for item in keywords["--rotate"]["choices"].elts], ["0", "90", "180", "270", "auto"])
 
     def test_main_guard_and_no_top_level_execution(self):
         allowed_types = (ast.FunctionDef, ast.Import, ast.ImportFrom, ast.If)

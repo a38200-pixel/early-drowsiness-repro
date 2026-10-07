@@ -28,6 +28,8 @@ import os
 import sys
 # [DUMP] 프레임별 EAR 덤프(docs/improvement/RULE_SPEC.md 7.1절, D1_REQUIREMENTS.md C1b)
 from . import ear_dump
+# [DUMP] 회전 처리(결정 I-19): 메타데이터 각도 읽기, 이중 회전 보호, 회전 적용은 video_rotation.py 에 있다.
+from . import video_rotation
 
 # this "adjust_gamma" function directly taken from : https://www.pyimagesearch.com/2015/10/05/opencv-gamma-correction/
 def adjust_gamma(image, gamma=1.0):
@@ -342,6 +344,13 @@ def blink_detector(output_textfile,input_video):
     # loop over frames from the video stream
 
 
+    # [DUMP] 회전 처리 준비(결정 I-19): 요청값이 auto 이면 메타데이터 각도를 읽는다. 기본값 0 은 아무것도 읽지 않고 프레임을 건드리지 않는다.
+    try:
+        rotation_intended, rotation_metadata = video_rotation.plan_rotation(rotate_request, path)
+    except video_rotation.RotationError as error:
+        raise SystemExit(str(error))
+    rotation_applied = None    # 첫 프레임에서 이중 회전 보호를 판단한 뒤 정해진다
+
     stream = cv2.VideoCapture(path)
     # [DUMP] 영상 fps 를 시작할 때 한 번 읽고 0 이하이면 오류로 끝낸다. 읽은 프레임 카운터를 만든다.
     fps = stream.get(cv2.CAP_PROP_FPS)
@@ -361,6 +370,18 @@ def blink_detector(output_textfile,input_video):
         dump_count += 1
         dump_written = False
 
+        # [DUMP] 회전 처리: 프레임을 읽은 직후, 리사이즈와 검출 앞에서 적용한다. 첫 프레임에서 이중 회전 보호를 판단하고 rotation.txt 를 쓴다.
+        if rotation_applied is None:
+            rotation_shape_before = frame.shape
+            rotation_applied, rotation_guard = video_rotation.guard_applied_angle(
+                rotate_request, rotation_intended, frame.shape,
+                stream.get(cv2.CAP_PROP_FRAME_WIDTH), stream.get(cv2.CAP_PROP_FRAME_HEIGHT))
+            frame = video_rotation.apply_rotation(frame, rotation_applied)
+            with open(os.path.join(os.path.dirname(output_textfile), "rotation.txt"), "x") as rotation_file:
+                rotation_file.write(video_rotation.rotation_line(
+                    rotate_request, rotation_metadata, rotation_applied, rotation_shape_before, frame.shape, rotation_guard))
+        else:
+            frame = video_rotation.apply_rotation(frame, rotation_applied)
 
         frame = imutils.resize(frame, width=450)
 
@@ -588,6 +609,8 @@ if __name__ == "__main__":
     parser.add_argument("--out-dir", dest="out_dir", required=True, help="출력 폴더(blinks.txt 와 ear_dump.csv 를 쓴다)")
     parser.add_argument("--predictor", required=True, help="dlib 랜드마크 모델(.dat) 경로")
     parser.add_argument("--svm", required=True, help="저자 SVM(.sav) 경로")
+    # [CLI] 회전 요청(결정 I-19). 필수가 아니며 기본값 0 은 프레임을 건드리지 않는다. auto 는 메타데이터 각도(이중 회전 보호 포함).
+    parser.add_argument("--rotate", choices=["0", "90", "180", "270", "auto"], default="0", help="프레임 회전(시계 방향 각도 또는 auto), 기본 0")
     arguments = parser.parse_args()
     os.makedirs(arguments.out_dir, exist_ok=True)
     output_file = os.path.join(arguments.out_dir, "blinks.txt")   # 저자와 같은 내용의 blink 기록
@@ -595,6 +618,10 @@ if __name__ == "__main__":
     for existing in (output_file, dump_path):
         if os.path.exists(existing):
             sys.exit("이미 있는 파일에는 이어 쓰지 않습니다: %s" % existing)
+    # [CLI] rotation.txt 도 이어 쓰지 않는다(추출을 시작하기 전에 확인).
+    if os.path.exists(os.path.join(arguments.out_dir, "rotation.txt")):
+        sys.exit("이미 있는 파일에는 이어 쓰지 않습니다: %s" % os.path.join(arguments.out_dir, "rotation.txt"))
+    rotate_request = arguments.rotate
     path = arguments.video
     predictor_path = arguments.predictor
     svm_path = arguments.svm
