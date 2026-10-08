@@ -26,6 +26,7 @@
 #   화면 표시와 규칙은 그대로이고 구석 표시는 sound: error 가 된다. Windows 가 아니면 소리 없이 동작한다.
 # 키: q 종료, r 알람 표시 끄기(소리도 멈춤), m 음소거(소리도 멈춤). 웹캠이 열리지 않으면 이유를 한 줄 출력하고 끝낸다.
 # 저장: 영상, 프레임, 이미지, CSV, 로그를 어떤 형태로도 만들지 않는다. 파일을 쓰지 않으며 모든 표시는 화면에만 그린다.
+# 처리율 표시: 영상 왼쪽 아래 두 줄(최근 3초의 처리 fps와 최대 프레임 간격, 웹캠 드라이버가 알려 주는 해상도와 fps)은 사용자 육안 확인용이며 따로 검증하지 않았다. 시각 목록은 메모리에만 두고 표시 전용이다.
 # 사용: (src 폴더에서 또는 PYTHONPATH=src) python -m improve.rules.live_demo --predictor <PREDICTOR> [--camera 0] [--beep] [--beep-all]
 import argparse
 import collections
@@ -209,6 +210,40 @@ class RecentMinimum(object):
         """now 기준 최근 window_s 초(경계 포함) 안의 최솟값. 값이 없으면 None."""
         self._prune(now)
         return min(value for _timestamp, value in self._items) if self._items else None
+
+
+class FrameRateMeter(object):
+    """최근 window_s 초 안의 프레임 도착 시각으로 처리 fps와 최대 프레임 간격(ms)을 구한다(표시 전용). 시각 목록은 메모리의 deque 뿐이며 파일로 쓰지 않는다."""
+
+    def __init__(self, window_s=EAR_MIN_WINDOW_S):
+        self.window_s = window_s
+        self._times = collections.deque()
+
+    def add(self, t_s):
+        """도착 시각을 넣는다. 직전 시각보다 작은 시각(거꾸로 온 표본)은 무시한다. window_s 보다 오래된 시각은 버린다."""
+        if self._times and t_s < self._times[-1]:
+            return
+        self._times.append(t_s)
+        while self._times and t_s - self._times[0] > self.window_s:
+            self._times.popleft()
+
+    def stats(self):
+        """(fps 또는 None, 최대 간격 ms 또는 None). fps = (표본 수 - 1) / (마지막 시각 - 첫 시각), 표본 2개 미만 또는 시간 차 0이면 None."""
+        if len(self._times) < 2:
+            return None, None
+        times = list(self._times)
+        gaps = [later - earlier for earlier, later in zip(times, times[1:])]
+        span = times[-1] - times[0]
+        fps = (len(times) - 1) / span if span > 0 else None
+        return fps, max(gaps) * 1000.0
+
+
+def format_rate_lines(fps, max_gap_ms, window_s, cam_width, cam_height, reported_fps):
+    """화면에 그릴 두 줄(영문)을 돌려준다. 값이 None 이면 "--", 보고 fps 가 None 이거나 0 이하이면 "n/a"."""
+    fps_text = "--" if fps is None else "%.1f" % fps
+    gap_text = "--" if max_gap_ms is None else "%d ms (%g s)" % (int(round(max_gap_ms)), window_s)
+    reported = "n/a" if (reported_fps is None or reported_fps <= 0) else "%.1f" % reported_fps
+    return ("fps %s  max gap %s" % (fps_text, gap_text), "cam %dx%d  reported fps %s" % (cam_width, cam_height, reported))
 
 
 _SIREN_CACHE = {}
@@ -411,10 +446,11 @@ def _put_centered(cv2, canvas, text, x0, x1, y_center, scale, thickness, color):
                 color, thickness, cv2.LINE_AA)
 
 
-def draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, ear_min, sound_label, now):
+def draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, ear_min, sound_label, now, rate_lines=None):
     """화면 한 장을 그려 돌려준다(저장하지 않는다). 구성: 임계값별 전체 폭 줄(주 임계값이 가장 큼), 얼굴 상태 띠, 영상, 키 안내.
 
     ear_value 는 현재 프레임의 EAR 평균(detected 일 때만, 없으면 None), ear_min 은 최근 3.0초의 EAR 최솟값(없으면 None)이다. 둘 다 표시 전용이다.
+    rate_lines 는 format_rate_lines 의 두 줄(없으면 None)이며 영상 왼쪽 아래에 작게 그린다(표시 전용).
     """
     height, width = frame.shape[:2]
     order = [t for t in rules.thresholds if t == rules.primary] + [t for t in rules.thresholds if t != rules.primary]
@@ -487,6 +523,11 @@ def draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, ear_min, soun
     sound_width, _sound_height = _text_size(cv2, sound_label, 0.6, 2)
     cv2.putText(video, sound_label, (max(10, width - sound_width - 10), height - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
                 COLOR_RED if sound_label == "sound: error" else COLOR_YELLOW, 2, cv2.LINE_AA)
+    if rate_lines:
+        rate_scale = min(_fit_scale(cv2, line, 1, int(width * 0.6), 0.5) for line in rate_lines)
+        for index, line in enumerate(rate_lines):                             # 왼쪽 아래: 왼쪽 위 EAR, 오른쪽 위 primary, 오른쪽 아래 sound 와 겹치지 않는다
+            y = height - 12 - 22 * (len(rate_lines) - 1 - index)
+            cv2.putText(video, line, (10, y), cv2.FONT_HERSHEY_SIMPLEX, rate_scale, COLOR_WHITE, 1, cv2.LINE_AA)
     canvas[top:top + height, :] = video
     top += height
 
@@ -516,6 +557,10 @@ def run(camera, predictor_path, beep=False, beep_all=False, thresholds=THRESHOLD
         return 1
     capture.set(cv2.CAP_PROP_FRAME_WIDTH, CAMERA_WIDTH)
     capture.set(cv2.CAP_PROP_FRAME_HEIGHT, CAMERA_HEIGHT)
+    # 아래 세 값은 드라이버가 알려 주는 값이며 실제 프레임 도착 간격과 다를 수 있다(실제 간격은 FrameRateMeter 가 도착 시각으로 잰다). 한 번만 읽는다.
+    cam_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH))
+    cam_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    reported_fps = capture.get(cv2.CAP_PROP_FPS)
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor(predictor_path)
     (l_start, l_end) = face_utils.FACIAL_LANDMARKS_IDXS["left_eye"]
@@ -524,6 +569,7 @@ def run(camera, predictor_path, beep=False, beep_all=False, thresholds=THRESHOLD
     latch = DisplayLatch()
     beeper = Beeper(enabled=beep, beep_all=beep_all, primary=rules.primary)
     recent = RecentMinimum()                         # 최근 3초 EAR 최솟값(표시 전용, 메모리만, R 키로 지워지지 않는다)
+    meter = FrameRateMeter()                         # 최근 3초 처리 fps와 최대 프레임 간격(표시 전용, 메모리만)
     try:
         while True:
             grabbed, frame = capture.read()
@@ -531,6 +577,7 @@ def run(camera, predictor_path, beep=False, beep_all=False, thresholds=THRESHOLD
             if not grabbed:
                 print("웹캠에서 프레임을 읽지 못해 끝냅니다.")
                 break
+            meter.add(arrival)                       # arrival 은 읽기만 하고 바꾸지 않는다
             small = imutils.resize(frame, width=PREPROCESS_WIDTH)
             gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY)
             gray = adjust_gamma(gray, gamma=PREPROCESS_GAMMA)
@@ -552,7 +599,10 @@ def run(camera, predictor_path, beep=False, beep_all=False, thresholds=THRESHOLD
                 latch.trigger(threshold, arrival)
             beeper.on_new_alarms(new_alarms)
             ear_min = recent.minimum(arrival) if ear_value is not None else None
-            cv2.imshow("live_demo", draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, ear_min, beeper.label(), arrival))
+            rate_fps, rate_gap_ms = meter.stats()
+            rate_lines = format_rate_lines(rate_fps, rate_gap_ms, meter.window_s, cam_width, cam_height, reported_fps)
+            cv2.imshow("live_demo", draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, ear_min, beeper.label(), arrival,
+                                            rate_lines))
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
                 break

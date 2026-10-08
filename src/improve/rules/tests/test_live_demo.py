@@ -367,5 +367,71 @@ class ThresholdListTest(unittest.TestCase):
             self.assertIn(tuple(int(v) for v in image[2, 320]), (live_demo.COLOR_RED, live_demo.COLOR_ORANGE))   # 알람 테두리
 
 
+class FrameRateMeterTest(unittest.TestCase):
+    """처리 fps와 최대 프레임 간격(표시 전용). 가짜 시각만 쓰며 웹캠, 창, 파일을 쓰지 않는다."""
+
+    def test_steady_interval_gives_fps_and_max_gap(self):
+        meter = live_demo.FrameRateMeter()
+        for index in range(20):
+            meter.add(index * 0.04)
+        fps, gap_ms = meter.stats()
+        self.assertAlmostEqual(fps, 25.0, places=6)
+        self.assertAlmostEqual(gap_ms, 40.0, places=6)
+
+    def test_one_long_gap_is_the_max_gap(self):
+        meter = live_demo.FrameRateMeter()
+        for timestamp_s in (0.0, 0.04, 0.08, 0.28, 0.32, 0.36):
+            meter.add(timestamp_s)
+        fps, gap_ms = meter.stats()
+        self.assertAlmostEqual(gap_ms, 200.0, places=6)
+        self.assertAlmostEqual(fps, 5 / 0.36, places=6)
+
+    def test_old_times_outside_the_window_are_dropped(self):
+        meter = live_demo.FrameRateMeter(window_s=3.0)
+        for timestamp_s in (0.0, 1.0, 2.0, 5.0):
+            meter.add(timestamp_s)
+        fps, gap_ms = meter.stats()                                         # 0.0, 1.0 은 5.0 - t > 3.0 이라 빠지고 2.0, 5.0 이 남는다
+        self.assertAlmostEqual(fps, 1 / 3.0, places=6)
+        self.assertAlmostEqual(gap_ms, 3000.0, places=6)
+
+    def test_fewer_than_two_samples_or_zero_span_is_none(self):
+        meter = live_demo.FrameRateMeter()
+        self.assertEqual(meter.stats(), (None, None))
+        meter.add(1.0)
+        self.assertEqual(meter.stats(), (None, None))
+        meter.add(1.0)                                                      # 시간 차 0: fps 는 None, 간격은 0
+        self.assertEqual(meter.stats(), (None, 0.0))
+
+    def test_backwards_time_is_ignored(self):
+        meter = live_demo.FrameRateMeter()
+        for timestamp_s in (1.0, 1.04, 0.5, 1.08):
+            meter.add(timestamp_s)
+        fps, gap_ms = meter.stats()
+        self.assertAlmostEqual(fps, 25.0, places=6)
+        self.assertAlmostEqual(gap_ms, 40.0, places=6)
+
+    def test_rate_line_strings_for_none_and_numbers(self):
+        self.assertEqual(live_demo.format_rate_lines(None, None, 3.0, 640, 480, 30.0),
+                         ("fps --  max gap --", "cam 640x480  reported fps 30.0"))
+        self.assertEqual(live_demo.format_rate_lines(24.8, 85.2, 3.0, 640, 480, 0.0),
+                         ("fps 24.8  max gap 85 ms (3 s)", "cam 640x480  reported fps n/a"))
+
+    def test_rate_lines_draw_without_error_and_do_not_change_size(self):
+        try:
+            import cv2
+            import numpy as np
+        except ImportError as error:
+            self.skipTest("cv2 또는 numpy 를 가져올 수 없어 건너뜁니다: %s" % error)
+        rules = live_demo.LiveRules()
+        latch = live_demo.DisplayLatch()
+        frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        plain = live_demo.draw_ui(cv2, np, frame, [], rules, latch, None, None, "sound: off", 100.0)
+        lines = live_demo.format_rate_lines(24.8, 85.0, 3.0, 640, 480, 30.0)
+        shown = live_demo.draw_ui(cv2, np, frame, [], rules, latch, None, None, "sound: off", 100.0, lines)
+        self.assertEqual(plain.shape, shown.shape)
+        self.assertTrue((plain != shown).any())                             # 글자가 그려졌다
+        self.assertEqual(rules.alarm_count(0.15), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
