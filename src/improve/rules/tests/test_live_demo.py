@@ -433,5 +433,72 @@ class FrameRateMeterTest(unittest.TestCase):
         self.assertEqual(rules.alarm_count(0.15), 0)
 
 
+class StageTimeMeterTest(unittest.TestCase):
+    """읽기 대기, 처리, 검출 시간 진단(표시 전용). 가짜 값과 시각만 쓰며 웹캠, 창, 파일을 쓰지 않는다."""
+
+    def test_constant_and_varied_values_give_mean_and_max(self):
+        meter = live_demo.StageTimeMeter()
+        for index, read_ms in enumerate((10.0, 20.0, 30.0)):
+            meter.add(read_ms, 100.0, 50.0, False, index * 0.1)
+        read_avg, proc_avg, det_avg, read_max, bad = meter.stats()
+        self.assertAlmostEqual(read_avg, 20.0)
+        self.assertAlmostEqual(proc_avg, 100.0)
+        self.assertAlmostEqual(det_avg, 50.0)
+        self.assertAlmostEqual(read_max, 30.0)
+        self.assertEqual(bad, 0)
+
+    def test_old_samples_outside_the_window_are_dropped(self):
+        meter = live_demo.StageTimeMeter(window_s=3.0)
+        meter.add(1000.0, 1000.0, 1000.0, False, 0.0)
+        meter.add(500.0, 500.0, 500.0, False, 1.0)
+        meter.add(10.0, 20.0, 30.0, False, 5.0)                             # 5.0 - 0.0, 5.0 - 1.0 은 3.0 보다 커서 앞의 둘이 빠진다
+        self.assertEqual(meter.stats(), (10.0, 20.0, 30.0, 10.0, 0))
+
+    def test_no_samples_gives_none(self):
+        self.assertEqual(live_demo.StageTimeMeter().stats(), (None, None, None, None, None))
+
+    def test_iterations_without_detection_are_left_out_of_the_detect_mean(self):
+        meter = live_demo.StageTimeMeter()
+        meter.add(10.0, 100.0, 100.0, False, 0.0)
+        meter.add(10.0, 100.0, None, False, 0.1)                            # 검출을 하지 않은 반복
+        meter.add(10.0, 100.0, 200.0, False, 0.2)
+        read_avg, proc_avg, det_avg, _read_max, _bad = meter.stats()
+        self.assertAlmostEqual(det_avg, 150.0)
+        self.assertAlmostEqual(proc_avg, 100.0)                             # 다른 항목의 평균에는 영향이 없다
+        meter = live_demo.StageTimeMeter()
+        meter.add(10.0, 100.0, None, False, 0.0)
+        self.assertIsNone(meter.stats()[2])
+
+    def test_read_failures_are_counted(self):
+        meter = live_demo.StageTimeMeter()
+        for index, failed in enumerate((False, True, False, True)):
+            meter.add(15.0, None if failed else 90.0, None if failed else 60.0, failed, index * 0.1)
+        read_avg, proc_avg, _det_avg, _read_max, bad = meter.stats()
+        self.assertEqual(bad, 2)
+        self.assertAlmostEqual(proc_avg, 90.0)                              # 실패한 읽기에는 처리 시간이 없다
+
+    def test_stage_line_strings_for_none_and_numbers(self):
+        self.assertEqual(live_demo.format_stage_line(None, None, None, None, None), "read --  proc --  det --  bad --")
+        self.assertEqual(live_demo.format_stage_line(12.4, 135.0, 110.4, 40.0, 0),
+                         "read 12 ms (max 40 ms)  proc 135 ms  det 110 ms  bad 0")
+
+    def test_stage_line_draws_without_error_and_does_not_change_size_or_alarms(self):
+        try:
+            import cv2
+            import numpy as np
+        except ImportError as error:
+            self.skipTest("cv2 또는 numpy 를 가져올 수 없어 건너뜁니다: %s" % error)
+        rules = live_demo.LiveRules()
+        latch = live_demo.DisplayLatch()
+        frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        rate_lines = live_demo.format_rate_lines(24.8, 85.0, 3.0, 640, 480, 30.0)
+        plain = live_demo.draw_ui(cv2, np, frame, [], rules, latch, None, None, "sound: off", 100.0, rate_lines)
+        stage_line = live_demo.format_stage_line(12.0, 135.0, 110.0, 40.0, 0)
+        shown = live_demo.draw_ui(cv2, np, frame, [], rules, latch, None, None, "sound: off", 100.0, rate_lines, stage_line)
+        self.assertEqual(plain.shape, shown.shape)
+        self.assertTrue((plain != shown).any())                             # 글자가 그려졌다
+        self.assertEqual(rules.alarm_count(0.15), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
