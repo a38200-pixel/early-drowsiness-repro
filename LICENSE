@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 <a38200-pixel>
+Copyright (c) 2026 a38200-pixel
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,3 +23,5 @@ SOFTWARE.
 This license covers only the code and documents written for this repository
 (src/, docs/, configs/, envs/, data/). Code under third_party/ is unmodified upstream
 code under its own license; see THIRD_PARTY.md.
+A derived file that carries its own copyright notice in its header is governed
+by that notice.
