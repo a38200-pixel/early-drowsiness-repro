@@ -1,3 +1,33 @@
+# [DUMP] 파생 파일 고지: 아래 주석 블록(저자 MIT 전문과 변경 요약)은 이 프로젝트가 추가했다.
+# MIT License
+#
+# Copyright (c) 2019 Reza Ghoddoosian
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# 이 파일은 Ghoddoosian et al.의 blink_video.py(https://github.com/rezaghoddoosian/Early-Drowsiness-Detection)를 수정한 파생 파일이다.
+# 원본은 third_party/ghoddoosian에 바이트 그대로 보관되어 있다. 변경 내용(원본과 줄 단위로 대조한 요약):
+#   - [GUI-REMOVED] 화면용 GUI(창과 그래프) 가져오기와 생성, 그래프 갱신, 화면 표시, 키 입력 확인, 창 닫기를 제거했다.
+#   - [CLI] 랜드마크 모델, SVM, 영상, 출력 폴더 경로를 명령줄 인자로 받고, 최상위 실행 코드를 __main__ 안에 두었다.
+#   - [DUMP] 프레임별 EAR 덤프(ear_dump.py)와 프레임 회전 처리(video_rotation.py)를 추가했다. Blink 클래스, Blink_Tracker, SVM 판별,
+#     blink 기록을 쓰는 코드는 바꾸지 않았다.
+#
 #Reference:https://www.pyimagesearch.com/
 #This file  detects blinks, their parameters and analyzes them[the final main code]
 # import the necessary packages
