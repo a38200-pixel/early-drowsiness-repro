@@ -9,6 +9,9 @@
 # B1 추출(src/repro/reproduction_blink_headless.py)과 같은 치환: 출력 경로, 영상 경로, predictor 경로, plot_frame.draw() 2곳,
 #       cv2.imshow 2곳, cv2.waitKey(1) 2곳, 회전이면 resize 1곳. 이 파일에서 다른 점은 SVM 경로 문자열 치환, 진행 표시용 waitKey 치환
 #       (진행 표시나 부분 실행을 켰을 때만), print 무음 처리(네임스페이스), 작업 폴더를 바꾸지 않는 것이다.
+# 프레임 번호(선택, record_frames): 같은 tick 호출 횟수를 카운터로 삼아, 행이 확정되는 반복의 0부터 센 번호(그 시점까지 끝난 tick 횟수)를 행마다
+#       sink.frame_indices 에 기록한다. 원본의 행 기록(462~464, 546~548줄)이 같은 반복의 waitKey 대체 호출(480, 562줄)보다 앞이라 성립한다.
+#       치환 문장과 행 값 경로는 바꾸지 않으며 켜지 않으면 동작이 전과 같다.
 # 사용: 같은 패키지의 verify_blinks.py 와 이후 라이브 도구가 `from improve.hmlstm import original_hook` 로 가져다 쓴다.
 """blink_video.py 메모리 치환 실행과 깜빡임 행 수신(Python 3.6 호환).
 
@@ -118,9 +121,11 @@ class MemoryBlinkSink(object):
     rows: float 배열 목록, raw: 받은 원문 바이트 전체, on_row: 행이 확정될 때마다 부르는 함수(선택)
     """
 
-    def __init__(self, on_row=None):
+    def __init__(self, on_row=None, frame_source=None):
         self.rows = []
         self.on_row = on_row
+        self.frame_source = frame_source        # 없으면(기본) frame_indices 는 비어 있다. 있으면 행이 확정될 때 이 함수의 값(정수)을 행마다 기록한다
+        self.frame_indices = []
         self._raw = bytearray()
         self._pending = ""
 
@@ -153,6 +158,8 @@ class MemoryBlinkSink(object):
         except ValueError:
             raise ValueError("깜빡임 행을 읽을 수 없습니다: %r" % line)
         self.rows.append(row)
+        if self.frame_source is not None:
+            self.frame_indices.append(int(self.frame_source()))        # on_row 보다 먼저 기록해 콜백이 frame_indices[-1] 을 읽을 수 있게 한다
         if self.on_row is not None:
             self.on_row(row)
 
@@ -196,15 +203,38 @@ def _silent_print(*args, **kwargs):
     return None
 
 
-def run_source(source, sink, quiet=True, progress_every=0, total_frames=None, max_frames=0):
+def check_frame_indices(rows, frame_indices, total_frames):
+    """행별 프레임 번호의 형식 검사(순수 함수). 오류 설명 list 를 돌려주고 비어 있으면 이상 없음이다.
+
+    검사: 길이가 행 수와 같은가, 비내림차순인가, 0 이상이고 total_frames 미만인가(total_frames 가 None 이면 상한은 보지 않는다).
+    프레임 번호가 행이 기록된 반복의 0부터 센 번호(그 시점까지 끝난 tick 호출 횟수)라는 정의에서 나오는 성질만 확인한다.
+    """
+    errors = []
+    if len(frame_indices) != len(rows):
+        errors.append("length mismatch: rows %d, frame indices %d" % (len(rows), len(frame_indices)))
+    for position in range(1, len(frame_indices)):
+        if frame_indices[position] < frame_indices[position - 1]:
+            errors.append("decreasing at position %d: %d after %d" % (position, frame_indices[position], frame_indices[position - 1]))
+            break
+    for position, value in enumerate(frame_indices):
+        if value < 0 or (total_frames is not None and value >= total_frames):
+            errors.append("out of range at position %d: %d (frames %s)" % (position, value, total_frames))
+            break
+    return errors
+
+
+def run_source(source, sink, quiet=True, progress_every=0, total_frames=None, max_frames=0, record_frames=False):
     """치환된 소스를 메모리에서 컴파일해 실행한다(원본 하단의 main 부분이 그대로 실행된다).
 
     입력: source - apply_replacements 결과, sink - MemoryBlinkSink, quiet - True 이면 원본의 print 를 무음으로(네임스페이스만 바꾼다),
           progress_every - N프레임마다 한 줄 출력(0 이면 안 함), total_frames - 진행 표시용 전체 프레임 수(선택),
-          max_frames - 0 이 아니면 그 프레임 수에서 루프를 끝낸다(부분 실행, 합격 판정과 무관)
+          max_frames - 0 이 아니면 그 프레임 수에서 루프를 끝낸다(부분 실행, 합격 판정과 무관),
+          record_frames - True 이면 sink.frame_source 를 tick 카운터로 정해 행마다 프레임 번호를 sink.frame_indices 에 기록한다
     반환: 진행 호출 횟수로 센 처리 프레임 수(진행 표시 치환을 쓰지 않았으면 0)
     """
     counter = {"frames": 0}
+    if record_frames:
+        sink.frame_source = lambda: counter["frames"]      # 행이 확정되는 반복에서는 tick 이 아직 불리기 전이라 값이 그 반복의 0부터 센 번호이다
     real_print = builtins.print
 
     def tick():
@@ -246,15 +276,17 @@ def close_gui_windows():
 class ExtractionResult(object):
     """extract_rows 의 결과. rows: float 배열 목록, raw: 원문 바이트, frames: 진행 호출로 센 프레임 수, elapsed_s, changed_lines: 치환된 줄 번호."""
 
-    def __init__(self, rows, raw, frames, elapsed_s, changed_lines):
+    def __init__(self, rows, raw, frames, elapsed_s, changed_lines, frame_indices=None):
         self.rows = rows
         self.raw = raw
         self.frames = frames
         self.elapsed_s = elapsed_s
         self.changed_lines = changed_lines
+        self.frame_indices = frame_indices if frame_indices is not None else []      # record_frames 를 켠 경우에만 행 수만큼 채워진다
 
 
-def extract_rows(video, svm, predictor, rotate="none", progress_every=0, max_frames=0, quiet=True, source=None, total_frames=None, on_row=None):
+def extract_rows(video, svm, predictor, rotate="none", progress_every=0, max_frames=0, quiet=True, source=None, total_frames=None, on_row=None,
+                 record_frames=False):
     """영상 1개에 원본을 메모리 치환으로 실행하고 깜빡임 행을 돌려준다. 디스크에 아무 파일도 쓰지 않는다.
 
     입력: video, svm, predictor - 존재하는 파일 경로, rotate - ROTATE_OPTIONS 중 하나, source - 원본 소스 문자열(없으면 third_party 에서 읽음)
@@ -264,7 +296,7 @@ def extract_rows(video, svm, predictor, rotate="none", progress_every=0, max_fra
         if not os.path.isfile(path):
             raise FileNotFoundError("%s 파일을 찾을 수 없습니다: %s" % (label, path))
     original = read_original_source() if source is None else source
-    tick = bool(progress_every or max_frames)
+    tick = bool(progress_every or max_frames or record_frames)
     replacements = build_replacements(video, predictor, svm, rotate, tick)
     check_counts(original, replacements)
     modified = apply_replacements(original, replacements)
@@ -272,7 +304,7 @@ def extract_rows(video, svm, predictor, rotate="none", progress_every=0, max_fra
     sink = MemoryBlinkSink(on_row=on_row)
     started = time.time()
     try:
-        frames = run_source(modified, sink, quiet, progress_every, total_frames, max_frames)
+        frames = run_source(modified, sink, quiet, progress_every, total_frames, max_frames, record_frames)
     finally:
         close_gui_windows()
-    return ExtractionResult(sink.rows, sink.raw, frames, time.time() - started, changed)
+    return ExtractionResult(sink.rows, sink.raw, frames, time.time() - started, changed, list(sink.frame_indices))

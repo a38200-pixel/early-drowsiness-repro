@@ -1,11 +1,15 @@
 """original_hook 시험: 실제 영상 없이 가짜 소스와 가짜 open 으로 확인한다. third_party 원본은 읽기만 한다."""
 import contextlib
 import io
+import os
+import tempfile
 import unittest
+from unittest import mock
 
 import numpy as np
 
 from improve.hmlstm import original_hook as OH
+from improve.hmlstm import verify_blinks as VB
 
 ROW = [1.0, 0.1057, 0.0822, 20.0, 0.0056]
 
@@ -171,6 +175,170 @@ class RunSourceTest(unittest.TestCase):
     def test_extract_rows_checks_files_before_anything_runs(self):
         with self.assertRaises(FileNotFoundError):
             OH.extract_rows("missing.mp4", "missing.sav", "missing.dat")
+
+
+LOOP_SOURCE = "\n".join([
+    "import numpy as np",
+    "output_file = %r" % OH.OUTPUT_SENTINEL,
+    "for i in range(6):",
+    "    if i in (1, 3):",
+    "        with open(output_file, 'ab') as f_handle:",
+    "            f_handle.write(b'\\n')",
+    "            np.savetxt(f_handle, [i + 1, 0.5, 0.25, 12, 0.0056], delimiter=', ', newline=' ', fmt='%.4f')",
+    "    if i == 3:",
+    "        with open(output_file, 'ab') as f_handle:",
+    "            f_handle.write(b'\\n')",
+    "            np.savetxt(f_handle, [i + 10, 0.5, 0.25, 12, 0.0056], delimiter=', ', newline=' ', fmt='%.4f')",
+    "    key = %s()" % OH.TICK_NAME,
+    "    if key != 255:",
+    "        break",
+    ""])
+
+
+class FrameIndexTest(unittest.TestCase):
+    def test_default_call_gives_the_same_rows_and_return_value_and_no_frame_indices(self):
+        sink = OH.MemoryBlinkSink()
+        self.assertEqual(OH.run_source(LOOP_SOURCE, sink), 6)
+        self.assertEqual([float(row[0]) for row in sink.rows], [2.0, 4.0, 13.0])
+        self.assertIsNone(sink.frame_source)
+        self.assertEqual(sink.frame_indices, [])
+        self.assertEqual(OH.ExtractionResult([], b"", 0, 0.0, []).frame_indices, [])
+
+    def test_record_frames_adds_one_nondecreasing_index_per_row(self):
+        sink = OH.MemoryBlinkSink()
+        OH.run_source(LOOP_SOURCE, sink, record_frames=True)
+        self.assertEqual(len(sink.frame_indices), len(sink.rows))
+        self.assertEqual(sorted(sink.frame_indices), sink.frame_indices)
+
+    def test_index_is_the_zero_based_iteration_of_the_row(self):
+        sink = OH.MemoryBlinkSink()
+        frames = OH.run_source(LOOP_SOURCE, sink, record_frames=True)
+        self.assertEqual(frames, 6)
+        self.assertEqual(sink.frame_indices, [1, 3, 3])                           # 반복 1에서 행 1개, 반복 3에서 행 2개(같은 번호)
+        self.assertEqual(OH.check_frame_indices(sink.rows, sink.frame_indices, frames), [])
+
+    def test_row_values_do_not_depend_on_record_frames(self):
+        plain, recorded = OH.MemoryBlinkSink(), OH.MemoryBlinkSink()
+        OH.run_source(LOOP_SOURCE, plain)
+        OH.run_source(LOOP_SOURCE, recorded, record_frames=True)
+        self.assertEqual(plain.raw, recorded.raw)
+
+    def test_frame_index_is_recorded_before_the_on_row_callback_runs(self):
+        seen = []
+        sink = OH.MemoryBlinkSink(on_row=lambda row: seen.append(sink.frame_indices[-1]))
+        OH.run_source(LOOP_SOURCE, sink, record_frames=True)
+        self.assertEqual(seen, [1, 3, 3])
+
+    def test_frame_source_can_be_given_to_the_sink_directly(self):
+        sink = OH.MemoryBlinkSink(frame_source=lambda: 7)
+        with sink as handle:
+            handle.write(b"\n")
+            handle.write(b"1.0000 0.1057 0.0822 20.0000 0.0056 ")
+        self.assertEqual(sink.frame_indices, [7])
+
+
+class CheckFrameIndicesTest(unittest.TestCase):
+    ROWS = [np.zeros(5)] * 3
+
+    def test_valid_indices_give_no_errors(self):
+        self.assertEqual(OH.check_frame_indices(self.ROWS, [0, 0, 4], 5), [])
+        self.assertEqual(OH.check_frame_indices([], [], 0), [])
+        self.assertEqual(OH.check_frame_indices(self.ROWS, [0, 10, 99], None), [])         # 전체 프레임 수를 모르면 상한은 보지 않는다
+
+    def test_length_mismatch_decrease_and_out_of_range_are_caught(self):
+        self.assertIn("length mismatch", OH.check_frame_indices(self.ROWS, [0, 1], 5)[0])
+        self.assertTrue(any("decreasing" in text for text in OH.check_frame_indices(self.ROWS, [0, 3, 2], 5)))
+        self.assertTrue(any("out of range" in text for text in OH.check_frame_indices(self.ROWS, [0, 1, 5], 5)))
+        self.assertTrue(any("out of range" in text for text in OH.check_frame_indices(self.ROWS, [-1, 1, 2], 5)))
+
+
+class RecordFramesTurnsTheTickOnTest(unittest.TestCase):
+    def source(self):
+        """치환 대상이 정해진 횟수만큼 나오는, 실제로 실행되는 가짜 원본(반복 2에서 행 1개)."""
+        branch = ["        if True:",
+                  "            if True:",
+                  "                " + OH.DRAW_TARGET.strip(),
+                  "                " + OH.IMSHOW_TARGET,
+                  "        k = " + OH.WAITKEY_TARGET]
+        lines = [OH.OUTPUT_TARGET, OH.PATH_TARGET, "pred = " + OH.PREDICTOR_TARGET, "svm = " + OH.SVM_TARGET, "import numpy as np",
+                 "for i in range(5):",
+                 "    if i % 2 == 0:",
+                 "        if i == 2:",
+                 "            with open(output_file, 'ab') as f_handle:",
+                 "                f_handle.write(b'\\n')",
+                 "                np.savetxt(f_handle, [1, 0.5, 0.25, 12, 0.0056], delimiter=', ', newline=' ', fmt='%.4f')"]
+        lines += branch + ["    else:"] + branch + [""]
+        return "\n".join(lines)
+
+    def run_extract(self, **kwargs):
+        with tempfile.TemporaryDirectory() as folder:
+            paths = []
+            for name in ("video.mp4", "model.sav", "predictor.dat"):
+                path = os.path.join(folder, name)
+                with open(path, "wb") as handle:
+                    handle.write(b"x")
+                paths.append(path)
+            return OH.extract_rows(paths[0], paths[1], paths[2], source=self.source(), **kwargs)
+
+    def test_record_frames_works_without_progress_every(self):
+        result = self.run_extract(record_frames=True)
+        self.assertEqual(result.frames, 5)
+        self.assertEqual(len(result.rows), 1)
+        self.assertEqual(result.frame_indices, [2])
+        self.assertEqual(OH.check_frame_indices(result.rows, result.frame_indices, result.frames), [])
+
+    def test_without_record_frames_and_progress_the_tick_stays_off(self):
+        result = self.run_extract()
+        self.assertEqual(result.frames, 0)
+        self.assertEqual(len(result.rows), 1)
+        self.assertEqual(result.frame_indices, [])
+
+
+class VerifyBlinksRecordFramesTest(unittest.TestCase):
+    ROWS = [np.array([1.0, 0.1057, 0.0822, 20.0, 0.0056]), np.array([2.0, 0.1957, 0.0792, 12.0, 0.0123])]
+
+    def run_main(self, extra, frame_indices):
+        with tempfile.TemporaryDirectory() as folder:
+            paths = {}
+            for name in ("video.mp4", "model.sav", "predictor.dat"):
+                paths[name] = os.path.join(folder, name)
+                with open(paths[name], "wb") as handle:
+                    handle.write(b"x")
+            reference = os.path.join(folder, "reference.txt")
+            with open(reference, "w") as handle:
+                for row in self.ROWS:
+                    handle.write("\n" + " ".join("%.4f" % value for value in row) + " ")
+            fake = OH.ExtractionResult(list(self.ROWS), b"", 5, 0.1, [313], frame_indices)
+            argv = ["--video", paths["video.mp4"], "--svm", paths["model.sav"], "--predictor", paths["predictor.dat"], "--reference", reference] + extra
+            buffer = io.StringIO()
+            with mock.patch.object(OH, "extract_rows", return_value=fake) as patched, mock.patch.object(VB, "total_frame_count", return_value=None):
+                with contextlib.redirect_stdout(buffer):
+                    code = VB.main(argv)
+            return code, buffer.getvalue(), patched
+
+    def test_option_is_off_by_default(self):
+        self.assertFalse(VB.parse_args(["--dry-run"]).record_frames)
+        self.assertTrue(VB.parse_args(["--dry-run", "--record-frames"]).record_frames)
+
+    def test_without_the_option_no_summary_line_and_extract_is_called_without_recording(self):
+        code, text, patched = self.run_main([], [])
+        self.assertEqual(code, 0)
+        self.assertNotIn("frame indices", text)
+        self.assertFalse(patched.call_args[1]["record_frames"])
+
+    def test_with_the_option_one_summary_line_follows_the_row_comparison(self):
+        code, text, patched = self.run_main(["--record-frames"], [1, 3])
+        self.assertEqual(code, 0)
+        self.assertTrue(patched.call_args[1]["record_frames"])
+        lines = [line for line in text.split("\n") if line.startswith("frame indices")]
+        self.assertEqual(lines, ["frame indices: frames=5 rows=2 first=1 last=3 check=일치"])
+        self.assertIn("verdict: 일치", text)
+
+    def test_a_bad_frame_index_list_is_reported_and_fails_the_exit_code(self):
+        code, text, _patched = self.run_main(["--record-frames"], [3, 1])
+        self.assertEqual(code, 1)
+        self.assertIn("check=불일치", text)
+        self.assertIn("verdict: 일치", text)                                        # 행 대조 자체는 그대로 일치
 
 
 if __name__ == "__main__":
