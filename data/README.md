@@ -10,9 +10,9 @@
 
    ```
    # Windows (cmd)
-   set RLDD_DATA_DIR=D:\datasets\UTA-RLDD
+   set RLDD_DATA_DIR=<DATA_DIR>
    # Linux / macOS
-   export RLDD_DATA_DIR=/data/UTA-RLDD
+   export RLDD_DATA_DIR=<DATA_DIR>
    ```
 
 `src/repro/reproduction_blink_one_video.py`는 상대경로 영상을 `RLDD_DATA_DIR` 아래에서 찾습니다
@@ -32,9 +32,9 @@
 
    ```
    # Windows (cmd)
-   set DLIB_LANDMARK_PATH=D:\models\shape_predictor_68_face_landmarks.dat
+   set DLIB_LANDMARK_PATH=<PREDICTOR>
    # Linux / macOS
-   export DLIB_LANDMARK_PATH=/models/shape_predictor_68_face_landmarks.dat
+   export DLIB_LANDMARK_PATH=<PREDICTOR>
    ```
 
 이 파일이 필요한 스크립트(`check_video_assets.py`, `reproduction_blink_one_video.py`)는 변수가 없거나 파일이 없으면
