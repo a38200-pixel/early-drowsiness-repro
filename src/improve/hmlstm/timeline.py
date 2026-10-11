@@ -11,7 +11,11 @@
 # 사용법: (저장소 폴더에서 conda activate ghoddoosian_tf1, set PYTHONPATH=src)
 #           python -m improve.hmlstm.timeline extract --video <영상> --svm <SVM .sav> --predictor <dlib .dat> --out <저장소 밖 .json> [--rotate none|cw90|ccw90|180|auto]
 #                                                      [--progress-every 500] [--max-frames N]
-# 종료 코드: 0 = 저장함, 1 = 프레임 번호 형식 검사 불일치(저장하지 않음), 2 = 인자나 입력 오류
+#         python -m improve.hmlstm.timeline score --baseline <평소영상 행 JSON> --target <대본영상 행 JSON> --ckpt-root <CKPT_DIR> --out <저장소 밖 .json> [--seed 1]
+#           score: 평소영상 행의 뒤 n//3 으로 기준을 구하고(B1 방식, windows.reference_details) 평소영상 샘플 구간(앞 n-n//3)과 대본영상을 같은 기준으로
+#           정규화해 창(길이 30, 보폭 2)을 만든 뒤 5개 폴드 체크포인트(시드 1)로 점수를 낸다. 창마다 끝 행 번호, 프레임 번호, 시각(프레임 번호 ÷ fps),
+#           폴드 5개 점수, 평균, 최솟값, 최댓값을 기록한다(행 확정 지연은 보정하지 않음). TensorFlow 는 점수기를 만들 때만 가져오고 cv2 와 dlib 는 가져오지 않는다.
+# 종료 코드: 0 = 저장함, 1 = 프레임 번호 형식 검사 불일치(저장하지 않음, extract), 2 = 인자나 입력 오류
 """블링크 행과 프레임 번호의 JSON 추출 도구(Python 3.6 호환)."""
 import argparse
 import json
@@ -19,9 +23,18 @@ import os
 import sys
 import time
 
+import numpy as np
+
 from . import original_hook as OH
+from . import scoring as SC
+from . import stage2 as S2
+from . import windows as W
 
 SCHEMA_VERSION = 1
+TIMELINE_KIND = "gauge_timeline"                                     # score 가 만드는 시간선 문서의 종류 표시(행 문서에는 없다)
+PAD_SHORT = False                                                    # 게이지는 블링크 30개가 모일 때까지 점수를 내지 않는다(D3 기본값). 30개 미만 패딩 창을 만들지 않는다
+FOLD_COUNT = len(S2.FOLDS)
+TIME_TOLERANCE = 1e-9
 COLUMNS = ("total_blinks", "freq_x100", "amp", "dur", "vel")        # 후크 행 5열: [TOTAL_BLINKS, Freq*100, Amp, Dur, Vel]
 ROTATION_BY_ANGLE = {0: "none", 90: "cw90", 180: "180", 270: "ccw90"}      # 메타데이터 각도(시계 방향) -> original_hook 회전 옵션
 ROTATE_CHOICES = tuple(OH.ROTATE_OPTIONS) + ("auto",)
@@ -113,8 +126,13 @@ def check_output_path(path, repo=None):
 
 
 def write_rows_document(path, document, repo=None):
-    """문서를 검사한 뒤 새 파일로 쓴다(독점 생성). 저장소 안, 이미 있는 파일은 TimelineError. 상위 폴더가 없으면 만든다."""
-    validate_document(document)
+    """행 문서를 검사한 뒤 새 파일로 쓴다. 규칙은 write_json_document 와 같다."""
+    write_json_document(path, document, validate_document, repo)
+
+
+def write_json_document(path, document, validate, repo=None):
+    """문서를 validate 로 검사한 뒤 새 파일로 쓴다(독점 생성). 저장소 안, 이미 있는 파일은 TimelineError. 상위 폴더가 없으면 만든다."""
+    validate(document)
     check_output_path(path, repo)
     parent = os.path.dirname(os.path.abspath(path))
     os.makedirs(parent, exist_ok=True)
@@ -135,6 +153,167 @@ def read_rows_document(path):
         except ValueError as error:
             raise TimelineError("JSON 을 읽을 수 없습니다: %s" % error)
     return validate_document(document)
+
+
+# ----- 시간선 문서(score 의 출력): 순수 함수 -----
+def window_entries(ranges, frame_indices, fps, mean, minimum, maximum, fold_scores):
+    """창마다 dict 를 만든다. 창 k(1부터)의 end_row 는 window_ranges 의 끝 행 번호(0부터)이고 frame_index = frame_indices[end_row],
+    time_sec = frame_index / fps 이다(행 확정 지연은 보정하지 않는다). fold_scores 는 폴드 1부터 순서대로의 점수 배열 목록이다."""
+    entries = []
+    for position, (_start, end) in enumerate(ranges):
+        frame = int(frame_indices[end])
+        entries.append({"k": position + 1, "end_row": int(end), "frame_index": frame, "time_sec": frame / float(fps),
+                        "mean": float(mean[position]), "min": float(minimum[position]), "max": float(maximum[position]),
+                        "folds": [float(scores[position]) for scores in fold_scores]})
+    return entries
+
+
+def build_timeline_section(video_name, fps, frames_read, frame_indices, ranges, per_fold):
+    """영상 하나의 시간선 구간을 만든다. per_fold 는 {폴드: 점수 배열}(창 순서). 평균, 최솟값, 최댓값은 scoring.aggregate 로 구한다(반올림 없음)."""
+    ordered = [np.asarray(per_fold[fold], dtype=np.float64) for fold in sorted(per_fold)]
+    result = SC.aggregate(per_fold)
+    return {"video_name": video_name, "fps": float(fps), "frames_read": int(frames_read),
+            "windows": window_entries(ranges, frame_indices, fps, result.mean, result.min, result.max, ordered),
+            "blink_frame_indices": [int(value) for value in frame_indices]}
+
+
+def build_summary(section, **extra):
+    """구간의 요약: 창 수, 폴드별 전체 평균(창이 없으면 None), 창 평균의 최솟값과 최댓값(창이 없으면 None). extra 는 그대로 덧붙인다."""
+    windows = section["windows"]
+    summary = {"window_count": len(windows)}
+    if windows:
+        summary["fold_means"] = [float(np.mean([window["folds"][fold] for window in windows])) for fold in range(FOLD_COUNT)]
+        summary["window_mean_min"] = min(window["mean"] for window in windows)
+        summary["window_mean_max"] = max(window["mean"] for window in windows)
+    else:
+        summary["fold_means"] = None
+        summary["window_mean_min"] = None
+        summary["window_mean_max"] = None
+    summary.update(extra)
+    return summary
+
+
+def build_timeline_document(seed, baseline, target, baseline_summary, target_summary):
+    return {"schema_version": SCHEMA_VERSION, "kind": TIMELINE_KIND, "seed": int(seed), "folds": list(S2.FOLDS),
+            "baseline": baseline, "target": target, "summary": {"baseline": baseline_summary, "target": target_summary}}
+
+
+def _validate_section(name, section):
+    for key in ("video_name", "fps", "frames_read", "windows", "blink_frame_indices"):
+        if key not in section:
+            raise TimelineError("%s: 필수 키가 없습니다: %s" % (name, key))
+    video = section["video_name"]
+    if not isinstance(video, str) or not video or os.path.basename(video) != video or "/" in video or "\\" in video:
+        raise TimelineError("%s: video_name 은 경로 없는 파일 이름이어야 합니다: %r" % (name, video))
+    if not _is_number(section["fps"]) or section["fps"] <= 0:
+        raise TimelineError("%s: fps 는 0 보다 큰 수여야 합니다: %r" % (name, section["fps"]))
+    frames = section["frames_read"]
+    if not isinstance(frames, int) or isinstance(frames, bool) or frames < 0:
+        raise TimelineError("%s: frames_read 는 0 이상의 정수여야 합니다: %r" % (name, frames))
+    indices = section["blink_frame_indices"]
+    if not isinstance(indices, list) or any(not isinstance(v, int) or isinstance(v, bool) for v in indices):
+        raise TimelineError("%s: blink_frame_indices 는 정수 목록이어야 합니다" % name)
+    errors = OH.check_frame_indices(indices, indices, frames)
+    if errors:
+        raise TimelineError("%s: blink_frame_indices 검사 실패: %s" % (name, "; ".join(errors)))
+    previous_end = -1
+    for position, window in enumerate(section["windows"]):
+        where = "%s.windows[%d]" % (name, position)
+        for key in ("k", "end_row", "frame_index", "time_sec", "mean", "min", "max", "folds"):
+            if key not in window:
+                raise TimelineError("%s: 필수 키가 없습니다: %s" % (where, key))
+        if window["k"] != position + 1:
+            raise TimelineError("%s: k 가 %d 여야 합니다: %r" % (where, position + 1, window["k"]))
+        end = window["end_row"]
+        if not isinstance(end, int) or isinstance(end, bool) or end < previous_end or not 0 <= end < len(indices):
+            raise TimelineError("%s: end_row 가 올바르지 않습니다: %r (행 %d개, 앞 창 %d)" % (where, end, len(indices), previous_end))
+        previous_end = end
+        if window["frame_index"] != indices[end]:
+            raise TimelineError("%s: frame_index %r 가 blink_frame_indices[%d] = %r 와 다릅니다" % (where, window["frame_index"], end, indices[end]))
+        if not _is_number(window["time_sec"]) or abs(window["time_sec"] - window["frame_index"] / float(section["fps"])) > TIME_TOLERANCE:
+            raise TimelineError("%s: time_sec 가 frame_index / fps 와 다릅니다: %r" % (where, window["time_sec"]))
+        folds = window["folds"]
+        if not isinstance(folds, list) or len(folds) != FOLD_COUNT or any(not _is_number(v) for v in folds):
+            raise TimelineError("%s: folds 는 숫자 %d개의 목록이어야 합니다" % (where, FOLD_COUNT))
+        if not all(_is_number(window[key]) for key in ("mean", "min", "max")):
+            raise TimelineError("%s: mean, min, max 는 숫자여야 합니다" % where)
+        if not window["min"] - TIME_TOLERANCE <= window["mean"] <= window["max"] + TIME_TOLERANCE:
+            raise TimelineError("%s: min <= mean <= max 가 아닙니다: %r %r %r" % (where, window["min"], window["mean"], window["max"]))
+
+
+def validate_timeline_document(document):
+    """시간선 문서의 형식을 검사해 돌려준다. 어긋나면 어디가 어떻게 틀렸는지 구체적으로 적은 TimelineError."""
+    if not isinstance(document, dict):
+        raise TimelineError("문서가 객체(dict)가 아닙니다")
+    for key in ("schema_version", "kind", "seed", "folds", "baseline", "target", "summary"):
+        if key not in document:
+            raise TimelineError("필수 키가 없습니다: %s" % key)
+    if document["schema_version"] != SCHEMA_VERSION:
+        raise TimelineError("지원하지 않는 schema_version 입니다: %r (지원 %d)" % (document["schema_version"], SCHEMA_VERSION))
+    if document["kind"] != TIMELINE_KIND:
+        raise TimelineError("kind 가 %r 이어야 합니다: %r" % (TIMELINE_KIND, document["kind"]))
+    if list(document["folds"]) != list(S2.FOLDS):
+        raise TimelineError("folds 가 기대와 다릅니다: %r" % (document["folds"],))
+    for name in ("baseline", "target"):
+        if not isinstance(document[name], dict):
+            raise TimelineError("%s 구간이 객체(dict)가 아닙니다" % name)
+        _validate_section(name, document[name])
+        summary = document["summary"].get(name) if isinstance(document["summary"], dict) else None
+        if not isinstance(summary, dict) or summary.get("window_count") != len(document[name]["windows"]):
+            raise TimelineError("summary.%s.window_count 가 창 수와 다릅니다" % name)
+        means = summary.get("fold_means")
+        if document[name]["windows"] and (not isinstance(means, list) or len(means) != FOLD_COUNT):
+            raise TimelineError("summary.%s.fold_means 는 숫자 %d개의 목록이어야 합니다" % (name, FOLD_COUNT))
+    return document
+
+
+def read_timeline_document(path):
+    """저장된 시간선 문서를 읽고 형식을 검사해 돌려준다."""
+    with open(path, "r", encoding="utf-8") as handle:
+        try:
+            document = json.load(handle)
+        except ValueError as error:
+            raise TimelineError("JSON 을 읽을 수 없습니다: %s" % error)
+    return validate_timeline_document(document)
+
+
+# ----- 서브명령 score -----
+def run_score(options):
+    """score 를 실행한다: 평소영상 행으로 기준을 구하고, 평소영상 샘플 구간과 대본영상을 같은 기준으로 정규화해 5개 폴드로 점수화한다. 반환: 종료 코드.
+
+    TensorFlow 는 EnsembleScorer 를 만들 때 처음 가져오며 cv2 와 dlib 는 가져오지 않는다(extract 와 별도 프로세스)."""
+    try:
+        check_output_path(options.out)
+        base, target = read_rows_document(options.baseline), read_rows_document(options.target)
+        details = W.reference_details(base["rows"])
+        if details is None or details.reason is not None:
+            raise TimelineError("기준 영상에서 기준 통계를 쓸 수 없습니다: %s" % ("행이 없음" if details is None else details.reason))
+        means, stds = details.means, details.stds
+        base_windows, base_ranges = W.video_windows(base["rows"], means, stds, is_reference=True, pad_short=PAD_SHORT)
+        target_windows, target_ranges = W.video_windows(target["rows"], means, stds, is_reference=False, pad_short=PAD_SHORT)
+        started = time.time()
+        stats = S2.load_stats(options.stats)
+        with SC.EnsembleScorer(options.ckpt_root, options.seed, stats=stats) as ensemble:
+            base_result = ensemble.score(base_windows)
+            target_result = ensemble.score(target_windows)
+        elapsed = time.time() - started
+        base_section = build_timeline_section(base["video_name"], base["fps"], base["frames_read"], base["frame_indices"], base_ranges, base_result.per_fold)
+        target_section = build_timeline_section(target["video_name"], target["fps"], target["frames_read"], target["frame_indices"], target_ranges,
+                                                target_result.per_fold)
+        base_summary = build_summary(base_section, reference_blinks=details.ref_n, sample_blinks=W.rows_used(len(base["rows"]), True))
+        target_summary = build_summary(target_section)
+        document = build_timeline_document(options.seed, base_section, target_section, base_summary, target_summary)
+        write_json_document(options.out, document, validate_timeline_document)
+        for label, section, summary in (("baseline", base_section, base_summary), ("target", target_section, target_summary)):
+            print("score: %s=%s windows=%d" % (label, section["video_name"], summary["window_count"]))
+            if summary["window_count"]:
+                print("score:   fold means (folds 1-5): %s ; window mean min/max: %.2f/%.2f" % (
+                    " ".join("%.2f" % value for value in summary["fold_means"]), summary["window_mean_min"], summary["window_mean_max"]))
+        print("score: elapsed_s=%.1f(reference only); written %s" % (elapsed, os.path.basename(options.out)))
+        return 0
+    except (TimelineError, SC.ScoringError, FileNotFoundError, ValueError) as error:
+        print("score: %s" % error)
+        return 2
 
 
 # ----- 서브명령 extract -----
@@ -211,6 +390,13 @@ def parse_args(argv=None):
     extract.add_argument("--rotate", choices=list(ROTATE_CHOICES), default="none", help="회전 옵션(기본 none, auto 는 MP4 메타데이터에서 읽음)")
     extract.add_argument("--progress-every", type=int, default=500, dest="progress_every", help="N프레임마다 한 줄 출력(기본 500, 0 이면 출력 없음)")
     extract.add_argument("--max-frames", type=int, default=0, dest="max_frames", help="앞 N프레임만 처리(스모크용 부분 실행)")
+    score = commands.add_parser("score", help="extract 가 만든 행 JSON 두 개로 5개 폴드 점수 시간선 JSON 을 만든다(TensorFlow 사용)")
+    score.add_argument("--baseline", required=True, help="평소영상의 행 JSON(기준 구간과 샘플 구간의 출처)")
+    score.add_argument("--target", required=True, help="점수를 볼 영상(대본영상)의 행 JSON")
+    score.add_argument("--ckpt-root", dest="ckpt_root", required=True, help="학습 출력 루트(<CKPT_DIR>, b1_seed{s}/seed{s}/fold{k} 아래 체크포인트)")
+    score.add_argument("--out", required=True, help="출력 시간선 JSON 경로(저장소 밖, 이미 있으면 거부)")
+    score.add_argument("--seed", type=int, default=1, help="체크포인트 시드(기본 1)")
+    score.add_argument("--stats", default=None, help="2단계 통계 JSON(기본: 패키지 안의 stage2_stats.json)")
     return parser.parse_args(argv)
 
 
@@ -218,6 +404,8 @@ def main(argv=None):
     options = parse_args(argv)
     if options.command == "extract":
         return run_extract(options)
+    if options.command == "score":
+        return run_score(options)
     return 2
 
 
