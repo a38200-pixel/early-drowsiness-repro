@@ -488,17 +488,18 @@ def _put_centered(cv2, canvas, text, x0, x1, y_center, scale, thickness, color):
                 color, thickness, cv2.LINE_AA)
 
 
-def draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, ear_min, sound_label, now, rate_lines=None, stage_line=None):
+def draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, ear_min, sound_label, now, rate_lines=None, stage_line=None, clean=False):
     """화면 한 장을 그려 돌려준다(저장하지 않는다). 구성: 임계값별 전체 폭 줄(주 임계값이 가장 큼), 얼굴 상태 띠, 영상, 키 안내.
 
     ear_value 는 현재 프레임의 EAR 평균(detected 일 때만, 없으면 None), ear_min 은 최근 3.0초의 EAR 최솟값(없으면 None)이다. 둘 다 표시 전용이다.
+    clean 이 True 이면 fps 두 줄, 단계 시간 줄, primary 글자, sound 표시, 하단 키 안내 줄(캔버스 높이에서 그 줄 높이를 뺀다)을 그리지 않는다(표시 전용).
     rate_lines 는 format_rate_lines 의 두 줄(없으면 None)이며 영상 왼쪽 아래에 작게 그린다(표시 전용).
     stage_line 은 format_stage_line 의 한 줄(없으면 None)이며 그 두 줄 바로 위에 그린다(표시 전용).
     """
     height, width = frame.shape[:2]
     order = [t for t in rules.thresholds if t == rules.primary] + [t for t in rules.thresholds if t != rules.primary]
     rows_h = sum(ROW_MAIN_H if t == rules.primary else ROW_OTHER_H for t in order)
-    total_h = rows_h + STRIP_H + height + HINT_H
+    total_h = rows_h + STRIP_H + height + (0 if clean else HINT_H)
     canvas = np.zeros((total_h, width, 3), dtype=np.uint8)
     canvas[:] = COLOR_DARK
     flash = COLOR_RED if blink_is_red(now) else COLOR_ORANGE
@@ -559,34 +560,36 @@ def draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, ear_min, soun
     ear_scale = _fit_scale(cv2, "EAR now: 0.000", 2, width - 20, 1.0)
     cv2.putText(video, ear_text, (10, 34), cv2.FONT_HERSHEY_SIMPLEX, ear_scale, COLOR_WHITE, 2, cv2.LINE_AA)
     cv2.putText(video, min_text, (10, 34 + int(36 * ear_scale) + 8), cv2.FONT_HERSHEY_SIMPLEX, ear_scale, COLOR_WHITE, 2, cv2.LINE_AA)
-    primary_text = "primary: %s" % threshold_label(rules.primary)         # 지금 주 임계값(목록의 첫 값)
-    primary_width, _primary_height = _text_size(cv2, primary_text, 0.6, 2)
-    cv2.putText(video, primary_text, (max(10, width - primary_width - 10), 28), cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLOR_WHITE, 2,
-                cv2.LINE_AA)
-    sound_width, _sound_height = _text_size(cv2, sound_label, 0.6, 2)
-    cv2.putText(video, sound_label, (max(10, width - sound_width - 10), height - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
-                COLOR_RED if sound_label == "sound: error" else COLOR_YELLOW, 2, cv2.LINE_AA)
-    if rate_lines:
+    if not clean:
+        primary_text = "primary: %s" % threshold_label(rules.primary)         # 지금 주 임계값(목록의 첫 값)
+        primary_width, _primary_height = _text_size(cv2, primary_text, 0.6, 2)
+        cv2.putText(video, primary_text, (max(10, width - primary_width - 10), 28), cv2.FONT_HERSHEY_SIMPLEX, 0.6, COLOR_WHITE, 2,
+                    cv2.LINE_AA)
+        sound_width, _sound_height = _text_size(cv2, sound_label, 0.6, 2)
+        cv2.putText(video, sound_label, (max(10, width - sound_width - 10), height - 12), cv2.FONT_HERSHEY_SIMPLEX, 0.6,
+                    COLOR_RED if sound_label == "sound: error" else COLOR_YELLOW, 2, cv2.LINE_AA)
+    if rate_lines and not clean:
         rate_scale = min(_fit_scale(cv2, line, 1, int(width * 0.6), 0.5) for line in rate_lines)
         for index, line in enumerate(rate_lines):                             # 왼쪽 아래: 왼쪽 위 EAR, 오른쪽 위 primary, 오른쪽 아래 sound 와 겹치지 않는다
             y = height - 12 - 22 * (len(rate_lines) - 1 - index)
             cv2.putText(video, line, (10, y), cv2.FONT_HERSHEY_SIMPLEX, rate_scale, COLOR_WHITE, 1, cv2.LINE_AA)
-    if stage_line:
+    if stage_line and not clean:
         stage_scale = _fit_scale(cv2, stage_line, 1, width - 20, 0.5)          # 맨 아래 줄 높이에만 sound 표시가 있으므로 그 위 세 번째 줄은 폭 전체를 쓸 수 있다
         stage_y = height - 12 - 22 * (len(rate_lines) if rate_lines else 0)
         cv2.putText(video, stage_line, (10, stage_y), cv2.FONT_HERSHEY_SIMPLEX, stage_scale, COLOR_WHITE, 1, cv2.LINE_AA)
     canvas[top:top + height, :] = video
     top += height
 
-    hint_scale = _fit_scale(cv2, HINT_TEXT, 1, width - 20, 0.6)
-    _put_centered(cv2, canvas, HINT_TEXT, 0, width, top + HINT_H // 2, hint_scale, 1, COLOR_WHITE)
+    if not clean:
+        hint_scale = _fit_scale(cv2, HINT_TEXT, 1, width - 20, 0.6)
+        _put_centered(cv2, canvas, HINT_TEXT, 0, width, top + HINT_H // 2, hint_scale, 1, COLOR_WHITE)
 
     if main_latched:
         cv2.rectangle(canvas, (0, 0), (width - 1, total_h - 1), flash, 10)
     return canvas
 
 
-def run(camera, predictor_path, beep=False, beep_all=False, thresholds=THRESHOLDS):
+def run(camera, predictor_path, beep=False, beep_all=False, thresholds=THRESHOLDS, clean=False):
     """웹캠을 열어 실시간 데모를 실행한다. 종료 코드를 돌려준다."""
     import cv2
     import dlib
@@ -658,7 +661,7 @@ def run(camera, predictor_path, beep=False, beep_all=False, thresholds=THRESHOLD
             rate_lines = format_rate_lines(rate_fps, rate_gap_ms, meter.window_s, cam_width, cam_height, reported_fps)
             stage_line = format_stage_line(*stage_meter.stats())
             cv2.imshow("live_demo", draw_ui(cv2, np, frame, eye_polygons, rules, latch, ear_value, ear_min, beeper.label(), arrival,
-                                            rate_lines, stage_line))
+                                            rate_lines, stage_line, clean))
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
                 break
@@ -684,6 +687,8 @@ def parse_args(argv=None):
     parser.add_argument("--thresholds", default=",".join(str(value) for value in THRESHOLDS),
                         help="닫힘 임계값 목록(쉼표로 구분한 1~%d개, 0 초과 1 미만, 첫 값이 주 임계값, 기본 %s)"
                              % (MAX_THRESHOLDS, ",".join(str(value) for value in THRESHOLDS)))
+    parser.add_argument("--clean", action="store_true",
+                        help="화면 녹화용: fps 줄, 단계 시간 줄, primary 글자, sound 표시, 하단 키 안내 줄을 그리지 않는다(키 입력은 그대로 동작, 기본 꺼짐)")
     return parser.parse_args(argv)
 
 
@@ -694,7 +699,7 @@ def main(argv=None):
     except ValueError as error:
         print(error)                                  # 한 줄 메시지를 출력하고 끝낸다
         return 2
-    return run(arguments.camera, arguments.predictor, arguments.beep, arguments.beep_all, thresholds)
+    return run(arguments.camera, arguments.predictor, arguments.beep, arguments.beep_all, thresholds, arguments.clean)
 
 
 if __name__ == "__main__":

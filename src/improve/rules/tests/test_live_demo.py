@@ -500,5 +500,64 @@ class StageTimeMeterTest(unittest.TestCase):
         self.assertEqual(rules.alarm_count(0.15), 0)
 
 
+class CleanOptionTest(unittest.TestCase):
+    """--clean(화면 녹화용). 합성 배열만 쓰며 웹캠, 창, 파일을 쓰지 않는다."""
+
+    def _scene(self):
+        try:
+            import cv2
+            import numpy as np
+        except ImportError as error:
+            self.skipTest("cv2 또는 numpy 를 가져올 수 없어 건너뜁니다: %s" % error)
+        rules = live_demo.LiveRules()
+        latch = live_demo.DisplayLatch()
+        frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        return cv2, np, rules, latch, frame
+
+    def test_parse_args_clean_defaults_to_off_and_turns_on_with_the_flag(self):
+        self.assertFalse(live_demo.parse_args(["--predictor", "unused"]).clean)
+        self.assertTrue(live_demo.parse_args(["--predictor", "unused", "--clean"]).clean)
+
+    def test_clean_removes_only_the_hint_row_from_the_canvas_height(self):
+        cv2, np, rules, latch, frame = self._scene()
+        lines = ("fps 26.0  max gap 40 ms (3 s)", "cam 640x480  reported fps 30.0")
+        normal = live_demo.draw_ui(cv2, np, frame, [], rules, latch, 0.3, 0.2, "sound: off", 100.0, lines, "read 1 ms")
+        clean = live_demo.draw_ui(cv2, np, frame, [], rules, latch, 0.3, 0.2, "sound: off", 100.0, lines, "read 1 ms", True)
+        self.assertEqual(normal.shape[0] - clean.shape[0], live_demo.HINT_H)
+        self.assertEqual(normal.shape[1], clean.shape[1])
+
+    def test_clean_keeps_threshold_rows_strip_and_ear_text_and_drops_the_rest(self):
+        cv2, np, rules, latch, frame = self._scene()
+        lines = ("fps 26.0  max gap 40 ms (3 s)", "cam 640x480  reported fps 30.0")
+        normal = live_demo.draw_ui(cv2, np, frame, [], rules, latch, 0.3, 0.2, "sound: on", 100.0, lines, "read 1 ms")
+        clean = live_demo.draw_ui(cv2, np, frame, [], rules, latch, 0.3, 0.2, "sound: on", 100.0, lines, "read 1 ms", True)
+        bare = live_demo.draw_ui(cv2, np, frame, [], rules, latch, 0.3, 0.2, "sound: on", 100.0, None, None, True)
+        top = live_demo.ROW_MAIN_H + live_demo.STRIP_H
+        self.assertTrue((normal[:top] == clean[:top]).all())                 # 임계값 줄과 얼굴 상태 띠는 그대로
+        self.assertTrue((clean == bare).all())                               # fps, 단계 시간 줄은 넘겨도 그려지지 않는다
+        video_normal = normal[top:top + 480]
+        video_clean = clean[top:top + 480]
+        self.assertTrue((video_clean[:80, :300] != 0).any())                 # EAR 두 줄(왼쪽 위)은 남는다
+        self.assertTrue((video_normal[:80, 300:] != 0).any())                # primary 글자(오른쪽 위)는 기본에서만 있다
+        self.assertFalse((video_clean[:80, 300:] != 0).any())
+        self.assertTrue((video_normal[440:, 300:] != 0).any())               # sound 표시(오른쪽 아래)는 기본에서만 있다
+        self.assertFalse((video_clean[440:, 300:] != 0).any())
+        self.assertTrue((video_normal[300:, :300] != 0).any())               # fps, 단계 시간 줄(왼쪽 아래)은 기본에서만 있다
+        self.assertFalse((video_clean[300:, :300] != 0).any())
+
+    def test_clean_keeps_the_alarm_frame_and_does_not_change_alarm_state(self):
+        cv2, np, rules, latch, frame = self._scene()
+        timestamp_s = 100.0
+        for _ in range(200):
+            for threshold, _alarm in rules.update(timestamp_s, 0.10, "detected"):
+                latch.trigger(threshold, timestamp_s)
+            timestamp_s += 0.03
+        image = live_demo.draw_ui(cv2, np, frame, [], rules, latch, 0.10, 0.09, "sound: off", timestamp_s, None, None, True)
+        self.assertEqual(image.shape[0], live_demo.ROW_MAIN_H + live_demo.STRIP_H + 480)
+        self.assertIn(tuple(int(v) for v in image[2, 320]), (live_demo.COLOR_RED, live_demo.COLOR_ORANGE))   # 알람 테두리
+        self.assertEqual(rules.alarm_count(0.15), 1)
+        self.assertTrue(latch.active(0.15, timestamp_s))
+
+
 if __name__ == "__main__":
     unittest.main()
