@@ -15,7 +15,7 @@ MIT License
 Copyright (c) 2019 Reza Ghoddoosian
 ```
 
-MIT 허가 문구와 보증 부인 전문은 `third_party/ghoddoosian/LICENSE`에 있으며 `third_party/` 아래 전체에 적용됩니다.
+MIT 허가 문구와 보증 부인 전문은 `third_party/ghoddoosian/LICENSE`에 있으며 `third_party/` 아래 코드 파일에 적용됩니다. `.npy`, `.sav`, 체크포인트 파일에 적용되는 범위는 아래 "데이터와 모델 파일의 라이선스 적용 범위" 절에 적은 대로 미확정입니다.
 이 코드나 사전학습 체크포인트를 사용할 때는 원논문을 인용하세요(`README.md` 참고).
 
 ### 파일은 수정되지 않았습니다

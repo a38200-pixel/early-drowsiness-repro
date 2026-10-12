@@ -8,12 +8,6 @@
 - **확인한 것:** 공개 체크포인트 평가는 논문 표와 14칸 중 11칸이 일치하고 3칸이 일치하지 않았습니다. 점수 시간선 도구는 저장된 B1 결과와 종단 대조에서 일치했습니다.
 - **한계:** 부분 재현이며, 점수는 참고용이고 알람이 아니며, 졸음 검출을 주장하지 않습니다. 사건 대조는 한 사람의 영상 한 건이고 Windows에서만 실행해 봤습니다.
 
-**English summary**
-
-- **What:** A personal project that re-runs the eye-blink-based baseline of an early-drowsiness-detection paper (Ghoddoosian, Galib, Athitsos, CVPRW 2019) from the authors' public code, and builds on it a rule-based eye-closure alarm and a reference-only score gauge.
-- **What was done:** re-extracted blink features from the UTA-RLDD videos and retrained the baseline (3 seeds, 5 folds); built a real-time webcam demo of a 3.0-second eye-closure rule; built offline tools that compute an HM-LSTM score timeline for a video, checked end to end against the stored baseline outputs.
-- **Limits:** partial reproduction (eye-based part only); some numbers differ from the paper; the score is shown for reference only, it is not an alarm, and no claim is made that it detects drowsiness; the event comparison uses one recording of one person; not a medical or safety device; run on Windows only.
-
 ## 1. 프로젝트 개요
 
 ### 문제 정의
@@ -293,3 +287,5 @@ python -m improve.hmlstm.timeline score --baseline <TIMELINE_DIR>/baseline_rows.
 | [docs/improvement/PREREG_E-01.md](docs/improvement/PREREG_E-01.md), [PREREG_E-02.md](docs/improvement/PREREG_E-02.md) | 사전 등록 |
 | [docs/improvement/DATA_REGISTRY.md](docs/improvement/DATA_REGISTRY.md) | 데이터 등록부 |
 | [THIRD_PARTY.md](THIRD_PARTY.md), [LICENSE](LICENSE) | 서드파티 고지와 라이선스 |
+
+참고: 날짜순 기록 문서(IMPROVEMENT_LOG.md, REPRODUCTION_LOG.md)와 사전 등록, 평가 규칙 문서는 기록 보존을 위해 고치지 않아서, 범위를 적은 물결표가 GitHub 미리보기에서 취소선으로 보이는 줄이 있습니다. 원문 텍스트는 그대로입니다.

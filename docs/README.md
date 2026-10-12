@@ -7,7 +7,7 @@
 | 문서 | 구분 | 성격 | 고치는 방식 |
 |---|---|---|---|
 | [REPRODUCTION_LOG.md](REPRODUCTION_LOG.md) | 기록류 | 날짜순 단계별 기록(사전 등록, 결과, 정정) | **추가만 한다.** 정정은 날짜 항목으로 쓴다 (2026-10-06 앞부분 번역 1회 예외, D-15) |
-| [IMPLEMENTATION_DIFF.md](IMPLEMENTATION_DIFF.md) | 기록류 | 원본 대비 차이, 문제점 목록(P-01~P-23), 단계별 메모(9~16절) | 오래된 서술은 지우지 않고 "(날짜 갱신: ...)"을 덧붙인다 |
+| [IMPLEMENTATION_DIFF.md](IMPLEMENTATION_DIFF.md) | 기록류 | 원본 대비 차이, 문제점 목록(P-01\~P-23), 단계별 메모(9\~16절) | 오래된 서술은 지우지 않고 "(날짜 갱신: ...)"을 덧붙인다 |
 | [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md) | 정리 문서 | 재현 보고서(요약, 방법, 결과, 해석, 문제점, 한계) | 기록류가 바뀌면 다시 정리한다 |
 | [CLAIMS_LEDGER.md](CLAIMS_LEDGER.md) | 정리 문서 | 말해도 되는 주장과 금지 표현 | 같음 |
 | [PIPELINE_RUNBOOK.md](PIPELINE_RUNBOOK.md) | 정리 문서 | S0~S5 실행 순서, 명령, 환경변수, 함정 | 같음 |
