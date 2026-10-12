@@ -2087,3 +2087,100 @@ Dur 상위 행(프레임 단위)과 가장 가까운 눈 감기 사건 끝과의
 - `--clean`이 그리는 것: 임계값 줄 전체, 닫힘 진행 막대, 알람 횟수, last alarm, 얼굴 상태 띠, 눈 윤곽, EAR 두 줄, 알람 테두리.
 - 확인(에이전트 실행): `--clean` 없이 호출한 `draw_ui`의 출력은 변경 전 파일(git에서 내려받은 사본)과 합성 입력 72가지에서 모든 픽셀이 같았다. 입력은 임계값 3가지, 알람 유무, EAR 유무, fps 줄과 단계 줄 유무, sound 표시 3가지의 조합이다.
 - 시험: `tests/test_live_demo.py`에 시험 4개를 추가했다(기존 시험은 바꾸지 않았다). rules 전체 237개가 통과했다(이전 233개).
+
+# 재생 뷰어 구현 (2026-10-12)
+
+이 항목은 2026-10-12 사용자 지시에 따른 기록이다. 이전 항목은 고치지 않았다. 결정 I-W-33의 대안안을 구현했다.
+
+## 추가한 파일
+
+| 파일 | 줄 수 |
+|---|---|
+| `src/improve/rules/replay_precompute.py` | 195 |
+| `src/improve/rules/replay_viewer.py` | 428 |
+| `src/improve/rules/tests/test_replay_precompute.py` | 159 |
+| `src/improve/rules/tests/test_replay_viewer.py` | 314 |
+
+- 수정한 기존 파일: `tests/test_session_log.py`의 허용 목록에 두 파일 이름을 추가했다(1줄, 사용자 승인, 일회성). 그 밖의 변경은 없다.
+- `live_demo.py`, `gauge.py`, `timeline.py`, `ear_math.py`, `blink_video_dump.py`, `original_hook.py`는 가져와 쓰기만 했고 수정하지 않았다.
+
+## 동작
+
+- `replay_precompute.py`: 영상 한 편의 프레임마다 얼굴 있음, 평균 EAR, 두 눈 윤곽 좌표(회전한 뒤 원래 크기 기준 정수)를 숫자 JSON으로 만든다. 문서에는 fps, 프레임 수, 적용한 회전 각도, 전처리 상수가 들어간다. 출력은 저장소 밖의 새 경로만 허용하고 덮어쓰기를 거부한다. 이미지는 저장하지 않는다.
+- `replay_viewer.py`: 시간은 프레임 번호 나누기 fps이다. 선계산한 EAR 열을 그 시간으로 `LiveRules`에 프레임 순서대로 넣어 알람 상태를 다시 계산한다. 화면을 건너뛰어도 건너뛴 프레임의 EAR는 모두 넣는다. 규칙 화면은 `draw_ui(clean=True)`를 그대로 쓰고 그 아래에 높이 96의 게이지 띠를 붙인다. 표시 폭은 640이다.
+- 게이지 문구는 `gauge.format_gauge_text(display_state(...))` 출력을 그대로 그린다. 눈금선만 3.34와 6.68 위치에 긋고 구간 이름은 쓰지 않는다(I-W-35 미결). 현재 프레임 번호 이하에서 확정된 마지막 창의 점수를 보여 준다.
+- 한글은 `cv2.putText`로 그릴 수 없어 Pillow(환경 파일의 8.3.1)와 Windows 한글 글꼴(malgun.ttf, malgunbd.ttf, gulim.ttc 순)로 그린다. 글꼴을 열지 못하면 시작할 때 오류로 끝낸다.
+- 재생은 영상 fps에 맞춘 시계 기준이고 느리면 화면 프레임을 건너뛴다. 키: q 종료, 스페이스 일시정지와 계속, r 처음부터.
+- 회전 옵션: 두 도구 모두 0, 90, 180, 270, auto이다(`video_rotation`의 계획, 이중 회전 보호, 적용 함수). 선계산 문서에 적용 각도가 기록되고 뷰어의 기본값 auto는 그 각도를 쓴다. `timeline.py extract`의 회전 옵션은 none, cw90, ccw90, 180, auto이며 90은 cw90, 270은 ccw90에 해당한다.
+
+## 복제한 부분
+
+- `replay_precompute.process_frame`: `live_demo.run`의 프레임 처리 줄들(632에서 646행)을 같은 순서로 복제했다. 632 리사이즈, 633 회색 변환, 634 감마, 636 검출기 호출(업샘플 0), 640 얼굴 유무와 첫 얼굴만, 641 랜드마크, 642에서 643 EAR 계산, 644에서 646 눈 윤곽 배율 적용. 이유는 `live_demo.run`이 웹캠 루프 안에 있어 가져와 쓸 수 없기 때문이다. 상수 `PREPROCESS_WIDTH`와 `PREPROCESS_GAMMA`는 `live_demo`에서 가져왔다.
+- `adjust_gamma`는 `live_demo`와 같이 `blink_video_dump`의 것을 쓴다. 눈 번호는 `face_utils.FACIAL_LANDMARKS_IDXS`의 left_eye, right_eye이다(`live_demo.py` 613, 614행과 같음).
+
+## 사용 순서 (자리표시자 경로, 저장소 루트에서 `PYTHONPATH=src`, 각 단계는 별도 프로세스)
+
+1. 기준 영상(평소영상)과 대상 영상에서 행을 뽑는다: `python -m improve.hmlstm.timeline extract --video <VIDEO_DIR>/<평소영상> --svm <SVM> --predictor <PREDICTOR> --out <TIMELINE_DIR>/baseline_rows.json --rotate <옵션>`, 대상 영상도 같은 명령으로 `<TIMELINE_DIR>/target_rows.json`을 만든다.
+2. 점수 시간선을 만든다: `python -m improve.hmlstm.timeline score --baseline <TIMELINE_DIR>/baseline_rows.json --target <TIMELINE_DIR>/target_rows.json --ckpt-root <CKPT_DIR> --out <TIMELINE_DIR>/timeline.json`
+3. 대상 영상의 규칙용 숫자를 만든다: `python -m improve.rules.replay_precompute --video <VIDEO_DIR>/<대상영상> --predictor <PREDICTOR> --rotate auto --out <TIMELINE_DIR>/rules.json`
+4. 재생한다: `python -m improve.rules.replay_viewer --video <VIDEO_DIR>/<대상영상> --rules-json <TIMELINE_DIR>/rules.json --timeline-json <TIMELINE_DIR>/timeline.json [--rotate auto] [--thresholds 0.15]`
+
+## 시험 결과 (에이전트 실행)
+
+- 새 시험: `test_replay_precompute.py` 9개, `test_replay_viewer.py` 21개. 규칙 전체 267개가 통과했다(이전 237개). `test_session_log.py`를 포함한다.
+- hmlstm 전체 191개가 통과했다(체크포인트 환경변수를 설정한 경우).
+- 시험 내용: 규칙 재생이 같은 EAR 열과 시간으로 `LiveRules`를 직접 돌린 결과와 같음(알람 시각, EAR 최솟값), 화면을 건너뛴 경우도 같음, 전처리 상수와 단계 순서가 `live_demo`와 같음(가짜 검출기와 랜드마크, 소스 순서 비교), 화면 높이가 규칙 화면에 게이지 띠를 더한 값과 같음, 첫 점수 전과 후의 경계 프레임, 일시정지와 처음부터와 끝 처리, 인자 파싱, 한글 글꼴이 없을 때 오류.
+- 한글 글꼴로 게이지 띠를 메모리에서만 그려 문구 픽셀이 생기는 것을 확인했다(저장하지 않음, 창을 열지 않음).
+
+## 미검증
+
+- 실제 영상으로 세 도구를 이어서 실행한 결과. 사용자가 실행한다.
+- 회전 메타데이터가 있는 영상에서 `timeline.py extract`의 회전 결과와 `replay_precompute`의 회전 결과가 같은 프레임 방향인지.
+- 규칙용 문서와 시간선 문서의 프레임 번호 정렬(두 쪽 모두 영상의 읽은 프레임 번호이지만 같은 영상에서 같은 프레임 수가 나오는지는 실행으로만 확인된다). 어긋나면 뷰어가 시작할 때 주의 줄을 출력한다.
+- 행 확정이 블링크 끝보다 8에서 15프레임 늦는 점(I-W-28).
+- 실제 재생에서 프레임 건너뛰기 빈도와 화면 모양.
+
+# 재생 뷰어 수정, 웹캠 후킹 속도 측정 결과 (2026-10-12)
+
+이 항목은 2026-10-12 사용자 보고와 지시에 따른 기록이다. 이전 항목은 고치지 않았다.
+
+## 사용자 보고
+
+- 첫 재생에서 점수 표시는 정상이었다. 영상 재생 시간이 보이지 않아 점수가 나타나는 시각을 판단할 수 없었다. 세로 영상(저장 1920x1080, 회전 270 적용 뒤 1080x1920)이 폭 640 기준으로 높이 약 1138 px이 되어 전체 약 1370 px로 화면에 맞지 않았다.
+- 웹캠 후킹 속도 측정 결과(`webcam_hook_speed`, 사용자 실행): 프레임 1802, 평균 30.00 fps, 프레임 간격 중앙값 32.0 ms, 95 백분위 48.3 ms, 최댓값 59.7 ms, 확정 행 58개, 마지막 행 58.6 s, 측정 60.0 s. 확정 행 58개는 평소영상의 분당 약 38개보다 많아 직접 센 횟수와의 비교가 필요하다. [미검증]
+- DECISIONS I-W-37의 선결 조건 (3)을 위 수치로 갱신했다. 상태는 미결이다.
+
+## replay_viewer.py 변경 (replay_precompute.py와 JSON 스키마는 바꾸지 않았다)
+
+| 항목 | 내용 |
+|---|---|
+| 영상 칸 | 폭 640, 높이 `--video-height`(기본 480, 허용 120에서 1400)의 고정 칸. 프레임은 종횡비를 지켜 칸 안에 맞추고 가운데에 놓으며 나머지는 검정이다. 세로 영상은 좌우가 검정이다 |
+| 눈 윤곽 | 같은 배율(가로, 세로 따로)과 이동량으로 변환한다 |
+| draw_ui | 수정하지 않았다. 640 x 높이 칸의 프레임을 `draw_ui(clean=True)`에 넘긴다 |
+| 시간 줄 | 영상 칸과 게이지 띠 사이, 높이 24. 왼쪽 "mm:ss.s / mm:ss.s"(현재 / 전체, 시간은 프레임 번호 나누기 fps), 오른쪽 "frame N / M"(N은 0부터 센 현재 프레임 번호, M은 마지막 프레임 번호), 아래 높이 4의 진행 막대, 일시정지 중에는 "일시정지" 표시 |
+| 시간 표기 경계 | 소수 첫째 자리에서 반올림하며 올림은 분으로 넘어간다(59.95초는 01:00.0). 분은 두 자리 이상 |
+| 일시정지 표시 | 스페이스로 멈추거나 이어 갈 때 마지막 화면을 다시 그려 표시를 바꾼다 |
+
+기본 전체 높이 738 px (폭 640):
+
+| 칸 | 높이(px) |
+|---|---|
+| 임계값 줄(주 임계값 하나) | 110 |
+| 얼굴 상태 띠 | 28 |
+| 영상 칸 | 480 |
+| 시간 줄 | 24 |
+| 게이지 띠 | 96 |
+| 합계 | 738 |
+
+## 파일과 시험
+
+- `replay_viewer.py` 428줄에서 542줄, `tests/test_replay_viewer.py` 314줄에서 425줄.
+- 고친 기존 시험 1개: `ComposeTest.test_screen_is_the_rule_screen_plus_the_gauge_strip`. 기대 높이를 "폭 640 기준 비례 높이"에서 "영상 칸 고정 높이 + 시간 줄"로 바꿨다. 이유: 영상 영역이 고정 칸으로 바뀌어 화면 높이가 프레임 모양에 따라 달라지지 않기 때문이다.
+- 새 시험 11개: 맞춤 기하(세로, 가로, 같은 모양, 작은 영상, 낮은 칸), 검정 바 위치, 윤곽 좌표 변환, 세로 프레임 합성, 시간 문자열 경계(0초, 59.94초, 59.95초, 3분, 62분 이상, 음수), 진행 막대 비율, 시간 문구, 막대 픽셀과 일시정지 표시, 시간 줄 캐시, 기본 높이 738과 높이 변경, `--video-height` 인자.
+- 규칙 시험 278개 통과(이전 267개), hmlstm 시험 191개 통과(체크포인트 환경변수 없이는 3개 건너뜀).
+- 한글 글꼴로 시간 줄을 메모리에서만 그려 문구 픽셀이 생기는 것을 확인했다(일시정지 표시가 있을 때 픽셀이 늘어남). 저장하지 않았고 창을 열지 않았다.
+
+## 미검증
+
+- 실제 영상에서의 화면 모양, 창 크기가 사용자 화면에 맞는지.
+- 일시정지 중 시간 줄 갱신의 체감 동작.
