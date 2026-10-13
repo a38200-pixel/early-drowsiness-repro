@@ -288,7 +288,7 @@ python -m improve.hmlstm.live_score_recheck --live-json <OUT_DIR>/live.json --ck
 
 - UTA-RLDD 영상, dlib 랜드마크 모델, 그로부터 만든 프레임은 **포함하지 않습니다**. 받는 방법은 [data/README.md](data/README.md)에 있습니다.
 - 데이터셋의 얼굴 이미지는 `configs/image_publishable.csv`에 있는 36명(공식 데이터셋 페이지 표의 'YES')만 공개할 수 있고, 반드시 `src/repro/publish_guard.py`를 통해 저장합니다(결정 I-32). 본인 웹캠 화면의 스크린샷은 올릴 수 있고, 사용자가 촬영한 원본 영상 파일과 데이터셋 영상은 올리지 않습니다(결정 I-32, I-34).
-- 웹캠 시연 도구(`live_demo`, `live_combined`)는 사용자 본인의 웹캠만 쓰고 프레임이나 영상을 저장하지 않습니다. `live_combined --out-json`은 숫자만(행, 창별 점수, 알람, 처리 시간 요약) 저장하며 저장소 밖 새 경로만 받습니다. 사용자 영상은 저장소에 올리지 않습니다.
+- 웹캠 시연 도구(`live_demo`, `live_combined`)는 사용자 본인의 웹캠만 쓰고 프레임이나 영상을 저장하지 않습니다. `live_combined --out-json`은 숫자만(행, 창별 점수, 알람, 처리 시간 요약) 저장하며 저장소 밖 새 경로만 받습니다. 사용자 영상은 저장소에 올리지 않습니다. `docs/images`의 GUI 시연 화면 4장은 저장소 소유자 본인의 스크린샷이며 본인 동의로 공개합니다(결정 I-36).
 - 점수 도구가 만드는 숫자 JSON(깜빡임 행, 프레임 번호, 창별 점수)은 저장소 밖 폴더(`<TIMELINE_DIR>`)에만 저장하며 도구가 저장소 안 경로를 거부합니다. 이 숫자로 그린 집계 그래프(PNG)는 저장소에 올릴 수 있지만 영상 프레임과 얼굴이 식별되는 이미지는 그래프에도 넣지 않습니다(결정 I-34).
 - `third_party/`의 `.npy` 20개, `.sav` 1개, 체크포인트 15개를 포함한 44개 파일(합계 55,020,834 B)은 저장소에 유지한 채 공개합니다(결정 I-W-31). 이 파일에 MIT가 적용되는 범위는 미확정이며 [THIRD_PARTY.md](THIRD_PARTY.md)에 적었습니다.
 

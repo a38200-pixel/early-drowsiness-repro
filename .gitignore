@@ -15,6 +15,7 @@ mlruns/
 *.mov
 *.mkv
 *.png
+!docs/images/*.png
 *.jpg
 *.jpeg
 *.gif
