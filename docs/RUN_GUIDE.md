@@ -71,13 +71,13 @@ PowerShell에서는 `set PYTHONPATH=src` 대신 `$env:PYTHONPATH = "src"`를 씁
 |---|---|---|
 | `<DATA_DIR>` | UTA-RLDD 영상 폴더(공식 데이터셋 페이지에서 내려받음, [data/README.md](../data/README.md)) | 환경변수 `RLDD_DATA_DIR` |
 | `<PREDICTOR>` | dlib 68점 랜드마크 모델 `shape_predictor_68_face_landmarks.dat` | 환경변수 `DLIB_LANDMARK_PATH` 또는 `--predictor` 인자 |
-| `<CKPT_DIR>` | B1 학습 출력 루트(저장소 밖). 그 아래 `b1_seed{시드}/seed{시드}/fold{k}`에 체크포인트가 있어야 합니다 | `--ckpt-root` 인자(점수 도구), 환경변수 `TRAIN_OUT_DIR`(학습 도구) |
+| `<CKPT_DIR>` | B1 모델 폴더(저장소 밖). 그 아래 `b1_seed{시드}/seed{시드}/fold{k}`에 체크포인트가 있어야 합니다. 학습 도구의 `TRAIN_OUT_DIR`는 이 폴더가 아니라 그 아래 `b1_seed{시드}` 폴더입니다 | `--ckpt-root` 인자(점수 도구) |
 | `<VIDEO_DIR>` | 처리할 영상이 있는 폴더 | 영상 경로 인자 |
 | `<TIMELINE_DIR>` | 저장소 밖의 숫자 JSON과 그림 출력 폴더 | `--out` 등 인자 |
 | `<OUT_DIR>` | 저장소 밖의 실행 결과(숫자 JSON) 폴더 | `--out-json` 인자 |
 | `<SVM>` | 저자 blink 판별 SVM. 저장소 안 `third_party/ghoddoosian/Trained_SVM_C=1000_gamma=0.1_for 7kNegSample.sav` (공백이 있으므로 명령에서는 따옴표로 감쌉니다) | `--svm` 인자 |
 
-`<CKPT_DIR>` 아래의 폴더 구조는 `timeline.py score`의 도움말 문구를 따랐고, 이 문서 작성에서 실제 폴더를 새로 만들어 확인하지는 않았습니다.
+`<CKPT_DIR>` 아래의 폴더 구조는 `timeline.py score`의 도움말 문구를 따랐고, 이 문서 작성에서 실제 폴더를 새로 만들어 확인하지는 않았습니다. 작성자 본인이 B1 학습으로 만든 폴더가 이 구조임은 아래 [실행 준비물 표](#실행-준비물규칙-알람과-점수-게이지)에 적었습니다.
 
 ### 환경변수 전체 (재현 트랙)
 
@@ -87,7 +87,7 @@ PowerShell에서는 `set PYTHONPATH=src` 대신 `$env:PYTHONPATH = "src"`를 씁
 | `DLIB_LANDMARK_PATH` | predictor 파일 경로 | `check_video_assets.py`, `reproduction_blink_one_video.py`, `extract_blinks_batch.py` |
 | `BLINK_OUT_DIR` | blink txt 출력 루트(저장소 밖) | `extract_blinks_batch.py`, `reproduction_build_sequences.py` |
 | `SEQ_OUT_DIR` | 시퀀스 산출물 루트(저장소 밖) | `reproduction_build_sequences.py`, `reproduction_train_baseline.py` |
-| `TRAIN_OUT_DIR` | B1 학습 출력 루트(저장소 밖) | `reproduction_train_baseline.py` |
+| `TRAIN_OUT_DIR` | B1 학습 출력 루트(저장소 밖). 점수 도구의 `<CKPT_DIR>` 아래 `b1_seed{시드}` 폴더에 해당합니다(실행 이름이 `seed{시드}`일 때) | `reproduction_train_baseline.py` |
 | `PYTHONPATH` | 활용 트랙 도구는 `src`로 지정해야 `python -m improve...`가 동작합니다 | 3절 (b)에서 (g) |
 | `HMLSTM_CKPT_ROOT`, `TIMELINE_DIR` | 시험 전용. 체크포인트를 쓰는 시험 3개와 실제 시간선을 쓰는 시험 1개를 켭니다 | 3절 (g) |
 
@@ -152,6 +152,7 @@ python src/repro/reproduction_blink_one_video.py <영상 경로> [출력 txt]
 - 결과 파일: 학습은 `TRAIN_OUT_DIR/<실행이름>/fold<k>/`(체크포인트, `metrics.csv`, `final_metrics.json`, `run_config.json`, `train.log`), 추출은 `BLINK_OUT_DIR`, 시퀀스는 `SEQ_OUT_DIR`의 `npy/`와 `metadata/`입니다. 모두 저장소 밖입니다.
 - B1 학습의 소요 시간은 이 저장소의 문서에 기록이 없습니다.
 - 작성자 본인의 B1 학습 1회(Fold1, 시드 1, 80 에폭)는 2026-10-04에 974.5초(약 16분)가 걸렸습니다. 이 값은 그 학습의 실행 설정 파일(`run_config.json`)의 경과 시간 항목(`elapsed_seconds`)에 적힌 값이고, 이 파일은 저장소에 없습니다. 다른 폴드와 다른 시드의 학습 시간은 미확인입니다.
+- 학습한 모델을 점수 게이지에 쓰려면 `TRAIN_OUT_DIR`를 `<CKPT_DIR>/b1_seed1`(실행 이름이 기본값 `seed1`일 때)로 정합니다.
 - `reproduction_train_fold1.py`는 레거시이며 다시 실행하면 저장소의 추적 파일을 덮어쓸 수 있으니 쓰지 마세요.
 
 ### (b) 규칙 알람 데모 live_demo
