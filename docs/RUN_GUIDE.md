@@ -10,7 +10,7 @@
 - **predictor**: dlib 68점 얼굴 랜드마크 모델 파일 `shape_predictor_68_face_landmarks.dat`. 눈 위치를 찾는 데 쓰며 이 저장소에는 들어 있지 않습니다.
 - **체크포인트**: 학습된 HM-LSTM 모델의 저장 파일. 점수 도구는 5개 폴드(5-fold, 데이터를 5조각으로 나눠 따로 학습한 모델 5개)의 체크포인트를 읽습니다.
 - **B1**: 이 저장소가 영상에서 blink 특징을 다시 추출해 저자 코드와 하이퍼파라미터 그대로 학습한 기준선 모델.
-- **점수 게이지**: HM-LSTM 점수를 0에서 10 눈금으로 보여 주는 표시. 참고용이며 알람이 아닙니다(개선 트랙 결정 I-33).
+- **점수 게이지**: HM-LSTM 점수를 0에서 10 눈금으로 보여 주는 표시. 참고용이며 알람이 아닙니다(활용 트랙(코드 폴더 improve)의 결정 I-33).
 - **기준 구간**: 라이브 실행의 처음 300초. 이 구간의 깜빡임으로 사람별 기준 통계를 만들고, 이 구간에는 점수를 내지 않습니다.
 - **자리표시자**: `<PREDICTOR>`처럼 꺾쇠로 쓴 이름은 사용자가 자기 경로로 바꿔 넣는 값입니다(2절 표).
 
@@ -87,17 +87,17 @@ PowerShell에서는 `set PYTHONPATH=src` 대신 `$env:PYTHONPATH = "src"`를 씁
 | `BLINK_OUT_DIR` | blink txt 출력 루트(저장소 밖) | `extract_blinks_batch.py`, `reproduction_build_sequences.py` |
 | `SEQ_OUT_DIR` | 시퀀스 산출물 루트(저장소 밖) | `reproduction_build_sequences.py`, `reproduction_train_baseline.py` |
 | `TRAIN_OUT_DIR` | B1 학습 출력 루트(저장소 밖) | `reproduction_train_baseline.py` |
-| `PYTHONPATH` | 개선 트랙 도구는 `src`로 지정해야 `python -m improve...`가 동작합니다 | 3절 (b)에서 (g) |
+| `PYTHONPATH` | 활용 트랙 도구는 `src`로 지정해야 `python -m improve...`가 동작합니다 | 3절 (b)에서 (g) |
 | `HMLSTM_CKPT_ROOT`, `TIMELINE_DIR` | 시험 전용. 체크포인트를 쓰는 시험 3개와 실제 시간선을 쓰는 시험 1개를 켭니다 | 3절 (g) |
 
 ### 한글 글꼴과 웹캠
 
 - 재생 뷰어와 `live_combined`는 한글 문구를 Pillow(이미지 라이브러리, 환경 파일의 버전 8.3.1)와 Windows 한글 글꼴로 그립니다. 찾는 글꼴 이름은 `malgun.ttf`, `malgunbd.ttf`, `gulim.ttc` 순이고(소스의 `FONT_NAMES`), 하나도 없으면 시작할 때 오류로 끝납니다.
-- 웹캠은 프로세스 하나만 열 수 있습니다(개선 트랙 결정 I-W-32). 다른 프로그램이 쓰고 있으면 안 됩니다.
+- 웹캠은 프로세스 하나만 열 수 있습니다(활용 트랙 결정 I-W-32). 다른 프로그램이 쓰고 있으면 안 됩니다.
 
 ## 3. 실행 방법
 
-개선 트랙 도구(b에서 g)는 먼저 `conda activate ghoddoosian_tf1`을 하고 `PYTHONPATH=src`를 설정합니다. 어떤 도구도 프레임이나 영상을 저장하지 않습니다.
+활용 트랙 도구(b에서 g)는 먼저 `conda activate ghoddoosian_tf1`을 하고 `PYTHONPATH=src`를 설정합니다. 어떤 도구도 프레임이나 영상을 저장하지 않습니다.
 
 ### (a) B1 재현
 
@@ -198,7 +198,7 @@ python -m improve.rules.replay_viewer --video <VIDEO_DIR>/<대상영상> --rules
 
 ### (d) 웹캠 통합 live_combined (규칙 알람과 점수 게이지를 한 창에)
 
-**목적.** 웹캠 앞에서 규칙 알람과 점수 게이지를 한 창에 같이 보여 줍니다. 점수 계산은 TensorFlow를 쓰는 별도 자식 프로세스가 맡습니다. 처음 300초는 기준 구간이라 **자연스럽게 앉아 있어야 하고, 이 구간에 졸음이 없어야** 점수를 해석할 수 있습니다(한계, 개선 트랙 결정 I-W-29). 점수는 참고용이며 알람이 아닙니다.
+**목적.** 웹캠 앞에서 규칙 알람과 점수 게이지를 한 창에 같이 보여 줍니다. 점수 계산은 TensorFlow를 쓰는 별도 자식 프로세스가 맡습니다. 처음 300초는 기준 구간이라 **자연스럽게 앉아 있어야 하고, 이 구간에 졸음이 없어야** 점수를 해석할 수 있습니다(한계, 활용 트랙 결정 I-W-29). 점수는 참고용이며 알람이 아닙니다.
 
 ```
 python -m improve.hmlstm.live_combined --predictor <PREDICTOR> --ckpt-root <CKPT_DIR>
@@ -280,7 +280,7 @@ python -m improve.hmlstm.ear_hook_compare --video <VIDEO_DIR>/<영상> --predict
 
 ### (g) 테스트 실행
 
-**목적.** 개선 트랙의 시험을 실행합니다. 카메라, 창, TensorFlow 없이 도는 시험이 대부분입니다.
+**목적.** 활용 트랙의 시험을 실행합니다. 카메라, 창, TensorFlow 없이 도는 시험이 대부분입니다.
 
 ```
 set PYTHONPATH=src
@@ -297,7 +297,7 @@ python -m unittest discover -s src/improve/hmlstm/tests -t src
 | `test_score_analysis`, `test_scoring`, `test_timeline`의 체크포인트 시험 3개 | 환경변수 `HMLSTM_CKPT_ROOT`(`<CKPT_DIR>`)가 없음 |
 
 - 건너뛴 시험을 켜려면 `HMLSTM_CKPT_ROOT`를 `b1_seed1` 폴더의 **부모** 폴더로, `TIMELINE_DIR`를 `timeline.json`이 있는 폴더로 지정합니다. 두 변수를 모두 설정하면 체크포인트 시험 3개가 실행되고, `timeline.json`이 없으면 실제 데이터 시험 1개는 계속 건너뜁니다(이 문서 작성에서는 `timeline.json`이 있는 폴더가 없어 이 시험이 실제로 도는 것은 확인하지 못했습니다, 미확인).
-- 재현 트랙(`src/repro`)에는 단위 시험 파일이 없습니다(`test_*.py` 검색 결과, 개선 트랙 두 폴더에만 있음). 재현 트랙은 1절의 `check_environment.py`, `check_dataset.py`와 A-1의 평가로 점검합니다.
+- 재현 트랙(`src/repro`)에는 단위 시험 파일이 없습니다(`test_*.py` 검색 결과, 활용 트랙 두 폴더에만 있음). 재현 트랙은 1절의 `check_environment.py`, `check_dataset.py`와 A-1의 평가로 점검합니다.
 - 규칙 알람의 3.0초 경계는 합성 입력 시험으로만 고정되어 있고 실제 영상으로는 시험하지 않았습니다(미검증).
 
 ## 4. 자주 겪는 문제
@@ -308,7 +308,7 @@ python -m unittest discover -s src/improve/hmlstm/tests -t src
 | 환경을 활성화하지 않고 환경의 `python.exe`를 직접 부르면 NumPy 관련 DLL 오류 | `conda activate ghoddoosian_tf1` 뒤에 실행하거나 `conda run -n ghoddoosian_tf1 ...`을 쓰세요([PIPELINE_RUNBOOK.md](PIPELINE_RUNBOOK.md) 7절). |
 | 웹캠이 열리지 않거나 프레임을 읽지 못한다는 메시지 | 웹캠은 프로세스당 하나만 열립니다(결정 I-W-32). 다른 프로그램이나 이전에 띄운 도구가 아직 떠 있는지 확인하세요. 번호가 맞는지(`--camera`)도 확인하세요. |
 | 한글이 깨지거나 시작할 때 글꼴 오류로 끝남 | 재생 뷰어와 `live_combined`는 `malgun.ttf`, `malgunbd.ttf`, `gulim.ttc` 중 하나가 필요합니다(Windows 한글 글꼴). 글꼴이 없는 환경은 미검증입니다. |
-| "set the environment variable DLIB_LANDMARK_PATH ..." 같은 메시지 | 재현 트랙 도구에는 환경변수가 필요합니다(`RLDD_DATA_DIR`, `DLIB_LANDMARK_PATH`, `BLINK_OUT_DIR`, `SEQ_OUT_DIR`, `TRAIN_OUT_DIR`). 개선 트랙 도구는 환경변수 대신 `--predictor`와 `--ckpt-root` 인자를 씁니다. |
+| "set the environment variable DLIB_LANDMARK_PATH ..." 같은 메시지 | 재현 트랙 도구에는 환경변수가 필요합니다(`RLDD_DATA_DIR`, `DLIB_LANDMARK_PATH`, `BLINK_OUT_DIR`, `SEQ_OUT_DIR`, `TRAIN_OUT_DIR`). 활용 트랙 도구는 환경변수 대신 `--predictor`와 `--ckpt-root` 인자를 씁니다. |
 | `live_combined`에서 `--ckpt-root`를 빼면 종료 코드 2 | `--no-score`를 주지 않으면 `--ckpt-root`가 필요합니다. |
 | `--out-json`, `--out`이 거부됨(종료 코드 2) | 숫자 JSON은 **새 경로**에만 쓰고 이미 있는 파일은 덮어쓰지 않습니다. 저장소 안 경로도 거부합니다. 저장소 밖의 새 파일 이름을 주세요. |
 | `reproduction_eval.py`를 다시 실행했더니 결과가 사라짐 | 이 도구는 `experiments/00_reproduction/regression_eval/`의 기존 파일을 덮어씁니다. 실행 전에 옮겨 두세요. |
