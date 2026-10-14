@@ -9,7 +9,7 @@
 - **blink 행**: 영상에서 깜빡임 하나가 확정될 때마다 만들어지는 숫자 한 줄(깜빡임 누적 횟수, 빈도, 진폭, 지속시간, 속도).
 - **predictor**: dlib 68점 얼굴 랜드마크 모델 파일 `shape_predictor_68_face_landmarks.dat`. 눈 위치를 찾는 데 쓰며 이 저장소에는 들어 있지 않습니다.
 - **체크포인트**: 학습된 HM-LSTM 모델의 저장 파일. 점수 도구는 5개 폴드(5-fold, 데이터를 5조각으로 나눠 따로 학습한 모델 5개)의 체크포인트를 읽습니다.
-- **B1**: 이 저장소가 영상에서 blink 특징을 다시 추출해 저자 코드와 하이퍼파라미터 그대로 학습한 기준선 모델.
+- **B1**: 이 저장소가 영상에서 blink 특징을 다시 추출해 저자 코드와 하이퍼파라미터 그대로 학습한 모델(재학습 모델).
 - **점수 게이지**: HM-LSTM 점수를 0에서 10 눈금으로 보여 주는 표시. 참고용이며 알람이 아닙니다(활용 트랙(코드 폴더 improve)의 결정 I-33).
 - **기준 구간**: 라이브 실행의 처음 300초. 이 구간의 깜빡임으로 사람별 기준 통계를 만들고, 이 구간에는 점수를 내지 않습니다.
 - **자리표시자**: `<PREDICTOR>`처럼 꺾쇠로 쓴 이름은 사용자가 자기 경로로 바꿔 넣는 값입니다(2절 표).
@@ -24,6 +24,7 @@ conda activate ghoddoosian_tf1
 ```
 
 - 의존성은 [envs/environment_tf1.yml](../envs/environment_tf1.yml) 한 파일에 conda 패키지와 pip 패키지(TensorFlow 1.8.0, OpenCV 3.4.5, numpy 1.14.6 등)가 함께 들어 있어서 별도의 pip 설치 명령은 없습니다. 이 파일로 환경을 새로 만들어 보는 것은 이번 문서 작성에서 하지 않았습니다(미확인). 아래 확인은 이미 만들어 둔 같은 이름의 환경에서 했습니다.
+- pandas 1.1.5: 코드에서 쓰지 않음. 환경에 설치되어 있지만 numpy 1.14.6과 함께는 불러올 수 없음.
 - 파일에는 Windows용 런타임 패키지(`vc14_runtime`, `ucrt` 등)가 들어 있어 Linux와 macOS에서는 만들어지지 않을 수 있습니다(미확인).
 
 환경 확인(읽기만 합니다):
@@ -56,7 +57,7 @@ PowerShell에서는 `set PYTHONPATH=src` 대신 `$env:PYTHONPATH = "src"`를 씁
 
 ### 지원 범위
 
-| 구분 | 지원 | 미검증 |
+| 구분 | 지원 | 미확인 |
 |---|---|---|
 | 운영체제 | Windows | Linux, macOS |
 | 파이썬과 프레임워크 | Python 3.6.13, TensorFlow 1.8.0 (conda 환경 `ghoddoosian_tf1`) | 다른 버전 |
@@ -194,7 +195,7 @@ python -m improve.rules.replay_viewer --video <VIDEO_DIR>/<대상영상> --rules
 - 키(재생 뷰어): `q` 종료, 스페이스 일시정지와 계속, `r` 처음부터.
 - 기대 출력: `timeline extract`는 `extract: video=... rotation=... fps=...` 줄과 진행 줄, 끝에 `extract: frames=... rows=... check=...`와 `extract: written <파일 이름>`을 냅니다. `timeline score`는 `score: ...` 줄과 `score: elapsed_s=...; written <파일 이름>`을 냅니다. `replay_precompute`는 `rows written: frames=... fps=... applied_angle=... faces=...`를 냅니다. 재생 뷰어는 창을 엽니다(규칙 화면 아래에 시간 줄과 점수 게이지 띠).
 - 결과 파일: 위 세 JSON은 `--out`으로 준 경로입니다. **저장소 안 경로와 이미 있는 파일은 거부**하고 종료 코드 2로 끝납니다. 재생 뷰어는 아무것도 저장하지 않습니다.
-- 한글 문구는 Windows 한글 글꼴로 그리며 글꼴이 없으면 시작할 때 오류로 끝납니다. 회전 메타데이터가 있는 영상의 `timeline extract --rotate auto` 경로는 실제 영상으로 검증하지 않았습니다(미검증).
+- 한글 문구는 Windows 한글 글꼴로 그리며 글꼴이 없으면 시작할 때 오류로 끝납니다. 회전 메타데이터가 있는 영상의 `timeline extract --rotate auto` 경로는 실제 영상으로 검증하지 않았습니다(미확인).
 
 ### (d) 웹캠 통합 live_combined (규칙 알람과 점수 게이지를 한 창에)
 
@@ -298,7 +299,7 @@ python -m unittest discover -s src/improve/hmlstm/tests -t src
 
 - 건너뛴 시험을 켜려면 `HMLSTM_CKPT_ROOT`를 `b1_seed1` 폴더의 **부모** 폴더로, `TIMELINE_DIR`를 `timeline.json`이 있는 폴더로 지정합니다. 두 변수를 모두 설정하면 체크포인트 시험 3개가 실행되고, `timeline.json`이 없으면 실제 데이터 시험 1개는 계속 건너뜁니다(이 문서 작성에서는 `timeline.json`이 있는 폴더가 없어 이 시험이 실제로 도는 것은 확인하지 못했습니다, 미확인).
 - 재현 트랙(`src/repro`)에는 단위 시험 파일이 없습니다(`test_*.py` 검색 결과, 활용 트랙 두 폴더에만 있음). 재현 트랙은 1절의 `check_environment.py`, `check_dataset.py`와 A-1의 평가로 점검합니다.
-- 규칙 알람의 3.0초 경계는 합성 입력 시험으로만 고정되어 있고 실제 영상으로는 시험하지 않았습니다(미검증).
+- 규칙 알람의 3.0초 경계는 합성 입력 시험으로만 고정되어 있고 실제 영상으로는 시험하지 않았습니다(미확인).
 
 ## 4. 자주 겪는 문제
 
@@ -307,7 +308,7 @@ python -m unittest discover -s src/improve/hmlstm/tests -t src
 | `python -m improve...`가 "No module named improve" 오류 | `PYTHONPATH=src`를 설정하지 않았습니다. 저장소 루트에서 `set PYTHONPATH=src`(PowerShell은 `$env:PYTHONPATH = "src"`)를 먼저 실행하세요. |
 | 환경을 활성화하지 않고 환경의 `python.exe`를 직접 부르면 NumPy 관련 DLL 오류 | `conda activate ghoddoosian_tf1` 뒤에 실행하거나 `conda run -n ghoddoosian_tf1 ...`을 쓰세요([PIPELINE_RUNBOOK.md](PIPELINE_RUNBOOK.md) 7절). |
 | 웹캠이 열리지 않거나 프레임을 읽지 못한다는 메시지 | 웹캠은 프로세스당 하나만 열립니다(결정 I-W-32). 다른 프로그램이나 이전에 띄운 도구가 아직 떠 있는지 확인하세요. 번호가 맞는지(`--camera`)도 확인하세요. |
-| 한글이 깨지거나 시작할 때 글꼴 오류로 끝남 | 재생 뷰어와 `live_combined`는 `malgun.ttf`, `malgunbd.ttf`, `gulim.ttc` 중 하나가 필요합니다(Windows 한글 글꼴). 글꼴이 없는 환경은 미검증입니다. |
+| 한글이 깨지거나 시작할 때 글꼴 오류로 끝남 | 재생 뷰어와 `live_combined`는 `malgun.ttf`, `malgunbd.ttf`, `gulim.ttc` 중 하나가 필요합니다(Windows 한글 글꼴). 글꼴이 없는 환경은 미확인입니다. |
 | "set the environment variable DLIB_LANDMARK_PATH ..." 같은 메시지 | 재현 트랙 도구에는 환경변수가 필요합니다(`RLDD_DATA_DIR`, `DLIB_LANDMARK_PATH`, `BLINK_OUT_DIR`, `SEQ_OUT_DIR`, `TRAIN_OUT_DIR`). 활용 트랙 도구는 환경변수 대신 `--predictor`와 `--ckpt-root` 인자를 씁니다. |
 | `live_combined`에서 `--ckpt-root`를 빼면 종료 코드 2 | `--no-score`를 주지 않으면 `--ckpt-root`가 필요합니다. |
 | `--out-json`, `--out`이 거부됨(종료 코드 2) | 숫자 JSON은 **새 경로**에만 쓰고 이미 있는 파일은 덮어쓰지 않습니다. 저장소 안 경로도 거부합니다. 저장소 밖의 새 파일 이름을 주세요. |

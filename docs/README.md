@@ -23,7 +23,7 @@
 
 | 독자 | 순서 |
 |---|---|
-| 보고서 독자(결과만 보려는 사람) | 저장소 [README.md](../README.md)의 "한눈에 보기"와 "4. 기준선 B1 재현과 검증" → [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md)의 요약과 5절에서 8절 → [CLAIMS_LEDGER.md](CLAIMS_LEDGER.md) |
+| 보고서 독자(결과만 보려는 사람) | 저장소 [README.md](../README.md)의 "한눈에 보기"와 "4. 논문 재현과 검증" → [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md)의 요약과 5절에서 8절 → [CLAIMS_LEDGER.md](CLAIMS_LEDGER.md) |
 | 재현 결과를 확인하려는 독자(값과 상태의 뜻까지 보려는 사람) | 저장소 [README.md](../README.md)의 4절 → [REPRODUCTION_RESULTS.md](REPRODUCTION_RESULTS.md)(용어 설명, 결과, 검증) → 상세는 [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md) |
 | 실행하려는 독자(환경 만들기, 도구 실행) | 저장소 [README.md](../README.md)의 실행 방법 → [RUN_GUIDE.md](RUN_GUIDE.md) → 재현 단계별 명령이 필요하면 [PIPELINE_RUNBOOK.md](PIPELINE_RUNBOOK.md) |
 | 논문 작성자(수치와 표현을 쓰는 사람) | [CLAIMS_LEDGER.md](CLAIMS_LEDGER.md) → [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md)의 부록 B, C → 근거가 필요한 항목은 [REPRODUCTION_LOG.md](REPRODUCTION_LOG.md)의 해당 항목. 논문 원문 대조가 필요한 항목은 보고서 8절 |
