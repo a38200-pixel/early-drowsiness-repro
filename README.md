@@ -161,13 +161,7 @@ flowchart TD
 ## 7. 실행 방법
 이 프로그램은 작성자 본인의 Windows PC에서만 실행해 봤고, 다른 컴퓨터에서 환경이 만들어지는지는 확인하지 못했습니다.
 
-### 준비물
-| 이름 | 정의 | 저장소 포함 | 입수 방법 |
-|---|---|---|---|
-| conda 환경 `ghoddoosian_tf1` | Python 3.6 등을 담은 환경 | 설정 파일 [envs/environment_tf1.yml](envs/environment_tf1.yml)만 있음 | `conda env create -f envs/environment_tf1.yml` |
-| dlib 19.17 | 얼굴 검출과 랜드마크 라이브러리 | 환경 파일에 포함(conda-forge 채널). 이 파일로 새 환경을 만들어 보지는 않았습니다 | 위 명령에 함께 설치됩니다. 실패하면 [재현 로그](docs/REPRODUCTION_LOG.md)의 설치 문제 절을 참고하세요. 별도 빌드 도구에 대한 기록은 없습니다 |
-| `<PREDICTOR>` | dlib 얼굴 랜드마크 모델 파일 `shape_predictor_68_face_landmarks.dat` | 없음 | [data/README.md](data/README.md)의 안내대로 dlib 사이트에서 내려받아 압축을 풉니다 |
-| `<CKPT_DIR>` | 직접 학습한 B1 모델 5개(폴드마다 1개)가 든 폴더. 구조는 `<CKPT_DIR>/b1_seed1/seed1/fold{k}/my_model{k}`(k는 1에서 5) | 없음 | 직접 학습해야 합니다. 영상에서 깜빡임을 뽑는 과정이 먼저 필요합니다([RUN_GUIDE 3절 (a)](docs/RUN_GUIDE.md#a-b1-재현)). 점수 서비스는 `<CKPT_DIR>/b1_seed1/seed1/fold{k}/` 아래의 `my_model{k}` 파일(`.index`, `.meta`, `.data-...`)을 읽습니다. 작성자 본인이 B1을 학습해 만든 폴더가 이 구조임을 확인했습니다. 학습 실행 설정 파일(`run_config.json`, 작성자 본인 PC에만 있고 저장소에는 없음)의 실행 이름이 `seed1`이고 출력 경로 규칙이 `TRAIN_OUT_DIR/<실행이름>/fold<k>`이므로, 학습 때 `TRAIN_OUT_DIR`는 `<CKPT_DIR>/b1_seed1`이었던 것으로 따라 나옵니다(입력한 값을 적은 기록은 없습니다). |
+실행 전에 conda 환경, dlib 얼굴 랜드마크 모델 파일(`<PREDICTOR>`), 점수 게이지용 B1 모델 폴더(`<CKPT_DIR>`)를 준비해야 합니다. 각 항목의 설명과 준비 방법은 [RUN_GUIDE.md의 실행 준비물](docs/RUN_GUIDE.md#실행-준비물규칙-알람과-점수-게이지)에 있습니다. B1 모델은 저장소에 없으므로 점수 게이지는 직접 학습해야 합니다.
 
 ### 실행
 규칙 알람만 보려면(점수 없이, `--ckpt-root` 불필요) 환경, dlib, `<PREDICTOR>`, 웹캠이 필요합니다.

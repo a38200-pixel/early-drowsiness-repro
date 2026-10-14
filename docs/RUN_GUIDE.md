@@ -96,6 +96,17 @@ PowerShell에서는 `set PYTHONPATH=src` 대신 `$env:PYTHONPATH = "src"`를 씁
 - 재생 뷰어와 `live_combined`는 한글 문구를 Pillow(이미지 라이브러리, 환경 파일의 버전 8.3.1)와 Windows 한글 글꼴로 그립니다. 찾는 글꼴 이름은 `malgun.ttf`, `malgunbd.ttf`, `gulim.ttc` 순이고(소스의 `FONT_NAMES`), 하나도 없으면 시작할 때 오류로 끝납니다.
 - 웹캠은 프로세스 하나만 열 수 있습니다(활용 트랙 결정 I-W-32). 다른 프로그램이 쓰고 있으면 안 됩니다.
 
+### 실행 준비물(규칙 알람과 점수 게이지)
+
+아래 표는 README.md 7절의 실행 명령에 쓰이는 `<PREDICTOR>`와 `<CKPT_DIR>`를 포함해 실행 전에 준비할 것을 정리한 것입니다.
+
+| 이름 | 정의 | 저장소 포함 | 입수 방법 |
+|---|---|---|---|
+| conda 환경 `ghoddoosian_tf1` | Python 3.6 등을 담은 환경 | 설정 파일 [envs/environment_tf1.yml](../envs/environment_tf1.yml)만 있음 | `conda env create -f envs/environment_tf1.yml` |
+| dlib 19.17 | 얼굴 검출과 랜드마크 라이브러리 | 환경 파일에 포함(conda-forge 채널). 이 파일로 새 환경을 만들어 보지는 않았습니다 | 위 명령에 함께 설치됩니다. 실패하면 [재현 로그](REPRODUCTION_LOG.md)의 설치 문제 절을 참고하세요. 별도 빌드 도구에 대한 기록은 없습니다 |
+| `<PREDICTOR>` | dlib 얼굴 랜드마크 모델 파일 `shape_predictor_68_face_landmarks.dat` | 없음 | [data/README.md](../data/README.md)의 안내대로 dlib 사이트에서 내려받아 압축을 풉니다 |
+| `<CKPT_DIR>` | 직접 학습한 B1 모델 5개(폴드마다 1개)가 든 폴더. 구조는 `<CKPT_DIR>/b1_seed1/seed1/fold{k}/my_model{k}`(k는 1에서 5) | 없음 | 직접 학습해야 합니다. 영상에서 깜빡임을 뽑는 과정이 먼저 필요합니다([RUN_GUIDE 3절 (a)](#a-b1-재현)). 점수 서비스는 `<CKPT_DIR>/b1_seed1/seed1/fold{k}/` 아래의 `my_model{k}` 파일(`.index`, `.meta`, `.data-...`)을 읽습니다. 작성자 본인이 B1을 학습해 만든 폴더가 이 구조임을 확인했습니다. 학습 실행 설정 파일(`run_config.json`, 작성자 본인 PC에만 있고 저장소에는 없음)의 실행 이름이 `seed1`이고 출력 경로 규칙이 `TRAIN_OUT_DIR/<실행이름>/fold<k>`이므로, 학습 때 `TRAIN_OUT_DIR`는 `<CKPT_DIR>/b1_seed1`이었던 것으로 따라 나옵니다(입력한 값을 적은 기록은 없습니다). |
+
 ## 3. 실행 방법
 
 활용 트랙 도구(b에서 g)는 먼저 `conda activate ghoddoosian_tf1`을 하고 `PYTHONPATH=src`를 설정합니다. 어떤 도구도 프레임이나 영상을 저장하지 않습니다.
