@@ -15,7 +15,7 @@
 | [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md) | 규칙 문서 | 개선 실험 전에 고정한 평가 규칙 | 결과를 본 뒤 바꾸지 않는다. 바꾸면 변경 이력에 날짜와 이유를 남긴다 |
 | [RUN_GUIDE.md](RUN_GUIDE.md) | 정리 문서 | 실행 안내(빠른 시작, 준비물, 도구별 실행 방법, 자주 겪는 문제) | 도구나 옵션이 바뀌면 다시 정리한다 |
 | [REPRODUCTION_RESULTS.md](REPRODUCTION_RESULTS.md) | 정리 문서 | 재현 결과와 검증의 상세 표, 용어 설명 | 기록류가 바뀌면 다시 정리한다 |
-| [PREREGISTERED_CRITERIA.md](PREREGISTERED_CRITERIA.md) | 정리 문서 | 사전 기준과 결과, 나중에 바뀐 기준 정리 | 기록류가 바뀌면 다시 정리한다 |
+| [PREREGISTERED_CRITERIA.md](PREREGISTERED_CRITERIA.md) | 정리 문서 | 사전 기준과 결과, 사후 기준 정리 | 기록류가 바뀌면 다시 정리한다 |
 | [improvement/](improvement/README.md) 폴더 | 활용 트랙(코드 폴더 improve) | 활용 트랙 안내, 추가 전용 기록(IMPROVEMENT_LOG.md), 개선 결정(DECISIONS.md) | 2026-10-06부터. 개선 작업의 사전 등록, 결과, 결정은 이 폴더에 쓴다 |
 
 정리 문서의 숫자는 모두 기록류의 항목(로그 항목 제목과 날짜, 또는 IMPLEMENTATION_DIFF 절 번호)에서 가져온 것이다. 문서가 서로 다르면 기록류(날짜가 있는 항목)가 우선한다.
@@ -28,7 +28,7 @@
 |---|---|
 | 보고서 독자(결과만 보려는 사람) | 저장소 [README.md](../README.md)의 "한눈에 보기"와 "4. 논문 재현과 검증" → [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md)의 요약과 5절에서 8절 → [CLAIMS_LEDGER.md](CLAIMS_LEDGER.md) |
 | 재현 결과를 확인하려는 독자(값과 상태의 뜻까지 보려는 사람) | 저장소 [README.md](../README.md)의 4절 → [REPRODUCTION_RESULTS.md](REPRODUCTION_RESULTS.md)(용어 설명, 결과, 검증) → 상세는 [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md) |
-| 기준과 판정 방식을 확인하려는 독자(사전 기준, 결과, 나중에 바뀐 것) | 저장소 [README.md](../README.md)의 "사전 기준 검증" → [PREREGISTERED_CRITERIA.md](PREREGISTERED_CRITERIA.md) → 원문은 [improvement/PREREG_E-01.md](improvement/PREREG_E-01.md), [improvement/PREREG_E-02.md](improvement/PREREG_E-02.md), [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md) |
+| 기준과 판정 방식을 확인하려는 독자(사전 기준, 결과, 사후 기준) | 저장소 [README.md](../README.md)의 "사전 기준 검증" → [PREREGISTERED_CRITERIA.md](PREREGISTERED_CRITERIA.md) → 원문은 [improvement/PREREG_E-01.md](improvement/PREREG_E-01.md), [improvement/PREREG_E-02.md](improvement/PREREG_E-02.md), [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md) |
 | 실행하려는 독자(환경 만들기, 도구 실행) | 저장소 [README.md](../README.md)의 실행 방법 → [RUN_GUIDE.md](RUN_GUIDE.md) → 재현 단계별 명령이 필요하면 [PIPELINE_RUNBOOK.md](PIPELINE_RUNBOOK.md) |
 | 논문 작성자(수치와 표현을 쓰는 사람) | [CLAIMS_LEDGER.md](CLAIMS_LEDGER.md) → [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md)의 부록 B, C → 근거가 필요한 항목은 [REPRODUCTION_LOG.md](REPRODUCTION_LOG.md)의 해당 항목. 논문 원문 대조가 필요한 항목은 보고서 8절 |
 | 포트폴리오 독자(재현 절차와 판단 근거를 보려는 사람) | [PIPELINE_RUNBOOK.md](PIPELINE_RUNBOOK.md) → [DECISIONS.md](DECISIONS.md) → [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md) → [IMPLEMENTATION_DIFF.md](IMPLEMENTATION_DIFF.md) |

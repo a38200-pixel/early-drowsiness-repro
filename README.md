@@ -257,7 +257,7 @@ docs/                          재현 트랙 문서, 활용 트랙 문서(docs/i
 
 - [docs/RUN_GUIDE.md](docs/RUN_GUIDE.md): 실행 방법
 - [docs/REPRODUCTION_RESULTS.md](docs/REPRODUCTION_RESULTS.md): 재현 결과와 검증
-- [docs/PREREGISTERED_CRITERIA.md](docs/PREREGISTERED_CRITERIA.md): 사전 기준과 나중에 바뀐 기준 정리
+- [docs/PREREGISTERED_CRITERIA.md](docs/PREREGISTERED_CRITERIA.md): 사전 기준과 사후 기준 정리
 - [docs/REPRODUCTION_REPORT.md](docs/REPRODUCTION_REPORT.md): 재현 보고서(단계별 방법과 전체 표)
 - [docs/improvement/IMPROVEMENT_LOG.md](docs/improvement/IMPROVEMENT_LOG.md): 활용 트랙의 날짜순 상세 실험 기록
 - [docs/improvement/DECISIONS.md](docs/improvement/DECISIONS.md): 활용 트랙의 결정 기록
