@@ -16,7 +16,7 @@
 | [RUN_GUIDE.md](RUN_GUIDE.md) | 정리 문서 | 실행 안내(빠른 시작, 준비물, 도구별 실행 방법, 자주 겪는 문제) | 도구나 옵션이 바뀌면 다시 정리한다 |
 | [REPRODUCTION_RESULTS.md](REPRODUCTION_RESULTS.md) | 정리 문서 | 재현 결과와 검증의 상세 표, 용어 설명 | 기록류가 바뀌면 다시 정리한다 |
 | [PREREGISTERED_CRITERIA.md](PREREGISTERED_CRITERIA.md) | 정리 문서 | 사전 기준과 결과, 사후 기준 정리 | 기록류가 바뀌면 다시 정리한다 |
-| [improvement/](improvement/README.md) 폴더 | 활용 트랙(코드 폴더 improve) | 활용 트랙 안내, 추가 전용 기록(IMPROVEMENT_LOG.md), 개선 결정(DECISIONS.md) | 2026-10-06부터. 개선 작업의 사전 등록, 결과, 결정은 이 폴더에 쓴다 |
+| [improvement/](improvement/README.md) 폴더 | 활용 트랙(코드 폴더 improve) | 활용 트랙 안내, 추가 전용 기록(IMPROVEMENT_LOG.md), 활용 트랙의 결정(DECISIONS.md) | 2026-10-06부터. 개선 작업의 사전 등록, 결과, 결정은 이 폴더에 쓴다 |
 
 정리 문서의 숫자는 모두 기록류의 항목(로그 항목 제목과 날짜, 또는 IMPLEMENTATION_DIFF 절 번호)에서 가져온 것이다. 문서가 서로 다르면 기록류(날짜가 있는 항목)가 우선한다.
 
@@ -32,7 +32,7 @@
 | 실행하려는 독자(환경 만들기, 도구 실행) | 저장소 [README.md](../README.md)의 실행 방법 → [RUN_GUIDE.md](RUN_GUIDE.md) → 재현 단계별 명령이 필요하면 [PIPELINE_RUNBOOK.md](PIPELINE_RUNBOOK.md) |
 | 논문 작성자(수치와 표현을 쓰는 사람) | [CLAIMS_LEDGER.md](CLAIMS_LEDGER.md) → [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md)의 부록 B, C → 근거가 필요한 항목은 [REPRODUCTION_LOG.md](REPRODUCTION_LOG.md)의 해당 항목. 논문 원문 대조가 필요한 항목은 보고서 8절 |
 | 포트폴리오 독자(재현 절차와 판단 근거를 보려는 사람) | [PIPELINE_RUNBOOK.md](PIPELINE_RUNBOOK.md) → [DECISIONS.md](DECISIONS.md) → [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md) → [IMPLEMENTATION_DIFF.md](IMPLEMENTATION_DIFF.md) |
-| 개선 실험을 하려는 사람 | [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md)(규칙, 열린 결정) → [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md)의 5절(기준선 수치) → [improvement/README.md](improvement/README.md) |
+| 개선 실험을 하려는 사람 | [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md)(규칙, 열린 결정) → [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md)의 5절(B1 수치) → [improvement/README.md](improvement/README.md) |
 
 루트 README는 포트폴리오 형식으로 재구성되어 있다(이 지도는 현재 문서의 읽는 순서만 적는다).
 
@@ -45,5 +45,14 @@
 | 재현 트랙 | `src/repro/`, `third_party/`, `experiments/00_reproduction/`, `01_fold1_seeds/`, `02_fold_seeds/`, 이 폴더의 동결 문서 7개(README 제외 기록류, 정리 문서, 규칙 문서: REPRODUCTION_LOG.md, IMPLEMENTATION_DIFF.md, REPRODUCTION_REPORT.md, CLAIMS_LEDGER.md, PIPELINE_RUNBOOK.md, DECISIONS.md, EVALUATION_PROTOCOL.md) | 동결. 정정은 날짜 항목으로만 추가한다. 동결 이후에 만든 정리 문서 RUN_GUIDE.md와 REPRODUCTION_RESULTS.md는 동결 대상이 아니다 |
 | 활용 트랙 | `docs/improvement/`, `src/improve/`, `experiments/improve/`, `configs/improve/` | 진행 |
 | 경계 문서 | [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md) | 평가 규칙. 변경은 이력에 기록한다 |
+
+동결 커밋 ad561f6(2026-10-06) 이후 git 이력으로 확인한 결과, 동결 문서 7개 중 5개(REPRODUCTION_LOG.md, IMPLEMENTATION_DIFF.md, REPRODUCTION_REPORT.md, DECISIONS.md, EVALUATION_PROTOCOL.md)에 수정이 있었고, CLAIMS_LEDGER.md와 PIPELINE_RUNBOOK.md에는 없었습니다. 수정한 커밋은 4개이고 문서별로 세면 6건입니다.
+
+- REPRODUCTION_LOG.md, 5cb32d2, 2026-10-06: 앞부분(영문이던 구간)을 한국어로 번역(245줄 추가, 269줄 삭제). 기록: [REPRODUCTION_LOG.md](REPRODUCTION_LOG.md)의 "로그 앞부분 번역과 영향 점검 (2026-10-06)" 1항, 결정 D-15.
+- REPRODUCTION_LOG.md, 7859db3, 2026-10-06: 번역의 영향 점검 항목 추가(92줄 추가). 기록: 같은 절. 이 커밋은 비동결 파일 docs/README.md도 함께 바꿨습니다.
+- DECISIONS.md, 7859db3, 2026-10-06: 결정 D-15 한 줄 추가. 기록: [DECISIONS.md](DECISIONS.md)의 D-15 행.
+- EVALUATION_PROTOCOL.md, 23aea77, 2026-10-06: 11절의 태그 해시 빈칸 기입(5줄 추가, 4줄 삭제). 기록: [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md) 변경 이력의 2026-10-06 항목.
+- IMPLEMENTATION_DIFF.md, 3e0637f, 2026-10-12: 물결표 범위가 GitHub 미리보기에서 취소선으로 보이지 않도록 이스케이프(24줄 수정). 기록: [IMPROVEMENT_LOG.md](improvement/IMPROVEMENT_LOG.md)의 "공개 전환 기록 (2026-10-12)".
+- REPRODUCTION_REPORT.md, 3e0637f, 2026-10-12: 같은 이스케이프(1줄 수정). 기록: 같은 절. 이 커밋은 비동결 파일 README.md, THIRD_PARTY.md, docs/README.md, docs/improvement/DECISIONS.md도 함께 바꿨습니다.
 
 의존 방향: 개선 쪽은 재현 쪽의 산출물을 읽기만 하고, 재현 쪽은 개선 쪽을 import하지 않는다.

@@ -1,5 +1,7 @@
 # 개선 트랙 안내
 
+이 폴더의 문서가 다루는 '개선 트랙'은 저장소 README에서 '활용 트랙'이라고 부르는 것과 같은 트랙입니다.
+
 작성일: 2026-10-06. 이 폴더는 재현 트랙이 동결된 뒤의 개선 작업을 기록한다. 상태 표기는 "일치/불일치/미확정/미검증"만 쓴다. 확실도는 [확실], [가능성 높음], [추측]이다.
 
 ## 1. 범위
@@ -14,11 +16,11 @@
 | 코드 | `src/repro/`, `third_party/` | `src/improve/rules/`, `src/improve/demo/` |
 | 실험 | `experiments/00_reproduction/`, `01_fold1_seeds/`, `02_fold_seeds/` | `experiments/improve/` |
 | 설정 | 기존 `configs/` 파일 | `configs/improve/` |
-| 문서 | `docs/`의 기존 문서 8개 | `docs/improvement/` |
+| 문서 | `docs/`의 기존 문서 8개(README 포함, 동결 문서는 README를 뺀 7개) | `docs/improvement/` |
 | 결정 ID | D-xx | 결정 I-xx, 실험 E-xx |
 | 경계 문서 | [EVALUATION_PROTOCOL.md](../EVALUATION_PROTOCOL.md) (평가 규칙, 변경은 이력에 기록) | 같음 |
 
-의존 방향: 개선 쪽은 재현 쪽의 산출물(B1 체크포인트, 시퀀스, 기준선 수치)을 **읽기만** 하고 수정하지 않는다. 재현 쪽은 개선 쪽을 import하지 않는다. [확실] (방침)
+의존 방향: 개선 쪽은 재현 쪽의 산출물(B1 체크포인트, 시퀀스, B1 수치)을 **읽기만** 하고 수정하지 않는다. 재현 쪽은 개선 쪽을 import하지 않는다. [확실] (방침)
 
 ## 3. 문서
 
@@ -33,7 +35,7 @@
 
 ## 4. 읽는 순서
 
-1. [../EVALUATION_PROTOCOL.md](../EVALUATION_PROTOCOL.md): 평가 규칙과 기준선 수치
+1. [../EVALUATION_PROTOCOL.md](../EVALUATION_PROTOCOL.md): 평가 규칙과 B1 수치(이 동결 문서에서는 '기준선 수치'라고 부릅니다)
 2. [IMPROVEMENT_LOG.md](IMPROVEMENT_LOG.md): 개선 트랙의 시작과 범위 결정
 3. [DECISIONS.md](DECISIONS.md): 확정된 결정과 아직 정하지 않은 결정
 4. [../README.md](../README.md): 재현 트랙 문서 지도
