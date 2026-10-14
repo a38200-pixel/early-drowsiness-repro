@@ -26,7 +26,7 @@
 
 | 독자 | 순서 |
 |---|---|
-| 보고서 독자(결과만 보려는 사람) | 저장소 [README.md](../README.md)의 "한눈에 보기"와 "4. 논문 재현과 검증" → [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md)의 요약과 5절에서 8절 → [CLAIMS_LEDGER.md](CLAIMS_LEDGER.md) |
+| 보고서 독자(결과만 보려는 사람) | 저장소 [README.md](../README.md)의 "프로젝트 요약"과 "4. 논문 재현과 검증" → [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md)의 요약과 5절에서 8절 → [CLAIMS_LEDGER.md](CLAIMS_LEDGER.md) |
 | 재현 결과를 확인하려는 독자(값과 상태의 뜻까지 보려는 사람) | 저장소 [README.md](../README.md)의 4절 → [REPRODUCTION_RESULTS.md](REPRODUCTION_RESULTS.md)(용어 설명, 결과, 검증) → 상세는 [REPRODUCTION_REPORT.md](REPRODUCTION_REPORT.md) |
 | 기준과 판정 방식을 확인하려는 독자(사전 기준, 결과, 사후 기준) | 저장소 [README.md](../README.md)의 "사전 기준 검증" → [PREREGISTERED_CRITERIA.md](PREREGISTERED_CRITERIA.md) → 원문은 [improvement/PREREG_E-01.md](improvement/PREREG_E-01.md), [improvement/PREREG_E-02.md](improvement/PREREG_E-02.md), [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md) |
 | 실행하려는 독자(환경 만들기, 도구 실행) | 저장소 [README.md](../README.md)의 실행 방법 → [RUN_GUIDE.md](RUN_GUIDE.md) → 재현 단계별 명령이 필요하면 [PIPELINE_RUNBOOK.md](PIPELINE_RUNBOOK.md) |
@@ -54,5 +54,7 @@
 - EVALUATION_PROTOCOL.md, 23aea77, 2026-10-06: 11절의 태그 해시 빈칸 기입(5줄 추가, 4줄 삭제). 기록: [EVALUATION_PROTOCOL.md](EVALUATION_PROTOCOL.md) 변경 이력의 2026-10-06 항목.
 - IMPLEMENTATION_DIFF.md, 3e0637f, 2026-10-12: 물결표 범위가 GitHub 미리보기에서 취소선으로 보이지 않도록 이스케이프(24줄 수정). 기록: [IMPROVEMENT_LOG.md](improvement/IMPROVEMENT_LOG.md)의 "공개 전환 기록 (2026-10-12)".
 - REPRODUCTION_REPORT.md, 3e0637f, 2026-10-12: 같은 이스케이프(1줄 수정). 기록: 같은 절. 이 커밋은 비동결 파일 README.md, THIRD_PARTY.md, docs/README.md, docs/improvement/DECISIONS.md도 함께 바꿨습니다.
+
+동결 문서(REPRODUCTION_REPORT.md, CLAIMS_LEDGER.md)에 'README 1절', 'README 2절'처럼 번호로 적힌 참조는 작성 당시의 README 번호입니다. 2026-10-14에 README를 재구성하면서 번호가 바뀌었으므로 현재 README의 구성은 README의 제목 목록을 보세요.
 
 의존 방향: 개선 쪽은 재현 쪽의 산출물을 읽기만 하고, 재현 쪽은 개선 쪽을 import하지 않는다.
