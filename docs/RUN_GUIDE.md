@@ -139,7 +139,8 @@ python src/repro/reproduction_blink_one_video.py <영상 경로> [출력 txt]
 | 학습 집계 | `python src/repro/summarize_training.py --roots <3개 루트> --out-dir <집계 폴더>` | `--roots`(3개), `--out-dir`, `--expected-test` |
 
 - 결과 파일: 학습은 `TRAIN_OUT_DIR/<실행이름>/fold<k>/`(체크포인트, `metrics.csv`, `final_metrics.json`, `run_config.json`, `train.log`), 추출은 `BLINK_OUT_DIR`, 시퀀스는 `SEQ_OUT_DIR`의 `npy/`와 `metadata/`입니다. 모두 저장소 밖입니다.
-- B1 학습의 소요 시간은 기록에 없어 미확인입니다.
+- B1 학습의 소요 시간은 이 저장소의 문서에 기록이 없습니다.
+- 작성자 본인의 B1 학습 1회(Fold1, 시드 1, 80 에폭)는 2026-10-04에 974.5초(약 16분)가 걸렸습니다. 이 값은 그 학습의 실행 설정 파일(`run_config.json`)의 경과 시간 항목(`elapsed_seconds`)에 적힌 값이고, 이 파일은 저장소에 없습니다. 다른 폴드와 다른 시드의 학습 시간은 미확인입니다.
 - `reproduction_train_fold1.py`는 레거시이며 다시 실행하면 저장소의 추적 파일을 덮어쓸 수 있으니 쓰지 마세요.
 
 ### (b) 규칙 알람 데모 live_demo
@@ -224,6 +225,7 @@ python -m improve.hmlstm.live_combined --predictor <PREDICTOR> --ckpt-root <CKPT
 - 기대 출력(콘솔): 종료할 때 요약이 가장 먼저 출력됩니다. 줄은 `status: finished`, `frames`, `mean fps`, 프레임 간격, 처리 시간, 프레임 예산 대비 비율, `live session`, `score process`, `self check`, `rule alarms`, `swallowed exceptions`, 출처별 프레임 수와 EAR 분포이며, 마지막 줄은 고정 문장 "이 값은 라이브 실행 요약이며 점수나 알람의 타당성 검증이 아님"입니다. 종료 코드는 정상 종료 0, 프레임이 없거나 오류가 있으면 1, 인자 오류는 2입니다.
 - 첫 점수는 기준 구간(300초)이 끝난 뒤 기준 이후 깜빡임 행이 30개 쌓여야 나옵니다. 사용자가 실행한 1회(점수 포함 600초 실행)에서 첫 점수 시각은 348.8초(화면 관찰 5분 50초)였지만 단일 사용자의 한 번 관찰이며 깜빡임 빈도에 따라 달라집니다.
 - 결과 파일: `--out-json`을 줄 때만 숫자 JSON(행, 창별 점수, 알람, 처리 시간 요약)을 씁니다. 프레임과 영상은 저장하지 않습니다.
+- 알려진 결함: 저장 JSON의 `scores[].time_sec`는 `frame_index`를 가정한 30 fps로 나눈 값이라 실제 시각이 아닙니다(기록에서 확인함. 한 실행의 첫 창은 기록 345.3초 대 행 시각 348.8초). 시간 비교에는 행의 `t`를 쓰세요. 상세는 [IMPROVEMENT_LOG.md](improvement/IMPROVEMENT_LOG.md)의 "live_combined 두 번째 전체 실행과 재채점 비교 (2026-10-13)" D절에 있습니다.
 - `--ckpt-root`를 주고 실제 점수 프로세스까지 돌리는 경로는 사용자가 두 번 직접 실행해 확인했습니다. 이 문서를 쓰면서는 웹캠을 쓰지 않았습니다.
 
 ### (e) 재채점 비교 live_score_recheck
